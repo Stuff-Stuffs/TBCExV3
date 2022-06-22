@@ -1,10 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "tbcexv3",
+  "id": "tbcexv3_core",
   "version": "${version}",
-
-  "name": "TBCExV3",
-  "description": "Turn Based Combat Experiment Version 3",
+  "name": "TBCExV3-Core",
+  "description": "Turn Based Combat Experiment Version 3 Core",
   "authors": [
     "Stuff-Stuffs"
   ],
@@ -14,13 +13,17 @@
   "license": "LGPL-3.0-or-later",
   "environment": "*",
   "entrypoints": {
+    "main": [
+      "io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core"
+    ],
+    "client": [
+      "io.github.stuff_stuffs.tbcexv3core.internal.client.TBCExV3CoreClient"
+    ]
   },
-
   "depends": {
     "fabricloader": ">=0.14.6",
     "fabric": "*",
     "minecraft": "~1.19",
-    "java": ">=17",
-    "tbcexv3_core": "*"
+    "java": ">=17"
   }
 }
