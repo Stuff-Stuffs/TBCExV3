@@ -12,6 +12,8 @@ import net.minecraft.util.registry.RegistryKey;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 @ApiStatus.NonExtendable
 public interface BattleActionType<T extends BattleAction> {
     Identifier NOOP_ID = TBCExV3Core.createId("default");
@@ -40,7 +42,7 @@ public interface BattleActionType<T extends BattleAction> {
         return type;
     }
 
-    static <T extends BattleAction> @Nullable BattleActionType<T> get(final Identifier id, final Class<T> actionClass) {
-        return REGISTRY.getOrEmpty(id).map(action -> action.checkedCast(actionClass)).orElse(null);
+    static <T extends BattleAction> Optional<BattleActionType<T>> get(final Identifier id, final Class<T> actionClass) {
+        return REGISTRY.getOrEmpty(id).map(action -> action.checkedCast(actionClass));
     }
 }
