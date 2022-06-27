@@ -39,10 +39,12 @@ public interface BattleEffectType<View extends BattleEffect, Effect extends View
         return null;
     }
 
-    static <View extends BattleEffect, Effect extends View> BattleEffectType<View, Effect> createAndRegister(final Identifier id, final Class<View> viewClass, final Class<Effect> effectClass, final Encoder<Effect> encoder, final Decoder<Effect> decoder) {
-        final BattleEffectTypeImpl<View, Effect> type = new BattleEffectTypeImpl<>(viewClass, effectClass, encoder, decoder);
-        Registry.register(REGISTRY, id, type);
-        return type;
+    static <View extends BattleEffect, Effect extends View> BattleEffectType<View, Effect> create(final Class<View> viewClass, final Class<Effect> effectClass, final Codec<Effect> codec) {
+        return create(viewClass, effectClass, codec, codec);
+    }
+
+    static <View extends BattleEffect, Effect extends View> BattleEffectType<View, Effect> create(final Class<View> viewClass, final Class<Effect> effectClass, final Encoder<Effect> encoder, final Decoder<Effect> decoder) {
+        return new BattleEffectTypeImpl<>(viewClass, effectClass, encoder, decoder);
     }
 
     static <View extends BattleEffect, Effect extends View> Optional<BattleEffectType<View, Effect>> get(final Identifier id, final Class<View> viewClass, final Class<Effect> effectClass) {

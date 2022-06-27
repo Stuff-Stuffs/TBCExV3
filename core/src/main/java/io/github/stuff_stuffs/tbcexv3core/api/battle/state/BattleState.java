@@ -1,8 +1,11 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battle.state;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battle.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.effect.BattleEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.BattleStateImpl;
@@ -10,8 +13,12 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.Optional;
+
 @ApiStatus.NonExtendable
 public interface BattleState extends BattleStateView {
+    void ready();
+
     @Override
     EventMap getEventMap();
 
@@ -20,6 +27,13 @@ public interface BattleState extends BattleStateView {
     void removeEffect(BattleEffectType<?, ?> type, Tracer<ActionTrace> tracer);
 
     void addEffect(BattleEffect effect, Tracer<ActionTrace> tracer);
+
+    boolean setBattleBounds(BattleBounds bounds, Tracer<ActionTrace> tracer);
+
+    @Override
+    BattleParticipantState getParticipant(BattleParticipantHandle handle);
+
+    boolean addParticipant(BattleParticipantState participant, Optional<BattleParticipantHandle> invitation, Tracer<ActionTrace> tracer);
 
     Event<EventInitializer> BATTLE_EVENT_INITIALIZATION_EVENT = EventFactory.createArrayBacked(EventInitializer.class, eventInitializers -> builder -> {
         for (EventInitializer initializer : eventInitializers) {

@@ -4,8 +4,11 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
+import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+
+import java.util.Optional;
 
 public interface BattleAction {
     Codec<BattleAction> CODEC = new Codec<>() {
@@ -21,6 +24,8 @@ public interface BattleAction {
     };
 
     BattleActionType<?> getType();
+
+    Optional<BattleParticipantHandle> getActor();
 
     void apply(BattleState state, Tracer<ActionTrace> trace);
 }

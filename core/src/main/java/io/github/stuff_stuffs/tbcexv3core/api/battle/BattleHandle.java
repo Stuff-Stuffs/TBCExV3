@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battle;
 
+import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleHandleImpl;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -11,9 +12,13 @@ import java.util.UUID;
 public interface BattleHandle {
     RegistryKey<World> getWorldKey();
 
-    UUID getUUID();
+    UUID getUuid();
 
     static BattleHandle of(final RegistryKey<World> worldKey, final UUID uuid) {
         return new BattleHandleImpl(worldKey, uuid);
+    }
+
+    static Codec<BattleHandle> codec() {
+        return BattleHandleImpl.CODEC;
     }
 }
