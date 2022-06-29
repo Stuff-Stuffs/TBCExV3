@@ -4,6 +4,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.BattleParticipa
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.inventory.BattleParticipantInventoryView;
+import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStatMapView;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMapView;
 import org.jetbrains.annotations.ApiStatus;
@@ -17,6 +18,8 @@ public interface BattleParticipantStateView {
     <View extends BattleParticipantEffect> View getEffectView(BattleParticipantEffectType<View, ?> type);
 
     BattleParticipantInventoryView getInventory();
+
+    BattleParticipantStatMapView getStatMap();
 
     BattleStateView getBattleState();
 

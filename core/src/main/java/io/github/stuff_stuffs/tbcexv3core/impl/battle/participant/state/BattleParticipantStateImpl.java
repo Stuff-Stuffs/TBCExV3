@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.BattleParticipa
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.inventory.BattleParticipantInventory;
+import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStatMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.state.BattleState;
@@ -22,6 +23,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     private final UUID uuid;
     private final Map<BattleParticipantEffectType<?, ?>, BattleParticipantEffect> effects;
     private final AbstractBattleParticipantInventory inventory;
+    private final BattleParticipantStatMap statMap;
     private BattleParticipantHandle handle;
     private BattleState battleState;
     private BattleParticipantStatePhase phase;
@@ -33,6 +35,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
         this.uuid = uuid;
         effects = new Reference2ObjectOpenHashMap<>();
         inventory = AbstractBattleParticipantInventory.createBlank();
+        statMap = BattleParticipantStatMap.create();
         phase = BattleParticipantStatePhase.SETUP;
     }
 
@@ -84,6 +87,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     @Override
     public BattleParticipantInventory getInventory() {
         return inventory;
+    }
+
+    @Override
+    public BattleParticipantStatMap getStatMap() {
+        return statMap;
     }
 
     @Override

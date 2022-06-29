@@ -4,6 +4,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battle.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.inventory.BattleParticipantInventory;
+import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStatMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battle.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
@@ -24,6 +25,9 @@ public interface BattleParticipantState extends BattleParticipantStateView {
 
     @Override
     BattleParticipantInventory getInventory();
+
+    @Override
+    BattleParticipantStatMap getStatMap();
 
     @Override
     BattleState getBattleState();
