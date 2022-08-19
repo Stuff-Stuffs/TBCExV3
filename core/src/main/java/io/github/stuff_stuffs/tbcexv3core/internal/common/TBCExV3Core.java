@@ -1,27 +1,30 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battle.action.CoreBattleActions;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.effect.CoreBattleEffects;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.event.CoreBattleEvents;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.event.PostBattleBoundsSet;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.event.PreBattleBoundsSet;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.effect.CoreBattleParticipantEffects;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.CoreBattleParticipantEvents;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.equipment.PostEquipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.equipment.PostUnequipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.equipment.PreEquipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.equipment.PreUnequipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.item.PostGiveBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.item.PostTakeBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.item.PreGiveBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.event.item.PreTakeBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.state.BattleParticipantState;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.PostBattleBoundsSet;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.PreBattleBoundsSet;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.CoreBattleParticipantEffects;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostEquipBattleParticipantEquipmentEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostUnequipBattleParticipantEquipmentEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreEquipBattleParticipantEquipmentEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreUnequipBattleParticipantEquipmentEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostGiveBattleParticipantItemEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostTakeBattleParticipantItemEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreGiveBattleParticipantItemEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TBCExV3Core implements ModInitializer {
     public static final String MOD_ID = "tbcexv3_core";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     @Override
     public void onInitialize() {

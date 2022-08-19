@@ -1,0 +1,4 @@
+dependencies {
+   api project(path: ':core', configuration: "namedElements")
+   api project(path: ':gui', configuration: "namedElements")
+}

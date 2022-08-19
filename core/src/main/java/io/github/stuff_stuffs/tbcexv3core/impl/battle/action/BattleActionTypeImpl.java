@@ -5,8 +5,8 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Decoder;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Encoder;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.action.BattleAction;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.action.BattleActionType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleActionType;
 import net.minecraft.util.registry.RegistryEntry;
 
 public class BattleActionTypeImpl<T extends BattleAction> implements BattleActionType<T> {

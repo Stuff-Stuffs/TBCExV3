@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "id": "tbcexv3",
   "version": "${version}",
-
   "name": "TBCExV3",
   "description": "Turn Based Combat Experiment Version 3",
   "authors": [

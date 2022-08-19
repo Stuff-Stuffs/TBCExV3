@@ -9,4 +9,6 @@ pluginManagement {
     }
 }
 
-include 'core'
+include ':core'
+include ':gui'
+include ':test'

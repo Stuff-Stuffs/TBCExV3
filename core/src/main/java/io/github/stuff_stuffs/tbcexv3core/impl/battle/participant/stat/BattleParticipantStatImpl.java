@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStat;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStat;
 import net.minecraft.util.registry.RegistryEntry;
 
 public class BattleParticipantStatImpl implements BattleParticipantStat {

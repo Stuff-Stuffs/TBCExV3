@@ -4,18 +4,20 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.Battle;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.BattleAccess;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.action.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.action.BattleAction;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleAccess;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.impl.util.CodecUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.List;
 
 public class BattleImpl implements Battle, BattleAccess {
     public static final Codec<BattleImpl> CODEC = Codec.list(BattleAction.CODEC).xmap(BattleImpl::new, impl -> impl.actions);
+    public static final Codec<Battle> CASTED_CODEC = CodecUtil.castedCodec(CODEC, BattleImpl.class);
     private static final ActionTrace ROOT_VALUE = ActionTrace.INSTANCE;
     private final ObjectArrayList<BattleAction> actions;
     private BattleState state = BattleState.createEmpty();

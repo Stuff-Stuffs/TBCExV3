@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "tbcexv3_gui",
+  "version": "${version}",
+  "name": "TBCExV3-GUI",
+  "description": "Turn Based Combat Experiment Version 3 GUI",
+  "authors": [
+    "Stuff-Stuffs"
+  ],
+  "contact": {
+    "sources": "https://github.com/Stuff-Stuffs/TBCExV3"
+  },
+  "license": "LGPL-3.0-or-later",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.stuff_stuffs.tbcexv3gui.internal.common.TBCExV3Gui"
+    ],
+    "client": [
+      "io.github.stuff_stuffs.tbcexv3gui.internal.client.TBCExV3GuiClient"
+    ]
+  },
+  "mixins": [
+    "tbcexv3gui.mixins.json"
+  ],
+  "accessWidener": "tbcexv3gui.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.14.6",
+    "fabric": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "io.github.stuff_stuffs.tbcexv3gui.internal.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MixinMinecraftClient"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "AccessorMultiPhaseParameters"
+  ]
+}

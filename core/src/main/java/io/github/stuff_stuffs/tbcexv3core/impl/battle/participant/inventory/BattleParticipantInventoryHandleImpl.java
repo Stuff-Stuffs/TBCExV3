@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 
 public record BattleParticipantInventoryHandleImpl(
         BattleParticipantHandle handle, long key

@@ -2,7 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.BattleHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;

@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.equipment;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.inventory.equipment.BattleParticipantEquipmentSlot;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.registry.RegistryEntry;
 

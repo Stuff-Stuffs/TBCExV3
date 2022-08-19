@@ -1,12 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.BattleHandle;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import net.minecraft.util.dynamic.Codecs;
 
 import java.util.UUID;

@@ -1,10 +1,10 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battle.action.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStat;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStatMap;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.BattleParticipantStatModifierKey;
-import io.github.stuff_stuffs.tbcexv3core.api.battle.participant.stat.StatTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStat;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.StatTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import it.unimi.dsi.fastutil.ints.Int2ReferenceAVLTreeMap;
