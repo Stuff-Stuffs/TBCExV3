@@ -1,5 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3test.client;
 
+import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
+import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
 import io.github.stuff_stuffs.tbcexv3gui.api.screen.GuiScreen;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
@@ -12,8 +14,6 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.math.Quaternion;
@@ -30,26 +30,23 @@ public class TBCExV3TestClient implements ClientModInitializer, PreLaunchEntrypo
     @Override
     public void onInitializeClient() {
         KeyBindingHelper.registerKeyBinding(OPEN_TEST_SCREEN);
-        ClientTickEvents.START_WORLD_TICK.register(new ClientTickEvents.StartWorldTick() {
-            @Override
-            public void onStartTick(final ClientWorld world) {
-                if (OPEN_TEST_SCREEN.wasPressed()) {
-                    final SingleAnimationWidget<Void> animationWidget = new SingleAnimationWidget<>(new SingleAnimationWidget.Animation<>() {
-                        @Override
-                        public Optional<WidgetRenderContext> animate(final Void data, final WidgetRenderContext parent) {
-                            final Quaternion quaternion = Vec3f.POSITIVE_Z.getDegreesQuaternion(parent.time());
-                            //parent.pushMatrix(new Matrix4f(quaternion));
-                            return Optional.of(parent);
-                        }
+        ClientTickEvents.START_WORLD_TICK.register(world -> {
+            if (OPEN_TEST_SCREEN.wasPressed()) {
+                final SingleAnimationWidget<Void> animationWidget = new SingleAnimationWidget<>(new SingleAnimationWidget.Animation<>() {
+                    @Override
+                    public Optional<WidgetRenderContext> animate(final Void data, final WidgetRenderContext parent) {
+                        final Quaternion quaternion = Vec3f.POSITIVE_Z.getDegreesQuaternion(parent.time()*4);
+                        final Quaternion revQuaternion = Vec3f.NEGATIVE_Z.getDegreesQuaternion(parent.time()*8);
+                        return Optional.of(parent.pushScissor(new Rectangle(new Point2d(0, 0), new Point2d(1, 1))).pushMatrix(new Matrix4f(quaternion)).pushScissor(new Rectangle(new Point2d(0, 0), new Point2d(1, 1))).pushMatrix(new Matrix4f(revQuaternion)));
+                    }
 
-                        @Override
-                        public Optional<WidgetEvent> animateEvent(final Void data, final WidgetEvent event) {
-                            return Optional.of(event);
-                        }
-                    });
-                    animationWidget.setChild(BasicWidgets.basicPanel(0xFF00FFFF, TBCExV3GuiRenderLayers.POS_COLOR_NO_CULL, (min, max) -> min), Function.identity());
-                    MinecraftClient.getInstance().setScreen(new GuiScreen<>(Text.of("sadas"), animationWidget, null));
-                }
+                    @Override
+                    public Optional<WidgetEvent> animateEvent(final Void data, final WidgetEvent event) {
+                        return Optional.of(event);
+                    }
+                });
+                animationWidget.setChild(BasicWidgets.basicPanel(0xFF00FFFF, TBCExV3GuiRenderLayers.getPosColorCull(), (min, max) -> new Rectangle(new Point2d(0.0, 0.0), new Point2d(0.5, 0.5))), Function.identity());
+                MinecraftClient.getInstance().setScreen(new GuiScreen<>(Text.of("sadas"), animationWidget, null));
             }
         });
     }

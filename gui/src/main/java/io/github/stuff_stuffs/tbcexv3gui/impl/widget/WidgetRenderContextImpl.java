@@ -1,45 +1,43 @@
 package io.github.stuff_stuffs.tbcexv3gui.impl.widget;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3gui.internal.client.StencilFrameBuffer;
 import io.github.stuff_stuffs.tbcexv3gui.internal.client.TBCExV3GuiClient;
-import io.github.stuff_stuffs.tbcexv3gui.internal.client.TBCExV3GuiRenderLayers;
-import it.unimi.dsi.fastutil.Stack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntStack;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.*;
 import net.minecraft.util.math.Matrix4f;
-import net.minecraft.util.math.Vector4f;
+import org.jetbrains.annotations.Nullable;
+import org.lwjgl.opengl.GL11;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class WidgetRenderContextImpl implements WidgetRenderContext {
     private final float time;
     private final Rectangle screenBounds;
-    private final Matrix4f screenSpaceMatrix;
+    final Matrix4f screenSpaceMatrix;
     private final List<DrawnElement> elementsToDraw = new ArrayList<>();
     private final Map<RenderLayer, VertexDataArray> buildingElements = new Reference2ObjectOpenHashMap<>();
-    private final ScissorStates scissorStates;
-    private final MatrixStates matrixStates;
+    private final DrawState drawState;
 
 
     public WidgetRenderContextImpl(final float time, final Rectangle screenBounds, final Matrix4f screenSpaceMatrix) {
         this.time = time;
         this.screenBounds = screenBounds;
         this.screenSpaceMatrix = screenSpaceMatrix;
-        scissorStates = new ScissorStates(screenBounds);
-        matrixStates = new MatrixStates();
+        drawState = new DrawState();
+        pushMatrix(screenSpaceMatrix);
     }
 
     @Override
@@ -48,57 +46,53 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
     }
 
     @Override
-    public void pushMatrix(final Matrix4f matrix) {
-        matrixStates.push(matrix);
+    public WidgetRenderContext pushMatrix(final Matrix4f matrix) {
+        return pushMatrix(matrix, 0);
     }
 
     @Override
-    public void popMatrix() {
-        matrixStates.pop();
+    public WidgetRenderContext pushScissor(final Rectangle scissor) {
+        return pushScissor(scissor, 0);
+    }
+
+    public WidgetRenderContext pushMatrix(final Matrix4f matrix, final int parentState) {
+        return new WrappedWidgetRenderContextImpl(this, drawState.pushMatrix(matrix, parentState));
+    }
+
+    public WidgetRenderContext pushScissor(final Rectangle scissors, final int parentState) {
+        return new WrappedWidgetRenderContextImpl(this, drawState.pushScissors(scissors, parentState));
     }
 
     @Override
-    public void pushScissor(final Rectangle scissor) {
-        scissorStates.push(scissor);
-    }
-
-    @Override
-    public void popScissor() {
-        scissorStates.pop();
-    }
-
-    @Override
-    public VertexConsumer getVertexConsumer(final RenderLayer layer) {
-        if (!layer.areVerticesNotShared()) {
+    public VertexConsumer getVertexConsumer(final RenderLayer renderLayer) {
+        if (!renderLayer.areVerticesNotShared()) {
             throw new IllegalArgumentException();
         }
-        return new ConsumerImpl(TBCExV3GuiRenderLayers.getGuiRenderLayer(layer), layer.getVertexFormat());
+        return new WidgetVertexConsumer(renderLayer, screenSpaceMatrix, (layer, data) -> submit(layer, data, 0));
     }
 
     public void draw() {
         if (elementsToDraw.size() == 0) {
             return;
         }
-        //GlStateManager._enableScissorTest();
         elementsToDraw.sort(DrawnElement.COMPARATOR);
         final BufferBuilder builder = Tessellator.getInstance().getBuffer();
         int i = 0;
-        int lastMatrixState = elementsToDraw.get(i).matrixState;
+        int lastDrawState = elementsToDraw.get(i).drawState;
         while (i < elementsToDraw.size()) {
-            final int matrixState = elementsToDraw.get(i).matrixState;
-            if (matrixState != lastMatrixState) {
-                copy(lastMatrixState, builder);
-                lastMatrixState = matrixState;
+            final int drawState = elementsToDraw.get(i).drawState;
+            if (drawState != lastDrawState) {
+                copy(builder);
+                lastDrawState = drawState;
             }
-            i = i + renderRun(i, matrixState, builder);
+            i = i + renderRun(i, drawState, builder);
         }
-        copy(lastMatrixState, builder);
-        //GlStateManager._disableScissorTest();
+        GL11.glDisable(GL11.GL_STENCIL_TEST);
+        copy(builder);
     }
 
-    private void copy(final int matrixState, final BufferBuilder builder) {
-        final Matrix4f blitMat = screenSpaceMatrix.copy();
-        blitMat.multiply(matrixStates.states.get(matrixState));
+    private void copy(final BufferBuilder builder) {
+        final Matrix4f blitMat = screenSpaceMatrix;
         final Shader shader = MinecraftClient.getInstance().gameRenderer.blitScreenShader;
         TBCExV3GuiClient.getGuiFrameBuffer().beginRead();
         shader.addSampler("DiffuseSampler", TBCExV3GuiClient.getGuiFrameBuffer());
@@ -120,29 +114,22 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
         TBCExV3GuiClient.getGuiFrameBuffer().clear(MinecraftClient.IS_SYSTEM_MAC);
     }
 
-    private int renderRun(final int startIndex, final int matrixState, final BufferBuilder builder) {
-        int scissorState;
+    private int renderRun(final int startIndex, final int matrixState, final BufferBuilder buffer) {
         final RenderLayer renderLayer;
-        final Matrix4f matrix;
+        final int drawState;
         {
             final DrawnElement element = elementsToDraw.get(startIndex);
-            scissorState = element.scissorState;
             renderLayer = element.renderLayer;
-            matrix = new Matrix4f();
-            matrix.loadIdentity();
-            updateScissors(scissorStates.states.get(scissorState), matrixState);
+            drawState = element.drawState;
+            setupStencil(buffer, drawState);
         }
-        builder.begin(renderLayer.getDrawMode(), renderLayer.getVertexFormat());
+        buffer.begin(renderLayer.getDrawMode(), renderLayer.getVertexFormat());
         DrawnElement element;
         int offset = 0;
         final VertexFormat.DrawMode drawMode = renderLayer.getDrawMode();
         final VertexFormat vertexFormat = renderLayer.getVertexFormat();
         final ImmutableList<VertexFormatElement> vertexFormatElements = vertexFormat.getElements();
-        while (startIndex + offset < elementsToDraw.size() && (element = elementsToDraw.get(startIndex + offset)).matrixState == matrixState && element.renderLayer == renderLayer) {
-            if (element.scissorState != scissorState) {
-                scissorState = element.scissorState;
-                updateScissors(scissorStates.states.get(scissorState), matrixState);
-            }
+        while (startIndex + offset < elementsToDraw.size() && (element = elementsToDraw.get(startIndex + offset)).renderLayer == renderLayer && element.drawState == drawState) {
             int i = 0;
             final ByteBuffer view = ByteBuffer.wrap(element.data);
             for (int vertexCount = 0; vertexCount < drawMode.firstVertexCount; vertexCount++) {
@@ -153,35 +140,90 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
                     final int componentSize = componentType.getByteLength();
                     for (int k = 0; k < componentCount; k++) {
                         switch (componentType) {
-                            case INT, UINT, FLOAT -> builder.putFloat(k * 4, view.getFloat(i + k * 4));
-                            case BYTE, UBYTE -> builder.putByte(k, view.get(i + k));
-                            case SHORT, USHORT -> builder.putShort(k*2, view.getShort(i + k * 2));
+                            case INT, UINT, FLOAT -> buffer.putFloat(k * 4, view.getFloat(i + k * 4));
+                            case BYTE, UBYTE -> buffer.putByte(k, view.get(i + k));
+                            case SHORT, USHORT -> buffer.putShort(k * 2, view.getShort(i + k * 2));
                         }
                     }
-                    builder.nextElement();
+                    buffer.nextElement();
                     i = i + componentCount * componentSize;
                 }
-                builder.next();
+                buffer.next();
             }
             offset++;
         }
-        renderLayer.draw(builder, 0, 0, 0);
+        renderLayer.draw(buffer, 0, 0, 0);
         return offset;
     }
 
-    private void updateScissors(final Rectangle rectangle, final int matrixState) {
-        final Matrix4f matrix = matrixStates.states.get(matrixState).copy();
-        matrix.multiply(screenSpaceMatrix);
-        final Vector4f vec = new Vector4f();
-        vec.set((float) rectangle.lower().x(), (float) rectangle.lower().y(), 0.0F, 1.0F);
-        vec.transform(matrix);
-        final int x0 = (int) (vec.getX() / vec.getW());
-        final int y0 = (int) (vec.getY() / vec.getW());
-        vec.set((float) rectangle.upper().x(), (float) rectangle.upper().y(), 0.0F, 1.0F);
-        vec.transform(matrix);
-        final int x1 = (int) (vec.getX() / vec.getW());
-        final int y1 = (int) (vec.getY() / vec.getW());
-        //RenderSystem.enableScissor(Math.min(x0, x1), Math.min(y0, y1), Math.max(x0, x1) - Math.min(x0, x1), Math.max(y0, y1) - Math.min(y0, y1));
+    private void setupStencil(final BufferBuilder buffer, final int drawStateId) {
+        DrawStateEntry entry = drawState.states.get(drawStateId);
+        final DrawStateEntry[] entries = new DrawStateEntry[entry.depth + 1];
+        int i = entries.length - 1;
+        while (entry != null) {
+            entries[i] = entry;
+            entry = entry.previous;
+            i--;
+        }
+
+        final Matrix4f mat = screenSpaceMatrix.copy();
+
+        int count = 0;
+        for (final DrawStateEntry drawStateEntry : entries) {
+            if (drawStateEntry.matrix.isPresent()) {
+                mat.multiply(drawStateEntry.matrix.get());
+            }
+            if (drawStateEntry.scissors.isPresent()) {
+                if (count == 0) {
+                    buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
+                    RenderSystem.setShader(GameRenderer::getPositionShader);
+                }
+                final Rectangle scissors = drawStateEntry.scissors.get();
+                buffer.vertex(mat, (float) scissors.lower().x(), (float) scissors.lower().y(), 0).next();
+                buffer.vertex(mat, (float) scissors.lower().x(), (float) scissors.upper().y(), 0).next();
+                buffer.vertex(mat, (float) scissors.upper().x(), (float) scissors.upper().y(), 0).next();
+                buffer.vertex(mat, (float) scissors.upper().x(), (float) scissors.lower().y(), 0).next();
+                count++;
+            }
+        }
+        if (count > 0) {
+            final StencilFrameBuffer guiFrameBuffer = TBCExV3GuiClient.getGuiFrameBuffer();
+            guiFrameBuffer.beginWrite(true);
+            GL11.glEnable(GL11.GL_STENCIL_TEST);
+            GlStateManager._colorMask(false, false, false, false);
+            GlStateManager._depthMask(false);
+            GL11.glStencilMask(255);
+            GL11.glClearStencil(0);
+            GlStateManager._clear(GL11.GL_STENCIL_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC);
+            GL11.glStencilOp(GL11.GL_INCR, GL11.GL_INCR, GL11.GL_INCR);
+            GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 255);
+            BufferRenderer.drawWithShader(buffer.end());
+            guiFrameBuffer.endWrite();
+            GlStateManager._colorMask(true, true, true, true);
+            GlStateManager._depthMask(true);
+            GL11.glStencilFunc(GL11.GL_EQUAL, count, 255);
+            GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
+        } else {
+            GL11.glDisable(GL11.GL_STENCIL_TEST);
+        }
+    }
+
+    public Matrix4f getMatrix(final int drawStateId) {
+        DrawStateEntry entry = drawState.states.get(drawStateId);
+        final DrawStateEntry[] entries = new DrawStateEntry[entry.depth + 1];
+        int i = entries.length - 1;
+        while (entry != null) {
+            entries[i] = entry;
+            entry = entry.previous;
+            i--;
+        }
+        final Matrix4f mat = screenSpaceMatrix.copy();
+        for (final DrawStateEntry drawStateEntry : entries) {
+            if (drawStateEntry.matrix.isPresent()) {
+                mat.multiply(drawStateEntry.matrix.get());
+            }
+        }
+        return mat;
     }
 
     private static final class VertexDataArray {
@@ -193,65 +235,55 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
         }
     }
 
-    private static final class ScissorStates {
-        private final IntStack stateIds = new IntArrayList();
-        private final Stack<Rectangle> stateStack = new ObjectArrayList<>();
-        private final Int2ObjectMap<Rectangle> states = new Int2ObjectOpenHashMap<>();
-        private int nextId = 1;
-
-        public ScissorStates(final Rectangle screenBounds) {
-            stateIds.push(0);
-            stateStack.push(screenBounds);
-            states.put(0, screenBounds);
-        }
-
-        public void push(final Rectangle rect) {
-            final Rectangle clipped = rect.clip(stateStack.top());
-            stateIds.push(nextId);
-            stateStack.push(clipped);
-            states.put(nextId++, clipped);
-        }
-
-        public void pop() {
-            stateIds.popInt();
-            stateStack.pop();
-        }
-    }
-
-    private static final class MatrixStates {
+    private static final class DrawState {
         private static final Matrix4f IDENTITY;
-        private final IntStack stateIds = new IntArrayList();
-        private final Stack<Matrix4f> stateStack = new ObjectArrayList<>();
-        private final Int2ObjectMap<Matrix4f> states = new Int2ObjectOpenHashMap<>();
+        private static final DrawStateEntry NONE;
+        private final Int2ObjectMap<DrawStateEntry> states = new Int2ObjectOpenHashMap<>();
         private int nextId = 1;
 
-        public MatrixStates() {
-            stateIds.push(0);
-            stateStack.push(IDENTITY);
-            states.put(0, IDENTITY);
+        public DrawState() {
+            states.put(0, NONE);
         }
 
-        public void push(final Matrix4f matrix) {
+        public int pushMatrix(final Matrix4f matrix, final int parentState) {
             final Matrix4f mat = matrix.copy();
-            final Matrix4f top = stateStack.top();
-            mat.multiply(top);
-            stateIds.push(nextId);
-            stateStack.push(mat);
-            states.put(nextId++, mat);
+            final DrawStateEntry top = states.get(parentState);
+            states.put(nextId, new DrawStateEntry(Optional.of(mat), Optional.empty(), top));
+            return nextId++;
         }
 
-        public void pop() {
-            stateIds.popInt();
-            stateStack.pop();
+        public int pushScissors(final Rectangle scissors, final int parentState) {
+            final DrawStateEntry top = states.get(parentState);
+            states.put(nextId, new DrawStateEntry(Optional.empty(), Optional.of(scissors), top));
+            return nextId++;
         }
 
         static {
             IDENTITY = new Matrix4f();
             IDENTITY.loadIdentity();
+            NONE = new DrawStateEntry(Optional.of(IDENTITY), Optional.empty(), null);
         }
     }
 
-    public void submit(final RenderLayer layer, final byte[] data, final int scissorState, final int matrixState) {
+    private static final class DrawStateEntry {
+        private final Optional<Matrix4f> matrix;
+        private final Optional<Rectangle> scissors;
+        private final @Nullable DrawStateEntry previous;
+        private final int depth;
+
+        private DrawStateEntry(final Optional<Matrix4f> matrix, final Optional<Rectangle> scissors, @Nullable final DrawStateEntry previous) {
+            this.matrix = matrix;
+            this.scissors = scissors;
+            this.previous = previous;
+            if (previous == null) {
+                depth = 0;
+            } else {
+                depth = previous.depth + 1;
+            }
+        }
+    }
+
+    public void submit(final RenderLayer layer, final byte[] data, final int drawState) {
         final VertexDataArray vertexDataArray = buildingElements.computeIfAbsent(layer, l -> new VertexDataArray(l.getVertexFormat().getVertexSizeByte(), l.getDrawMode().firstVertexCount));
         final VertexFormat vertexFormat = layer.getVertexFormat();
         final int vertexSizeByte = vertexFormat.getVertexSizeByte();
@@ -262,7 +294,7 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
             System.arraycopy(data, 0, consolidated, vertexDataArray.index * vertexSizeByte, vertexSizeByte);
             final int posIdx = vertexFormat.getElements().indexOf(VertexFormats.POSITION_ELEMENT);
             if (posIdx < 0) {
-                elementsToDraw.add(new DrawnElement(layer, consolidated, 0, scissorState, matrixState));
+                elementsToDraw.add(new DrawnElement(layer, consolidated, 0, drawState));
             } else {
                 int offset = 0;
                 for (int i = 0; i < posIdx; i++) {
@@ -274,100 +306,12 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
                     depth = depth + wrapped.getFloat(i * vertexSizeByte + offset + 2 * Float.BYTES);
                 }
                 depth = depth / firstVertexCount;
-                elementsToDraw.add(new DrawnElement(layer, consolidated, depth, scissorState, matrixState));
+                elementsToDraw.add(new DrawnElement(layer, consolidated, depth, drawState));
             }
             vertexDataArray.index = 0;
         } else {
             System.arraycopy(data, 0, vertexDataArray.bytes, vertexDataArray.index * vertexSizeByte, vertexSizeByte);
             vertexDataArray.index++;
-        }
-    }
-
-    private final class ConsumerImpl implements BufferVertexConsumer {
-        private final Vector4f vec = new Vector4f();
-        private final RenderLayer layer;
-        private final VertexFormat format;
-        private final byte[] backing;
-        private final ByteBuffer view;
-        private int vertexFormatIndex = 0;
-        private int indexSum = 0;
-        private boolean fixedColor = false;
-        private int fixedR, fixedG, fixedB, fixedA;
-
-        private ConsumerImpl(final RenderLayer layer, final VertexFormat format) {
-            this.layer = layer;
-            this.format = format;
-            backing = new byte[format.getVertexSizeByte()];
-            view = ByteBuffer.wrap(backing);
-        }
-
-        @Override
-        public VertexFormatElement getCurrentElement() {
-            return format.getElements().get(vertexFormatIndex);
-        }
-
-        @Override
-        public void nextElement() {
-            indexSum = indexSum + format.getElements().get(vertexFormatIndex).getByteLength();
-            vertexFormatIndex = vertexFormatIndex + 1;
-            if (vertexFormatIndex > format.getElements().size()) {
-                throw new IllegalStateException();
-            }
-        }
-
-        @Override
-        public VertexConsumer vertex(final double x, final double y, final double z) {
-            vec.set((float) x, (float) y, (float) z, 1);
-            vec.transform(screenSpaceMatrix);
-            return BufferVertexConsumer.super.vertex(vec.getX() / vec.getW(), vec.getY() / vec.getW(), vec.getZ() / vec.getW());
-        }
-
-        @Override
-        public void putByte(final int index, final byte value) {
-            view.put(index + indexSum, value);
-        }
-
-        @Override
-        public void putShort(final int index, final short value) {
-            view.putShort(index + indexSum, value);
-        }
-
-        @Override
-        public void putFloat(final int index, final float value) {
-            view.putFloat(index + indexSum, value);
-        }
-
-        @Override
-        public VertexConsumer color(final int red, final int green, final int blue, final int alpha) {
-            if (fixedColor) {
-                return BufferVertexConsumer.super.color(fixedR, fixedG, fixedB, fixedA);
-            }
-            return BufferVertexConsumer.super.color(red, green, blue, alpha);
-        }
-
-        @Override
-        public void next() {
-            if (vertexFormatIndex != format.getElements().size()) {
-                throw new IllegalStateException();
-            } else {
-                submit(layer, backing, scissorStates.stateIds.topInt(), matrixStates.stateIds.topInt());
-                indexSum = 0;
-                vertexFormatIndex = 0;
-            }
-        }
-
-        @Override
-        public void fixedColor(final int red, final int green, final int blue, final int alpha) {
-            fixedR = red;
-            fixedG = green;
-            fixedB = blue;
-            fixedA = alpha;
-            fixedColor = true;
-        }
-
-        @Override
-        public void unfixColor() {
-            fixedColor = false;
         }
     }
 }

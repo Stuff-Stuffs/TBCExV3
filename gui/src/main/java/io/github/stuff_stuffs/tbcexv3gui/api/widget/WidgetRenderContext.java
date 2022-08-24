@@ -8,13 +8,9 @@ import net.minecraft.util.math.Matrix4f;
 public interface WidgetRenderContext {
     float time();
 
-    void pushMatrix(Matrix4f matrix);
+    WidgetRenderContext pushMatrix(Matrix4f matrix);
 
-    void popMatrix();
-
-    void pushScissor(Rectangle scissor);
-
-    void popScissor();
+    WidgetRenderContext pushScissor(Rectangle scissor);
 
     VertexConsumer getVertexConsumer(RenderLayer renderLayer);
 }

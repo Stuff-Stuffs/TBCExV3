@@ -14,12 +14,11 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Matrix4f;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.opengl.GL11;
 
 public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
     private final RootWidget root;
-    private int lastMouseX = -1;
-    private int lastMouseY = -1;
+    private int lastMouseX = Integer.MIN_VALUE;
+    private int lastMouseY = Integer.MIN_VALUE;
     private @Nullable Rectangle lastScreenBounds = null;
     private int tickCount;
 
@@ -43,7 +42,7 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         final Rectangle screenBounds = checkSize();
 
         if (mouseX != lastMouseX && mouseY != lastMouseY) {
-            if (lastMouseX == -1) {
+            if (lastMouseX == Integer.MIN_VALUE) {
                 root.handleEvent(new WidgetEvent.MouseMoveEvent(localizeMouse(mouseX, mouseY), localizeMouse(mouseX, mouseY), time(delta)));
             } else {
                 root.handleEvent(new WidgetEvent.MouseMoveEvent(localizeMouse(lastMouseX, lastMouseY), localizeMouse(mouseX, mouseY), time(delta)));
@@ -62,10 +61,9 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         final WidgetRenderContextImpl renderContext = new WidgetRenderContextImpl(time(delta), screenBounds, matrices.peek().getPositionMatrix());
         root.draw(renderContext);
 
-        matrices.pop();
-
         renderContext.draw();
 
+        matrices.pop();
         RenderSystem.setProjectionMatrix(prevProjection);
     }
 

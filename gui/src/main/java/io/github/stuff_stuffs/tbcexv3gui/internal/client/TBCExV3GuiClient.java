@@ -5,7 +5,6 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.SimpleFramebuffer;
 import net.minecraft.client.util.Window;
 
 public class TBCExV3GuiClient implements ClientModInitializer {
@@ -14,12 +13,12 @@ public class TBCExV3GuiClient implements ClientModInitializer {
             event.resolutionChanged(width, height);
         }
     });
-    private static Framebuffer GUI_FRAME_BUFFER;
+    private static StencilFrameBuffer GUI_FRAME_BUFFER;
 
-    public static Framebuffer getGuiFrameBuffer() {
+    public static StencilFrameBuffer getGuiFrameBuffer() {
         if (GUI_FRAME_BUFFER == null) {
             final Window window = MinecraftClient.getInstance().getWindow();
-            GUI_FRAME_BUFFER = new SimpleFramebuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), true, MinecraftClient.IS_SYSTEM_MAC);
+            GUI_FRAME_BUFFER = new StencilFrameBuffer(window.getFramebufferWidth(), window.getFramebufferHeight(), MinecraftClient.IS_SYSTEM_MAC);
         }
         return GUI_FRAME_BUFFER;
     }

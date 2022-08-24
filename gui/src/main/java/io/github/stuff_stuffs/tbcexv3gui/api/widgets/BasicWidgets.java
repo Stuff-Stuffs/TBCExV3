@@ -111,10 +111,10 @@ public final class BasicWidgets {
     public static void drawRectangle(final VertexConsumer vertexConsumer, final Rectangle rectangle, final int c) {
         final Point2d lower = rectangle.lower();
         final Point2d upper = rectangle.upper();
-        vertexConsumer.vertex(upper.x(), lower.y(),  -100).color(c).next();
-        vertexConsumer.vertex(upper.x(), upper.y(),  -100).color(c).next();
-        vertexConsumer.vertex(lower.x(), upper.y(),  -100).color(c).next();
-        vertexConsumer.vertex(lower.x(), lower.y(),  -100).color(c).next();
+        vertexConsumer.vertex(lower.x(), lower.y(),  0).color(c).next();
+        vertexConsumer.vertex(lower.x(), upper.y(),  0).color(c).next();
+        vertexConsumer.vertex(upper.x(), upper.y(),  0).color(c).next();
+        vertexConsumer.vertex(upper.x(), lower.y(),  0).color(c).next();
     }
 
     public enum ButtonState {
