@@ -21,25 +21,31 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
     private int lastMouseY = Integer.MIN_VALUE;
     private @Nullable Rectangle lastScreenBounds = null;
     private int tickCount;
+    private Point2d mousePoint = new Point2d(-100, -100);
 
     public GuiScreen(final Text title, final RootWidget widget, final Data data) {
         super(title);
         root = widget;
         root.setup(WidgetContext.root(data, () -> {
             lastScreenBounds = null;
-            checkSize();
+            checkSize(true);
         }));
+    }
+
+    @Override
+    public void mouseMoved(final double mouseX, final double mouseY) {
+        mousePoint = localizeMouse(mouseX, mouseY);
     }
 
     @Override
     public void tick() {
         super.tick();
-        root.handleEvent(new WidgetEvent.TickEvent(tickCount++));
+        root.handleEvent(new WidgetEvent.TickEvent(tickCount++, mousePoint));
     }
 
     @Override
     public void render(final MatrixStack matrices, final int mouseX, final int mouseY, final float delta) {
-        final Rectangle screenBounds = checkSize();
+        final Rectangle screenBounds = checkSize(false);
 
         if (mouseX != lastMouseX && mouseY != lastMouseY) {
             if (lastMouseX == Integer.MIN_VALUE) {
@@ -130,14 +136,21 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         return new Point2d(x, y);
     }
 
-    private Rectangle checkSize() {
+    private Rectangle checkSize(final boolean force) {
         final Rectangle screenBounds = findBounds();
 
-        if (!screenBounds.equals(lastScreenBounds)) {
+        if (force || !screenBounds.equals(lastScreenBounds)) {
             lastScreenBounds = screenBounds;
             root.resize(screenBounds, screenBounds);
         }
         return screenBounds;
+    }
+
+    @Override
+    public void resize(final MinecraftClient client, final int width, final int height) {
+        super.resize(client, width, height);
+        final Rectangle rect = checkSize(false);
+        root.resize(rect, rect);
     }
 
     @Override

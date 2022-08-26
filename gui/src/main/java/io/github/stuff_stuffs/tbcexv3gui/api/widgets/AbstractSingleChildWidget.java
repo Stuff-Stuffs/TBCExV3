@@ -25,12 +25,11 @@ public abstract class AbstractSingleChildWidget<T> extends AbstractContainerWidg
     }
 
     @Override
-    protected Iterator<WidgetInfo<T, ?>> getChildren() {
+    protected Iterator<? extends WidgetInfo<T, ?>> getChildren() {
         if (child == null) {
             return Collections.emptyIterator();
         }
-        final List<WidgetInfo<T, ?>> list = List.of(child);
-        return list.iterator();
+        return List.of(child).iterator();
     }
 
     @Override

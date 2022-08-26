@@ -13,7 +13,7 @@ public abstract class AbstractContainerWidget<T> implements Widget<T> {
     private boolean focused = false;
     private Widget<?> focus = null;
 
-    protected abstract Iterator<WidgetInfo<T, ?>> getChildren();
+    protected abstract Iterator<? extends WidgetInfo<T, ?>> getChildren();
 
     protected abstract Iterator<? extends Widget<?>> getChildrenByDrawDepth();
 
@@ -86,7 +86,7 @@ public abstract class AbstractContainerWidget<T> implements Widget<T> {
         widgetInfo.widget.setup(widgetInfo.contextFactory.apply(context));
     }
 
-    protected static final class WidgetInfo<T, K> {
+    public static final class WidgetInfo<T, K> {
         public final Widget<K> widget;
         public final Function<WidgetContext<T>, WidgetContext<K>> contextFactory;
 

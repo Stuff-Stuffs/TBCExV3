@@ -27,7 +27,7 @@ public sealed interface WidgetEvent permits WidgetEvent.GainedFocusEvent, Widget
         }
     }
 
-    record TickEvent(int tickCount) implements WidgetEvent {
+    record TickEvent(int tickCount, Point2d mousePos) implements WidgetEvent {
         @Override
         public boolean shouldPassToChildren() {
             return true;

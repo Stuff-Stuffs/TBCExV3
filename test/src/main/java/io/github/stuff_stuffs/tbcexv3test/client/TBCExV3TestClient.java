@@ -1,12 +1,10 @@
 package io.github.stuff_stuffs.tbcexv3test.client;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.Sizer;
 import io.github.stuff_stuffs.tbcexv3gui.api.screen.GuiScreen;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
-import io.github.stuff_stuffs.tbcexv3gui.api.widgets.BasicWidgets;
-import io.github.stuff_stuffs.tbcexv3gui.api.widgets.SingleAnimationWidget;
+import io.github.stuff_stuffs.tbcexv3gui.api.widgets.*;
 import io.github.stuff_stuffs.tbcexv3gui.internal.client.TBCExV3GuiRenderLayers;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -15,9 +13,6 @@ import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.Matrix4f;
-import net.minecraft.util.math.Quaternion;
-import net.minecraft.util.math.Vec3f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Optional;
@@ -35,17 +30,21 @@ public class TBCExV3TestClient implements ClientModInitializer, PreLaunchEntrypo
                 final SingleAnimationWidget<Void> animationWidget = new SingleAnimationWidget<>(new SingleAnimationWidget.Animation<>() {
                     @Override
                     public Optional<WidgetRenderContext> animate(final Void data, final WidgetRenderContext parent) {
-                        final Quaternion quaternion = Vec3f.POSITIVE_Z.getDegreesQuaternion(parent.time()*4);
-                        final Quaternion revQuaternion = Vec3f.NEGATIVE_Z.getDegreesQuaternion(parent.time()*8);
-                        return Optional.of(parent.pushScissor(new Rectangle(new Point2d(0, 0), new Point2d(1, 1))).pushMatrix(new Matrix4f(quaternion)).pushScissor(new Rectangle(new Point2d(0, 0), new Point2d(1, 1))).pushMatrix(new Matrix4f(revQuaternion)));
+                        return Optional.of(parent);
                     }
 
                     @Override
                     public Optional<WidgetEvent> animateEvent(final Void data, final WidgetEvent event) {
                         return Optional.of(event);
                     }
-                });
-                animationWidget.setChild(BasicWidgets.basicPanel(0xFF00FFFF, TBCExV3GuiRenderLayers.getPosColorCull(), (min, max) -> new Rectangle(new Point2d(0.0, 0.0), new Point2d(0.5, 0.5))), Function.identity());
+                }, WidgetUtils.builder().build(), SingleAnimationWidget.WidgetEventPhase.PRE_CHILD);
+                final Widget<WidgetUtils.MutableButtonStateHolder> button = BasicWidgets.button(Function.identity(), WidgetRenderUtils.basicPanelTerminal(data -> switch (data.state()) {
+                    case DEFAULT -> 0xFFFFFFFF;
+                    case HOVER -> 0xFF7F7FFF;
+                    case PRESSED -> 0xFF0707FF;
+                }, TBCExV3GuiRenderLayers.getPosColorCull()), Sizer.max());
+                animationWidget.setChild(button, WidgetUtils.MutableButtonStateHolder::standalone);
+
                 MinecraftClient.getInstance().setScreen(new GuiScreen<>(Text.of("sadas"), animationWidget, null));
             }
         });

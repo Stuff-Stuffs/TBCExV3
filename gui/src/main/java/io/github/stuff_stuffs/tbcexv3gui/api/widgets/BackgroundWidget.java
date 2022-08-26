@@ -8,10 +8,10 @@ import java.util.function.ToDoubleFunction;
 
 public final class BackgroundWidget<T> extends AbstractSingleChildWidget<T> {
     private final ToDoubleFunction<? super T> outlineWidth;
-    private final Renderer<? super T> renderer;
+    private final WidgetRenderUtils.Renderer<? super T> renderer;
     private Rectangle bounds;
 
-    public BackgroundWidget(final ToDoubleFunction<? super T> outlineWidth, final Renderer<? super T> renderer) {
+    public BackgroundWidget(final ToDoubleFunction<? super T> outlineWidth, final WidgetRenderUtils.Renderer<? super T> renderer) {
         this.outlineWidth = outlineWidth;
         this.renderer = renderer;
     }
@@ -33,7 +33,4 @@ public final class BackgroundWidget<T> extends AbstractSingleChildWidget<T> {
         }
     }
 
-    public interface Renderer<T> {
-        void render(T data, WidgetRenderContext renderContext, Rectangle bounds);
-    }
 }
