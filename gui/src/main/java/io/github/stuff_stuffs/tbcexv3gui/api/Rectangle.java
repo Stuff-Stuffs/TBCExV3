@@ -11,6 +11,14 @@ public record Rectangle(Point2d lower, Point2d upper) {
         }
     }
 
+    public double width() {
+        return upper.x() - lower.x();
+    }
+
+    public double height() {
+        return upper.y() - lower.y();
+    }
+
     public boolean contains(final Rectangle other) {
         return lower.x() <= other.lower.x() && lower.y() <= other.lower.y() && other.upper.x() <= upper.x() && other.upper.y() <= upper.y();
     }

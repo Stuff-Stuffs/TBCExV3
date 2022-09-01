@@ -87,7 +87,7 @@ public final class WidgetUtils {
             });
         }
 
-        static StateUpdater<? extends MutableBoundsHolder> stateUpdater() {
+        static StateUpdater<MutableBoundsHolder> stateUpdater() {
             return new StateUpdater<>() {
                 @Override
                 public boolean event(final WidgetEvent event, final MutableBoundsHolder data) {
@@ -142,7 +142,7 @@ public final class WidgetUtils {
                 public boolean event(final WidgetEvent event, final MutableButtonStateHolder data) {
                     if (event instanceof WidgetEvent.TickEvent tickEvent) {
                         if (data.state() == BasicWidgets.ButtonState.PRESSED) {
-                            if (data.bounds().contains(tickEvent.mousePos())) {
+                            if (tickEvent.mousePos().isPresent() && data.bounds().contains(tickEvent.mousePos().get())) {
                                 data.setState(BasicWidgets.ButtonState.HOVER);
                             } else {
                                 data.setState(BasicWidgets.ButtonState.DEFAULT);

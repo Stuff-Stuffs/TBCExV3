@@ -1,8 +1,9 @@
-package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
+package io.github.stuff_stuffs.tbcexv3gui.api.widgets.container;
 
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
-import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
+import io.github.stuff_stuffs.tbcexv3gui.api.widgets.Widget;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -18,6 +19,14 @@ public abstract class AbstractSingleChildWidget<T> extends AbstractContainerWidg
             throw new RuntimeException();
         }
         child = new WidgetInfo<>(widget, converter);
+    }
+
+    @Override
+    public void setup(final WidgetContext<T> context) {
+        super.setup(context);
+        if (child != null) {
+            setFocus(child.widget);
+        }
     }
 
     protected @Nullable WidgetInfo<T, ?> getChild() {
@@ -41,23 +50,10 @@ public abstract class AbstractSingleChildWidget<T> extends AbstractContainerWidg
     }
 
     @Override
-    public boolean handleEvent(final WidgetEvent event) {
-        final WidgetContext<T> widgetContext = getWidgetContext();
-        if (widgetContext == null) {
-            throw new NullPointerException();
-        }
-        if (!super.handleEvent(event)) {
-            return event.shouldPassToChildren() && child.widget.handleEvent(event);
-        } else {
-            return true;
-        }
-    }
-
-    @Override
-    public Rectangle resize(final Rectangle min, final Rectangle max) {
+    public Rectangle resize(final RectangleRange range) {
         if (child == null) {
-            return min;
+            return range.getMinRectangle();
         }
-        return child.widget.resize(min, max);
+        return child.widget.resize(range);
     }
 }

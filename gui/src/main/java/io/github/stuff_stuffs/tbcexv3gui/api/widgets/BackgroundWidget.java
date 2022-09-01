@@ -1,8 +1,10 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
 
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3gui.api.widgets.container.AbstractSingleChildWidget;
 
 import java.util.function.ToDoubleFunction;
 
@@ -17,8 +19,8 @@ public final class BackgroundWidget<T> extends AbstractSingleChildWidget<T> {
     }
 
     @Override
-    public Rectangle resize(final Rectangle min, final Rectangle max) {
-        return bounds = super.resize(min, max);
+    public Rectangle resize(final RectangleRange range) {
+        return bounds = super.resize(range);
     }
 
     @Override

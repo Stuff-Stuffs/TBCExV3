@@ -5,6 +5,8 @@ import io.github.stuff_stuffs.tbcexv3gui.api.Sizer;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.StateUpdater;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3gui.api.widgets.container.AbstractSingleChildWidget;
+import io.github.stuff_stuffs.tbcexv3gui.api.widgets.container.ModifiableWidget;
 import net.minecraft.client.render.RenderLayer;
 
 import java.util.Optional;
@@ -13,8 +15,8 @@ import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 public final class BasicWidgets {
-    public static <T> AbstractSingleChildWidget<T> hide(final Predicate<? super T> visibility, final StateUpdater<? super T> stateUpdater, final SingleAnimationWidget.WidgetEventPhase eventPhase) {
-        return new SingleAnimationWidget<>(new SingleAnimationWidget.Animation<>() {
+    public static <T> AbstractSingleChildWidget<T> hide(final Predicate<? super T> visibility, final StateUpdater<? super T> stateUpdater, final ModifiableWidget.WidgetEventPhase eventPhase) {
+        return new ModifiableWidget<>(new ModifiableWidget.Animation<>() {
             @Override
             public Optional<WidgetRenderContext> animate(final T data, final WidgetRenderContext parent) {
                 return visibility.test(data) ? Optional.of(parent) : Optional.empty();
@@ -28,7 +30,7 @@ public final class BasicWidgets {
     }
 
     public static <T> Widget<T> button(final Function<? super T, ? extends WidgetUtils.MutableButtonStateHolder> stateGetter, final WidgetRenderUtils.Renderer<T> renderer, final Sizer<? super T> sizer) {
-        final SingleAnimationWidget<T> widget = new SingleAnimationWidget<>(new SingleAnimationWidget.Animation<T>() {
+        final ModifiableWidget<T> widget = new ModifiableWidget<>(new ModifiableWidget.Animation<>() {
             @Override
             public Optional<WidgetRenderContext> animate(final T data, final WidgetRenderContext parent) {
                 return Optional.of(parent);
@@ -38,7 +40,7 @@ public final class BasicWidgets {
             public Optional<WidgetEvent> animateEvent(final T data, final WidgetEvent event) {
                 return Optional.of(event);
             }
-        }, WidgetUtils.<T>builder().addTransforming(stateGetter, WidgetUtils.MutableButtonStateHolder.stateUpdater()).build(), SingleAnimationWidget.WidgetEventPhase.POST_CHILD);
+        }, WidgetUtils.<T>builder().addTransforming(stateGetter, WidgetUtils.MutableButtonStateHolder.stateUpdater()).build(), ModifiableWidget.WidgetEventPhase.POST_CHILD);
         widget.setChild(new TerminalWidget<>(StateUpdater.none(), renderer, sizer), Function.identity());
         return widget;
     }

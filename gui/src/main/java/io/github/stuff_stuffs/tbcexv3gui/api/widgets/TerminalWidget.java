@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
 
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.Sizer;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.StateUpdater;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
@@ -31,8 +32,8 @@ public class TerminalWidget<T> implements Widget<T> {
     }
 
     @Override
-    public Rectangle resize(final Rectangle min, final Rectangle max) {
-        final Rectangle bounds = sizer.calculateSize(context.getData(), min, max);
+    public Rectangle resize(final RectangleRange range) {
+        final Rectangle bounds = sizer.calculateSize(context.getData(), range);
         stateUpdater.updateBounds(bounds, context.getData());
         return this.bounds = bounds;
     }

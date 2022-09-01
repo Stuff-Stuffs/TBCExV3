@@ -36,5 +36,10 @@ public final class WidgetRenderUtils {
 
     public interface Renderer<T> {
         void render(T data, WidgetRenderContext renderContext, Rectangle bounds);
+
+        static <T> Renderer<T> empty() {
+            return (data, renderContext, bounds) -> {
+            };
+        }
     }
 }

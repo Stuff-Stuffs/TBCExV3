@@ -1,13 +1,13 @@
 package io.github.stuff_stuffs.tbcexv3gui.api;
 
 public interface Sizer<T> {
-    Rectangle calculateSize(T data, Rectangle min, Rectangle max);
+    Rectangle calculateSize(T data, RectangleRange range);
 
     static <T> Sizer<T> min() {
-        return (data, min, max) -> min;
+        return (data, range) -> range.getMinRectangle();
     }
 
     static <T> Sizer<T> max() {
-        return (data, min, max) -> max;
+        return (data, range) -> range.getMaxRectangle();
     }
 }

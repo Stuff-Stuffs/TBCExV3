@@ -100,6 +100,8 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
         framebuffer.beginWrite(false);
         shader.bind();
         RenderSystem.setShader(() -> MinecraftClient.getInstance().gameRenderer.blitScreenShader);
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.enableBlend();
         builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.BLIT_SCREEN);
 
 

@@ -3,6 +3,7 @@ package io.github.stuff_stuffs.tbcexv3gui.api.screen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3gui.api.widgets.Widget;
@@ -14,6 +15,8 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Matrix4f;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
     private final RootWidget root;
@@ -32,15 +35,24 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         }));
     }
 
+    public RootWidget getRoot() {
+        return root;
+    }
+
     @Override
     public void mouseMoved(final double mouseX, final double mouseY) {
         mousePoint = localizeMouse(mouseX, mouseY);
     }
 
     @Override
+    public boolean mouseScrolled(final double mouseX, final double mouseY, final double amount) {
+        return root.handleEvent(new WidgetEvent.MouseScrollEvent(localizeMouse(mouseX, mouseY), amount / 16.0));
+    }
+
+    @Override
     public void tick() {
         super.tick();
-        root.handleEvent(new WidgetEvent.TickEvent(tickCount++, mousePoint));
+        root.handleEvent(new WidgetEvent.TickEvent(tickCount++, Optional.of(mousePoint)));
     }
 
     @Override
@@ -119,19 +131,16 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
     }
 
     private Point2d localizeMouse(final double mouseX, final double mouseY) {
-        final int width = MinecraftClient.getInstance().getWindow().getFramebufferWidth();
-        final int height = MinecraftClient.getInstance().getWindow().getFramebufferHeight();
+        final int width = MinecraftClient.getInstance().getWindow().getScaledWidth();
+        final int height = MinecraftClient.getInstance().getWindow().getScaledHeight();
         double x = mouseX / (double) width;
         double y = mouseY / (double) height;
         if (width > height) {
-            x = x * (height / (double) width);
+            x = x * (width / (double) height);
             x = x - (width / (double) height - 1) / 2.0;
         } else if (height > width) {
-            y = y * (width / (double) height);
+            y = y * (height / (double) width);
             y = y - (height / (double) width - 1) / 2.0;
-        } else {
-            x = x * 2 - 1;
-            y = y * 2 - 1;
         }
         return new Point2d(x, y);
     }
@@ -141,7 +150,7 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
 
         if (force || !screenBounds.equals(lastScreenBounds)) {
             lastScreenBounds = screenBounds;
-            root.resize(screenBounds, screenBounds);
+            root.resize(new RectangleRange(screenBounds));
         }
         return screenBounds;
     }
@@ -149,8 +158,8 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
     @Override
     public void resize(final MinecraftClient client, final int width, final int height) {
         super.resize(client, width, height);
-        final Rectangle rect = checkSize(false);
-        root.resize(rect, rect);
+        final RectangleRange rect = new RectangleRange(checkSize(false));
+        root.resize(rect);
     }
 
     @Override

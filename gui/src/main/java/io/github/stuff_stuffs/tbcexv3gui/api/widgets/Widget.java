@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
 
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
@@ -10,7 +11,7 @@ public interface Widget<T> {
 
     boolean handleEvent(WidgetEvent events);
 
-    Rectangle resize(Rectangle min, Rectangle max);
+    Rectangle resize(RectangleRange range);
 
     void draw(WidgetRenderContext context);
 }

@@ -1,19 +1,21 @@
-package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
+package io.github.stuff_stuffs.tbcexv3gui.api.widgets.container;
 
 import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.StateUpdater;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3gui.api.widgets.container.AbstractSingleChildWidget;
 
 import java.util.Optional;
 
-public class SingleAnimationWidget<T> extends AbstractSingleChildWidget<T> {
+public class ModifiableWidget<T> extends AbstractSingleChildWidget<T> {
     private final Animation<? super T> animation;
     private final StateUpdater<? super T> stateUpdater;
     private final WidgetEventPhase eventPhase;
 
-    public SingleAnimationWidget(final Animation<? super T> animation, final StateUpdater<? super T> stateUpdater, final WidgetEventPhase eventPhase) {
+    public ModifiableWidget(final Animation<? super T> animation, final StateUpdater<? super T> stateUpdater, final WidgetEventPhase eventPhase) {
         this.animation = animation;
         this.stateUpdater = stateUpdater;
         this.eventPhase = eventPhase;
@@ -66,8 +68,8 @@ public class SingleAnimationWidget<T> extends AbstractSingleChildWidget<T> {
     }
 
     @Override
-    public Rectangle resize(final Rectangle min, final Rectangle max) {
-        final Rectangle rectangle = super.resize(min, max);
+    public Rectangle resize(final RectangleRange range) {
+        final Rectangle rectangle = super.resize(range);
         final WidgetContext<T> widgetContext = getWidgetContext();
         if (widgetContext == null) {
             throw new NullPointerException();
