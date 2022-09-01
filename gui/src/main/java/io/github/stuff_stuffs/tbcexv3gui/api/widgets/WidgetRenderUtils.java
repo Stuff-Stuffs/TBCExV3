@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Point2d;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;

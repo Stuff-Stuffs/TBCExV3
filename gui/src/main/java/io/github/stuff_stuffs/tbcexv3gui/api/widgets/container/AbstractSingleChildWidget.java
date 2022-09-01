@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
-import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3gui.api.widgets.Widget;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +19,10 @@ public abstract class AbstractSingleChildWidget<T> extends AbstractContainerWidg
             throw new RuntimeException();
         }
         child = new WidgetInfo<>(widget, converter);
+        if (getWidgetContext() != null) {
+            setupChild(getWidgetContext(), child);
+            getWidgetContext().forceResize();
+        }
     }
 
     @Override

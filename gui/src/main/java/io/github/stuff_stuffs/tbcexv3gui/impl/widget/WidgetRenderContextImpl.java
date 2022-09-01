@@ -3,7 +3,8 @@ package io.github.stuff_stuffs.tbcexv3gui.impl.widget;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Quadrilateral;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
 import io.github.stuff_stuffs.tbcexv3gui.internal.client.StencilFrameBuffer;
 import io.github.stuff_stuffs.tbcexv3gui.internal.client.TBCExV3GuiClient;
@@ -51,7 +52,7 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
     }
 
     @Override
-    public WidgetRenderContext pushScissor(final Rectangle scissor) {
+    public WidgetRenderContext pushScissor(final Quadrilateral scissor) {
         return pushScissor(scissor, 0);
     }
 
@@ -59,7 +60,7 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
         return new WrappedWidgetRenderContextImpl(this, drawState.pushMatrix(matrix, parentState));
     }
 
-    public WidgetRenderContext pushScissor(final Rectangle scissors, final int parentState) {
+    public WidgetRenderContext pushScissor(final Quadrilateral scissors, final int parentState) {
         return new WrappedWidgetRenderContextImpl(this, drawState.pushScissors(scissors, parentState));
     }
 
@@ -180,11 +181,11 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
                     buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
                     RenderSystem.setShader(GameRenderer::getPositionShader);
                 }
-                final Rectangle scissors = drawStateEntry.scissors.get();
-                buffer.vertex(mat, (float) scissors.lower().x(), (float) scissors.lower().y(), 0).next();
-                buffer.vertex(mat, (float) scissors.lower().x(), (float) scissors.upper().y(), 0).next();
-                buffer.vertex(mat, (float) scissors.upper().x(), (float) scissors.upper().y(), 0).next();
-                buffer.vertex(mat, (float) scissors.upper().x(), (float) scissors.lower().y(), 0).next();
+                final Quadrilateral scissors = drawStateEntry.scissors.get();
+                buffer.vertex(mat, (float) scissors.getVertexX(0), (float) scissors.getVertexY(0), 0).next();
+                buffer.vertex(mat, (float) scissors.getVertexX(1), (float) scissors.getVertexY(1), 0).next();
+                buffer.vertex(mat, (float) scissors.getVertexX(2), (float) scissors.getVertexY(2), 0).next();
+                buffer.vertex(mat, (float) scissors.getVertexX(3), (float) scissors.getVertexY(3), 0).next();
                 count++;
             }
         }
@@ -254,7 +255,7 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
             return nextId++;
         }
 
-        public int pushScissors(final Rectangle scissors, final int parentState) {
+        public int pushScissors(final Quadrilateral scissors, final int parentState) {
             final DrawStateEntry top = states.get(parentState);
             states.put(nextId, new DrawStateEntry(Optional.empty(), Optional.of(scissors), top));
             return nextId++;
@@ -269,11 +270,11 @@ public class WidgetRenderContextImpl implements WidgetRenderContext {
 
     private static final class DrawStateEntry {
         private final Optional<Matrix4f> matrix;
-        private final Optional<Rectangle> scissors;
+        private final Optional<Quadrilateral> scissors;
         private final @Nullable DrawStateEntry previous;
         private final int depth;
 
-        private DrawStateEntry(final Optional<Matrix4f> matrix, final Optional<Rectangle> scissors, @Nullable final DrawStateEntry previous) {
+        private DrawStateEntry(final Optional<Matrix4f> matrix, final Optional<Quadrilateral> scissors, @Nullable final DrawStateEntry previous) {
             this.matrix = matrix;
             this.scissors = scissors;
             this.previous = previous;

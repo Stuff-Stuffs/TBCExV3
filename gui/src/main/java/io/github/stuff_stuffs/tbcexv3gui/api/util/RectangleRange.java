@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3gui.api;
+package io.github.stuff_stuffs.tbcexv3gui.api.util;
 
 public final class RectangleRange {
     private final Point2d outerLow;

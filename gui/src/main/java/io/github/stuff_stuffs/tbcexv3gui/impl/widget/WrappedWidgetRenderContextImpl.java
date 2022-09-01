@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3gui.impl.widget;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Quadrilateral;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
@@ -26,7 +26,7 @@ class WrappedWidgetRenderContextImpl implements WidgetRenderContext {
     }
 
     @Override
-    public WidgetRenderContext pushScissor(final Rectangle scissor) {
+    public WidgetRenderContext pushScissor(final Quadrilateral scissor) {
         return parent.pushScissor(scissor, drawState);
     }
 

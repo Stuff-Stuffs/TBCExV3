@@ -87,7 +87,7 @@ public abstract class AbstractContainerWidget<T> implements Widget<T> {
         getChildrenByDrawDepth().forEachRemaining(widget -> widget.draw(context));
     }
 
-    private static <T, K> void setupChild(final WidgetContext<T> context, final WidgetInfo<T, K> widgetInfo) {
+    protected static <T, K> void setupChild(final WidgetContext<T> context, final WidgetInfo<T, K> widgetInfo) {
         widgetInfo.widget.setup(widgetInfo.contextFactory.apply(context));
     }
 

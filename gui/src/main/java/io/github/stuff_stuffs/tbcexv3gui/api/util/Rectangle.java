@@ -1,6 +1,6 @@
-package io.github.stuff_stuffs.tbcexv3gui.api;
+package io.github.stuff_stuffs.tbcexv3gui.api.util;
 
-public record Rectangle(Point2d lower, Point2d upper) {
+public record Rectangle(Point2d lower, Point2d upper) implements Quadrilateral {
     public Rectangle(final Point2d lower, final Point2d upper) {
         if (lower.x() <= upper.x() && lower.y() <= upper.y()) {
             this.lower = lower;
@@ -31,7 +31,21 @@ public record Rectangle(Point2d lower, Point2d upper) {
         return new Rectangle(new Point2d(lower.x() - expansion, lower.y() - expansion), new Point2d(upper.x() + expansion, upper.y() + expansion));
     }
 
+    public Rectangle union(final Rectangle other) {
+        return new Rectangle(lower.combine(other.lower, Double::min), upper.combine(other.upper, Double::max));
+    }
+
     public Rectangle clip(final Rectangle clipper) {
         return new Rectangle(lower.combine(clipper.lower, Math::max), upper.combine(clipper.upper, Math::min));
+    }
+
+    @Override
+    public double getVertexX(final int vertexIndex) {
+        return (vertexIndex & 2) == 0 ? lower().x() : upper().x();
+    }
+
+    @Override
+    public double getVertexY(final int vertexIndex) {
+        return (vertexIndex & 1) == 0 ? lower().x() : upper().x();
     }
 }

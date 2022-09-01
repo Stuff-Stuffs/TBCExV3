@@ -1,5 +1,8 @@
 package io.github.stuff_stuffs.tbcexv3gui.api;
 
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.RectangleRange;
+
 public interface Sizer<T> {
     Rectangle calculateSize(T data, RectangleRange range);
 

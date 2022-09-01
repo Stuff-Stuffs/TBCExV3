@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widget;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
 
 public interface StateUpdater<T> {
     boolean event(WidgetEvent event, T data);

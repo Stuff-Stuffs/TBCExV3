@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widget;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Point2d;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;

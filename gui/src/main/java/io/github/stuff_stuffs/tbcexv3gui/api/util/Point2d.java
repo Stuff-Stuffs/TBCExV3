@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3gui.api;
+package io.github.stuff_stuffs.tbcexv3gui.api.util;
 
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.Axis;
 

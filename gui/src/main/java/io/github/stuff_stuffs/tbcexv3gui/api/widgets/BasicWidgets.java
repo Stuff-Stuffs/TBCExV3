@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3gui.api.Sizer;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.StateUpdater;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetEvent;

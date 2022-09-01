@@ -1,8 +1,8 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
-import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Point2d;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.Axis;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.WidgetRenderContext;
@@ -49,6 +49,12 @@ public abstract class AbstractListLikeContainerWidget<T> extends AbstractContain
         }
         if (widget != null) {
             entries.add(newEntry);
+            if (getWidgetContext() != null) {
+                if (getWidgetContext() != null) {
+                    setupChild(getWidgetContext(), newEntry.widgetInfo);
+                    getWidgetContext().forceResize();
+                }
+            }
             return previous;
         } else {
             return null;

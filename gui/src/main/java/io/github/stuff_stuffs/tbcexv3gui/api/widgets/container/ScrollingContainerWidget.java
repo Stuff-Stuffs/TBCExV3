@@ -1,8 +1,8 @@
 package io.github.stuff_stuffs.tbcexv3gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3gui.api.Point2d;
-import io.github.stuff_stuffs.tbcexv3gui.api.Rectangle;
-import io.github.stuff_stuffs.tbcexv3gui.api.RectangleRange;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Point2d;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.Rectangle;
+import io.github.stuff_stuffs.tbcexv3gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3gui.api.Sizer;
 import io.github.stuff_stuffs.tbcexv3gui.api.widget.*;
 import io.github.stuff_stuffs.tbcexv3gui.api.widgets.WidgetRenderUtils;
