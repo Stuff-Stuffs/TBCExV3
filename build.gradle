@@ -1,18 +1,18 @@
 plugins {
-    id 'fabric-loom' version '0.12-SNAPSHOT' apply false
+    id 'fabric-loom' version '1.0-SNAPSHOT' apply false
     id 'io.github.juuxel.loom-quiltflower' version '1.7.1' apply false
     id 'maven-publish'
 }
 
 version = project.mod_version
 
+archives_base_name = "tbcexv3"
+
 allprojects {
     apply plugin: 'fabric-loom'
     apply plugin: 'io.github.juuxel.loom-quiltflower'
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
-
-    archivesBaseName = project.archives_base_name
     group = project.maven_group
 
     tasks.withType(JavaCompile).configureEach {
@@ -27,10 +27,21 @@ allprojects {
         }
     }
 
+    loom {
+        splitEnvironmentSourceSets()
+    }
+
     sourceSets {
         testmod {
             compileClasspath += main.compileClasspath
             runtimeClasspath += main.runtimeClasspath
+        }
+    }
+
+    allprojects.each { p ->
+        loom.mods.register("tbcexv3_" + p.name) {
+            sourceSet p.sourceSets.main
+            sourceSet p.sourceSets.client
         }
     }
 
@@ -49,10 +60,6 @@ allprojects {
 
     java {
         withSourcesJar()
-    }
-
-    loom {
-        shareRemapCaches = true
     }
 
     jar {
@@ -77,8 +84,9 @@ dependencies {
 
     afterEvaluate {
         subprojects.each {
-            api project(path: ":${it.name}", configuration: "namedElements")
-            include project("${it.name}:")
+            api project(path: ":${it.path}:", configuration: "namedElements")
+            clientImplementation project("${it.path}:").sourceSets.client.output
+            include project("${it.path}:")
         }
     }
 }

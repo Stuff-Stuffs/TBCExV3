@@ -14,14 +14,18 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.stuff_stuffs.tbcexv3gui.internal.common.TBCExV3Gui"
+      "io.github.stuff_stuffs.tbcexv3_gui.internal.common.TBCExV3Gui"
     ],
     "client": [
-      "io.github.stuff_stuffs.tbcexv3gui.internal.client.TBCExV3GuiClient"
+      "io.github.stuff_stuffs.tbcexv3_gui.internal.client.TBCExV3GuiClient"
     ]
   },
   "mixins": [
-    "tbcexv3gui.mixins.json"
+    "tbcexv3gui.mixins.json",
+    {
+      "config": "tbcexv3gui-client.mixins.json",
+      "environment": "client"
+    }
   ],
   "accessWidener": "tbcexv3gui.accesswidener",
   "depends": {
