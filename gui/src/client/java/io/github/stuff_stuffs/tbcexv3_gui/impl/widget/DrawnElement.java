@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3_gui.widget;
+package io.github.stuff_stuffs.tbcexv3_gui.impl.widget;
 
 import net.minecraft.client.render.RenderLayer;
 

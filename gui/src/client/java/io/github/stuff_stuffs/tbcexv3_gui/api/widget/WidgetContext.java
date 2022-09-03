@@ -1,7 +1,10 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widget;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.function.Function;
 
+@ApiStatus.NonExtendable
 public interface WidgetContext<T> {
     void forceResize();
 

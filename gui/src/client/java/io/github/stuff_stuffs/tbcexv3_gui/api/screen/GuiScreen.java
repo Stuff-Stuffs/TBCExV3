@@ -7,7 +7,7 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
-import io.github.stuff_stuffs.tbcexv3_gui.widget.WidgetRenderContextImpl;
+import io.github.stuff_stuffs.tbcexv3_gui.impl.widget.WidgetRenderContextImpl;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.Window;

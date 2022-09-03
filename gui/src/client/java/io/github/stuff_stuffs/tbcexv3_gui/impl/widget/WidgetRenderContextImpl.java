@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3_gui.widget;
+package io.github.stuff_stuffs.tbcexv3_gui.impl.widget;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
