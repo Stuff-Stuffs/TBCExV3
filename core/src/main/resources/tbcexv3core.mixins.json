@@ -1,8 +1,9 @@
 {
   "required": true,
-  "package": "io.github.stuff_stuffs.tbcexv3core.internal.mixin",
+  "package": "io.github.stuff_stuffs.tbcexv3core.internal.common.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "AccessorWorldSavePath",
     "MixinServerWorld"
   ],
   "injectors": {

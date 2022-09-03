@@ -5,17 +5,18 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleAccess;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.util.CodecUtil;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.List;
 
-public class BattleImpl implements Battle, BattleAccess {
+public class BattleImpl implements Battle, BattleView {
     public static final Codec<BattleImpl> CODEC = Codec.list(BattleAction.CODEC).xmap(BattleImpl::new, impl -> impl.actions);
     public static final Codec<Battle> CASTED_CODEC = CodecUtil.castedCodec(CODEC, BattleImpl.class);
     private static final ActionTrace ROOT_VALUE = ActionTrace.INSTANCE;
@@ -58,6 +59,9 @@ public class BattleImpl implements Battle, BattleAccess {
 
     @Override
     public void pushAction(final BattleAction action) {
+        if (tracer.getCurrentStage().getValue() == ROOT_VALUE) {
+            TBCExV3Core.LOGGER.error("Pushed action while tracer was not at root");
+        }
         action.apply(state, tracer);
         actions.push(action);
     }
@@ -70,15 +74,6 @@ public class BattleImpl implements Battle, BattleAccess {
     @Override
     public BattleAction getAction(final int index) {
         return actions.get(index);
-    }
-
-    @Override
-    public boolean tryPushAction(final BattleAction action) {
-        if (tracer.getCurrentStage().getValue() == ROOT_VALUE) {
-            pushAction(action);
-            return true;
-        }
-        return false;
     }
 
     static <K> DataResult<Battle> decode(final DynamicOps<K> ops, final K battle) {

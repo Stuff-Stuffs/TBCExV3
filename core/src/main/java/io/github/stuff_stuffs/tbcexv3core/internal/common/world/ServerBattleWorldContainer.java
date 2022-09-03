@@ -24,14 +24,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
-public class ServerBattleWorldContainerImpl {
+public class ServerBattleWorldContainer {
     private static final long TIMEOUT_TICK_DIFF = 6000;
     private final Map<UUID, Battle> battles;
     private final Object2LongMap<UUID> lastAccessTime;
     private final Path directory;
     private long tickCount;
 
-    public ServerBattleWorldContainerImpl(final Path directory) {
+    public ServerBattleWorldContainer(final Path directory) {
         battles = new Object2ReferenceOpenHashMap<>();
         lastAccessTime = new Object2LongOpenHashMap<>();
         this.directory = directory;

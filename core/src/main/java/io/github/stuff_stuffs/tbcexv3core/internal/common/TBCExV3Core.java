@@ -17,13 +17,17 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.Pre
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TBCExV3Core implements ModInitializer {
     public static final String MOD_ID = "tbcexv3_core";
+    public static final WorldSavePath TBCEX_WORLD_SAVE_PATH = AccessorWorldSavePath.create("tbcex");
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     @Override
@@ -31,6 +35,7 @@ public class TBCExV3Core implements ModInitializer {
         CoreBattleActions.init();
         CoreBattleEffects.init();
         CoreBattleParticipantEffects.init();
+        BattleUpdateRequestReceiver.init();
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.register(builder -> {
             builder.unsorted(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET_EVENT, PreBattleBoundsSet::convert, PreBattleBoundsSet::invoker);
             builder.unsorted(CoreBattleEvents.POST_BATTLE_BOUNDS_SET_EVENT, PostBattleBoundsSet::convert, PostBattleBoundsSet::invoker);

@@ -21,7 +21,11 @@
     ]
   },
   "mixins": [
-    "tbcexv3core.mixins.json"
+    "tbcexv3core.mixins.json",
+    {
+      "config": "tbcexv3core.client.mixins.json",
+      "environment": "client"
+    }
   ],
   "depends": {
     "fabricloader": ">=0.14.6",
@@ -32,7 +36,10 @@
   "custom": {
     "loom:injected_interfaces": {
       "net/minecraft/class_1937": [
-        "io/github/stuff_stuffs/tbcexv3core/api/battle"
+        "io/github/stuff_stuffs/tbcexv3core/api/battles/BattleWorld"
+      ],
+      "net/minecraft/class_3218": [
+        "io/github/stuff_stuffs/tbcexv3core/api/battles/ServerBattleWorld"
       ]
     }
   }
