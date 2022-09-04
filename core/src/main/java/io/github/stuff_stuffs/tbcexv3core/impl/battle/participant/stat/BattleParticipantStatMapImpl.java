@@ -1,17 +1,15 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStat;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierKey;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.StatTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import it.unimi.dsi.fastutil.ints.Int2ReferenceAVLTreeMap;
-import it.unimi.dsi.fastutil.ints.Int2ReferenceSortedMap;
+import io.github.stuff_stuffs.tbcexv3core.impl.util.TieBreakingTopologicalSort;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Reference2ReferenceLinkedOpenHashMap;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
@@ -22,8 +20,8 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
     }
 
     @Override
-    public BattleParticipantStatModifierKey addModifier(final BattleParticipantStat stat, final Modifier modifier) {
-        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier);
+    public BattleParticipantStatModifierKey addModifier(final BattleParticipantStat stat, final BattleParticipantStatModifier modifier, final Tracer<ActionTrace> tracer) {
+        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier, tracer.getCurrentStage());
     }
 
     @Override
@@ -32,49 +30,75 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
     }
 
     private static final class Entry {
-        private final Int2ReferenceSortedMap<Bucket> buckets;
+        private final List<WrappedModifier> modifiers;
+        private List<WrappedModifier> sorted = List.of();
 
         private Entry() {
-            buckets = new Int2ReferenceAVLTreeMap<>();
+            modifiers = new ArrayList<>();
         }
 
         public double compute(final Tracer<StatTrace> tracer) {
             double val = 0;
-            for (final Bucket bucket : buckets.values()) {
-                val = bucket.compute(val, tracer);
+            for (final WrappedModifier modifier : sorted) {
+                val = modifier.modify(val, tracer);
             }
             return val;
         }
 
-        public KeyImpl addModifier(final Modifier modifier) {
-            final Bucket bucket = buckets.computeIfAbsent(modifier.getPriority(), i -> new Bucket());
-            final KeyImpl key = new KeyImpl(bucket);
-            bucket.modifiers.putAndMoveToLast(key, modifier);
-            return key;
+        public KeyImpl addModifier(final BattleParticipantStatModifier modifier, final Tracer.Stage<ActionTrace> stage) {
+            final int index = modifiers.size();
+            final WrappedModifier wrappedModifier = new WrappedModifier(index, modifier);
+            modifiers.add(wrappedModifier);
+            sort();
+            return new KeyImpl(wrappedModifier, this, stage);
+        }
+
+        public void remove(final WrappedModifier modifier, final Tracer<ActionTrace> tracer) {
+            modifiers.remove(modifier);
+            sort();
+        }
+
+        private void sort() {
+            sorted = TieBreakingTopologicalSort.sort(modifiers, (parent, child, items) -> {
+                final BattleParticipantStatModifierPhase possibleParent = items.get(parent).getPhase();
+                final BattleParticipantStatModifierPhase possibleChild = items.get(child).getPhase();
+                return possibleParent.getHappensBefore().contains(possibleChild.getId()) || possibleChild.getHappensAfter().contains(possibleParent.getId());
+            }, Comparator.comparingInt(wrapped -> wrapped.index));
         }
     }
 
-    private static final class Bucket {
-        private final Reference2ReferenceLinkedOpenHashMap<KeyImpl, Modifier> modifiers = new Reference2ReferenceLinkedOpenHashMap<>();
+    private static final class WrappedModifier implements BattleParticipantStatModifier {
+        private final int index;
+        private final BattleParticipantStatModifierPhase phase;
+        private final BattleParticipantStatModifier wrapped;
 
-        public double compute(double value, final Tracer<StatTrace> tracer) {
-            for (final Modifier modifier : modifiers.values()) {
-                value = modifier.modify(value, tracer);
-            }
-            return value;
+        private WrappedModifier(final int index, final BattleParticipantStatModifier wrapped) {
+            this.index = index;
+            phase = wrapped.getPhase();
+            this.wrapped = wrapped;
         }
 
-        public void destroy(final KeyImpl key) {
-            modifiers.remove(key);
+        @Override
+        public BattleParticipantStatModifierPhase getPhase() {
+            return phase;
+        }
+
+        @Override
+        public double modify(final double value, final Tracer<StatTrace> tracer) {
+            return wrapped.modify(value, tracer);
         }
     }
 
     private static final class KeyImpl implements BattleParticipantStatModifierKey {
-        private final Bucket bucket;
+        private final WrappedModifier modifier;
+        private final Entry entry;
+        private final Tracer.Stage<ActionTrace> stage;
         private boolean alive;
 
-        public KeyImpl(final Bucket bucket) {
-            this.bucket = bucket;
+        public KeyImpl(final WrappedModifier modifier, final Entry entry, final Tracer.Stage<ActionTrace> stage) {
+            this.modifier = modifier;
+            this.entry = entry;
+            this.stage = stage;
             alive = true;
         }
 
@@ -84,11 +108,16 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
         }
 
         @Override
+        public Tracer.Stage<ActionTrace> getTracerStage() {
+            return stage;
+        }
+
+        @Override
         public void destroy(final Tracer<ActionTrace> tracer) {
             if (isDestroyed()) {
                 throw new TBCExException();
             }
-            bucket.destroy(this);
+            entry.remove(modifier, tracer);
             alive = false;
         }
     }

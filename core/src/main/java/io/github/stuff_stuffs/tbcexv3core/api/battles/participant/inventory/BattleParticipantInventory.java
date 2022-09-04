@@ -1,18 +1,20 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 
 import java.util.Optional;
 
 public interface BattleParticipantInventory extends BattleParticipantInventoryView {
-    boolean swapStack(BattleParticipantInventoryHandle handle, BattleParticipantItemStack stack);
+    boolean swapStack(BattleParticipantInventoryHandle handle, BattleParticipantItemStack stack, Tracer<ActionTrace> tracer);
 
-    Optional<BattleParticipantInventoryHandle> give(BattleParticipantItemStack stack);
+    Optional<BattleParticipantInventoryHandle> give(BattleParticipantItemStack stack, Tracer<ActionTrace> tracer);
 
-    Optional<BattleParticipantItemStack> takeStack(BattleParticipantInventoryHandle handle);
+    Optional<BattleParticipantItemStack> takeStack(BattleParticipantInventoryHandle handle, Tracer<ActionTrace> tracer);
 
-    boolean equip(BattleParticipantEquipmentSlot slot, BattleParticipantInventoryHandle handle, boolean swap);
+    boolean equip(BattleParticipantEquipmentSlot slot, BattleParticipantInventoryHandle handle, boolean swap, Tracer<ActionTrace> tracer);
 
-    boolean unequip(BattleParticipantEquipmentSlot slot);
+    boolean unequip(BattleParticipantEquipmentSlot slot, Tracer<ActionTrace> tracer);
 }

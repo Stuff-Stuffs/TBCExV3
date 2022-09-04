@@ -8,5 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 public interface BattleParticipantStatModifierKey {
     boolean isDestroyed();
 
+    Tracer.Stage<ActionTrace> getTracerStage();
+
     void destroy(Tracer<ActionTrace> tracer);
 }

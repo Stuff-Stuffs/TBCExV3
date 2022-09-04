@@ -4,6 +4,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventoryHandle;
@@ -12,6 +13,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -92,7 +94,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     }
 
     @Override
-    public boolean swapStack(final BattleParticipantInventoryHandle handle, final BattleParticipantItemStack stack) {
+    public boolean swapStack(final BattleParticipantInventoryHandle handle, final BattleParticipantItemStack stack, final Tracer<ActionTrace> tracer) {
         checkSetup();
         if (this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
@@ -101,11 +103,11 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
             throw new TBCExException();
         }
         final EventMap eventMap = state.getEventMap();
-        if (stacks.containsKey(abstractHandle.getKey()) && eventMap.getEvent(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preTakeItem(handle, stacks.get(abstractHandle.getKey()), state)) {
-            if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preGiveItem(stack, state)) {
+        if (stacks.containsKey(abstractHandle.getKey()) && eventMap.getEvent(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preTakeItem(handle, stacks.get(abstractHandle.getKey()), state, tracer)) {
+            if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preGiveItem(stack, state, tracer)) {
                 final BattleParticipantItemStack currentStack = stacks.put(abstractHandle.getKey(), stack);
-                eventMap.getEvent(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postTakeItem(currentStack, state);
-                eventMap.getEvent(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postGiveItem(handle, stack, state);
+                eventMap.getEvent(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postTakeItem(currentStack, state, tracer);
+                eventMap.getEvent(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postGiveItem(handle, stack, state, tracer);
                 return true;
             }
         }
@@ -113,24 +115,24 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     }
 
     @Override
-    public Optional<BattleParticipantInventoryHandle> give(final BattleParticipantItemStack stack) {
+    public Optional<BattleParticipantInventoryHandle> give(final BattleParticipantItemStack stack, final Tracer<ActionTrace> tracer) {
         checkSetup();
         final EventMap eventMap = state.getEventMap();
-        if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preGiveItem(stack, state)) {
+        if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preGiveItem(stack, state, tracer)) {
             long next;
             do {
                 next = nextKey++;
             } while (stacks.containsKey(next));
             final BattleParticipantInventoryHandle handle = AbstractBattleParticipantInventoryHandle.of(this.handle, next);
             stacks.put(nextKey, stack);
-            eventMap.getEvent(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postGiveItem(handle, stack, state);
+            eventMap.getEvent(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postGiveItem(handle, stack, state, tracer);
             return Optional.of(handle);
         }
         return Optional.empty();
     }
 
     @Override
-    public Optional<BattleParticipantItemStack> takeStack(final BattleParticipantInventoryHandle handle) {
+    public Optional<BattleParticipantItemStack> takeStack(final BattleParticipantInventoryHandle handle, final Tracer<ActionTrace> tracer) {
         checkSetup();
         if (this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
@@ -142,16 +144,16 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
         if (stacks.containsKey(abstractHandle.getKey())) {
             if (equipped.inverse().containsKey(handle)) {
                 final BattleParticipantEquipmentSlot slot = equipped.inverse().get(handle);
-                if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preUnequip(state, handle, slot) && eventMap.getEvent(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preTakeItem(handle, stacks.get(abstractHandle.getKey()), state)) {
+                if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preUnequip(state, handle, slot, tracer) && eventMap.getEvent(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preTakeItem(handle, stacks.get(abstractHandle.getKey()), state, tracer)) {
                     equipped.remove(slot);
                     final BattleParticipantItemStack stack = stacks.remove(abstractHandle.getKey());
-                    eventMap.getEvent(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postUnequip(state, handle, slot, stack);
-                    eventMap.getEvent(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postTakeItem(stack, state);
+                    eventMap.getEvent(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postUnequip(state, handle, slot, stack, tracer);
+                    eventMap.getEvent(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postTakeItem(stack, state, tracer);
                     return Optional.of(stack);
                 }
-            } else if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preTakeItem(handle, stacks.get(abstractHandle.getKey()), state)) {
+            } else if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().preTakeItem(handle, stacks.get(abstractHandle.getKey()), state, tracer)) {
                 final BattleParticipantItemStack stack = stacks.remove(abstractHandle.getKey());
-                eventMap.getEvent(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postTakeItem(stack, state);
+                eventMap.getEvent(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT).getInvoker().postTakeItem(stack, state, tracer);
                 return Optional.of(stack);
             }
         }
@@ -159,7 +161,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     }
 
     @Override
-    public boolean equip(final BattleParticipantEquipmentSlot slot, final BattleParticipantInventoryHandle handle, final boolean swap) {
+    public boolean equip(final BattleParticipantEquipmentSlot slot, final BattleParticipantInventoryHandle handle, final boolean swap, final Tracer<ActionTrace> tracer) {
         checkSetup();
         if (this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
@@ -184,17 +186,17 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
         final BattleParticipantInventoryHandle equippedHandle = equipped.getOrDefault(slot, null);
         final EventMap eventMap = state.getEventMap();
         if (equippedHandle == null) {
-            if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preEquip(state, handle, slot)) {
+            if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preEquip(state, handle, slot, tracer)) {
                 equipped.put(slot, handle);
-                eventMap.getEvent(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postEquip(state, handle, slot);
+                eventMap.getEvent(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postEquip(state, handle, slot, tracer);
                 return true;
             }
         } else if (swap) {
-            if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preUnequip(state, equippedHandle, slot)
-                    && eventMap.getEvent(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preEquip(state, handle, slot)) {
+            if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preUnequip(state, equippedHandle, slot, tracer)
+                    && eventMap.getEvent(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preEquip(state, handle, slot, tracer)) {
                 equipped.put(slot, handle);
-                eventMap.getEvent(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postUnequip(state, equippedHandle, slot, stack);
-                eventMap.getEvent(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postEquip(state, handle, slot);
+                eventMap.getEvent(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postUnequip(state, equippedHandle, slot, stack, tracer);
+                eventMap.getEvent(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postEquip(state, handle, slot, tracer);
                 return true;
             }
         }
@@ -214,17 +216,17 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     }
 
     @Override
-    public boolean unequip(final BattleParticipantEquipmentSlot slot) {
+    public boolean unequip(final BattleParticipantEquipmentSlot slot, final Tracer<ActionTrace> tracer) {
         checkSetup();
         final BattleParticipantInventoryHandle handle = equipped.getOrDefault(slot, null);
         if (handle == null) {
             return false;
         }
         final EventMap eventMap = state.getEventMap();
-        if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preUnequip(state, handle, slot)) {
+        if (eventMap.getEvent(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().preUnequip(state, handle, slot, tracer)) {
             equipped.remove(slot);
             final BattleParticipantItemStack stack = stacks.get(((AbstractBattleParticipantInventoryHandle) handle).getKey());
-            eventMap.getEvent(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postUnequip(state, handle, slot, stack);
+            eventMap.getEvent(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT).getInvoker().postUnequip(state, handle, slot, stack, tracer);
             return true;
         }
         return false;

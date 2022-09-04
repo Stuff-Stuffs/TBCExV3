@@ -13,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 
 @ApiStatus.NonExtendable
 public interface BattleParticipantEffectType<View extends BattleParticipantEffect, Effect extends View> {
@@ -29,7 +30,16 @@ public interface BattleParticipantEffectType<View extends BattleParticipantEffec
 
     Class<Effect> getEffectClass();
 
-    default <V extends BattleParticipantEffect, E extends V> @Nullable BattleParticipantEffectType<V, E> checkedCast(final Class<V> viewClass, final Class<E> effectClass) {
+    Effect combine(Effect first, Effect second);
+
+    default @Nullable Effect checkedCast(final BattleParticipantEffect effect) {
+        if (effect.getType() == this) {
+            return (Effect) effect;
+        }
+        return null;
+    }
+
+    default <V extends BattleParticipantEffect, E extends V> @Nullable BattleParticipantEffectType<V, E> checkedTypeCast(final Class<V> viewClass, final Class<E> effectClass) {
         if (viewClass == getViewClass()) {
             final BattleParticipantEffectType<V, ?> partialCast = (BattleParticipantEffectType<V, ?>) this;
             if (effectClass == partialCast.getEffectClass()) {
@@ -39,15 +49,15 @@ public interface BattleParticipantEffectType<View extends BattleParticipantEffec
         return null;
     }
 
-    static <View extends BattleParticipantEffect, Effect extends View> BattleParticipantEffectType<View, Effect> create(final Class<View> viewClass, final Class<Effect> effectClass, final Codec<Effect> codec) {
-        return create(viewClass, effectClass, codec, codec);
+    static <View extends BattleParticipantEffect, Effect extends View> BattleParticipantEffectType<View, Effect> create(final Class<View> viewClass, final Class<Effect> effectClass, final BinaryOperator<Effect> combiner, final Codec<Effect> codec) {
+        return create(viewClass, effectClass, combiner, codec, codec);
     }
 
-    static <View extends BattleParticipantEffect, Effect extends View> BattleParticipantEffectType<View, Effect> create(final Class<View> viewClass, final Class<Effect> effectClass, final Encoder<Effect> encoder, final Decoder<Effect> decoder) {
-        return new BattleParticipantEffectTypeImpl<>(viewClass, effectClass, encoder, decoder);
+    static <View extends BattleParticipantEffect, Effect extends View> BattleParticipantEffectType<View, Effect> create(final Class<View> viewClass, final Class<Effect> effectClass, final BinaryOperator<Effect> combiner, final Encoder<Effect> encoder, final Decoder<Effect> decoder) {
+        return new BattleParticipantEffectTypeImpl<>(viewClass, effectClass, combiner, encoder, decoder);
     }
 
     static <View extends BattleParticipantEffect, Effect extends View> Optional<BattleParticipantEffectType<View, Effect>> get(final Identifier id, final Class<View> viewClass, final Class<Effect> effectClass) {
-        return REGISTRY.getOrEmpty(id).map(action -> action.checkedCast(viewClass, effectClass));
+        return REGISTRY.getOrEmpty(id).map(action -> action.checkedTypeCast(viewClass, effectClass));
     }
 }
