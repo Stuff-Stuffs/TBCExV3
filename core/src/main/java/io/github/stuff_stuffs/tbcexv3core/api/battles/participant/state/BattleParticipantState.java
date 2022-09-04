@@ -8,9 +8,12 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.BattleParticipantStateImpl;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.UUID;
 
 @ApiStatus.NonExtendable
 public interface BattleParticipantState extends BattleParticipantStateView {
@@ -40,5 +43,9 @@ public interface BattleParticipantState extends BattleParticipantStateView {
 
     interface EventInitializer {
         void addEvents(EventMap.Builder builder);
+    }
+
+    static BattleParticipantState create(final UUID uuid) {
+        return new BattleParticipantStateImpl(uuid);
     }
 }

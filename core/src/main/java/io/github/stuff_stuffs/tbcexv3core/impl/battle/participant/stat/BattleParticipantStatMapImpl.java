@@ -4,7 +4,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.impl.util.TieBreakingTopologicalSort;
+import io.github.stuff_stuffs.tbcexv3core.impl.util.TopologicalSort;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
         }
 
         private void sort() {
-            sorted = TieBreakingTopologicalSort.sort(modifiers, (parent, child, items) -> {
+            sorted = TopologicalSort.tieBreakingSort(modifiers, (parent, child, items) -> {
                 final BattleParticipantStatModifierPhase possibleParent = items.get(parent).getPhase();
                 final BattleParticipantStatModifierPhase possibleChild = items.get(child).getPhase();
                 return possibleParent.getHappensBefore().contains(possibleChild.getId()) || possibleChild.getHappensAfter().contains(possibleParent.getId());

@@ -15,6 +15,7 @@ import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.ServerWorldProperties;
 import net.minecraft.world.level.storage.LevelStorage;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,30 +31,30 @@ import java.util.function.Supplier;
 public abstract class MixinServerWorld extends World implements BattleWorld, ServerBattleWorld {
     private ServerBattleWorldContainer battleWorldContainer;
 
-    protected MixinServerWorld(MutableWorldProperties properties, RegistryKey<World> registryRef, RegistryEntry<DimensionType> dimension, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed, int maxChainedNeighborUpdates) {
+    protected MixinServerWorld(final MutableWorldProperties properties, final RegistryKey<World> registryRef, final RegistryEntry<DimensionType> dimension, final Supplier<Profiler> profiler, final boolean isClient, final boolean debugWorld, final long seed, final int maxChainedNeighborUpdates) {
         super(properties, registryRef, dimension, profiler, isClient, debugWorld, seed, maxChainedNeighborUpdates);
     }
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void initialize(MinecraftServer server, Executor workerExecutor, LevelStorage.Session session, ServerWorldProperties properties, RegistryKey worldKey, DimensionOptions dimensionOptions, WorldGenerationProgressListener worldGenerationProgressListener, boolean debugWorld, long seed, List spawners, boolean shouldTickTime, CallbackInfo ci) {
+    private void initialize(final MinecraftServer server, final Executor workerExecutor, final LevelStorage.Session session, final ServerWorldProperties properties, final RegistryKey worldKey, final DimensionOptions dimensionOptions, final WorldGenerationProgressListener worldGenerationProgressListener, final boolean debugWorld, final long seed, final List spawners, final boolean shouldTickTime, final CallbackInfo ci) {
         battleWorldContainer = new ServerBattleWorldContainer(session.getDirectory(TBCExV3Core.TBCEX_WORLD_SAVE_PATH));
     }
 
     @Override
-    public @Nullable Battle tryGetBattleView(final BattleHandle handle) {
-        if(!handle.getWorldKey().equals(this.getRegistryKey())) {
+    public @Nullable BattleView tryGetBattleView(final @NotNull BattleHandle handle) {
+        if (!handle.getWorldKey().equals(this.getRegistryKey())) {
             return null;
         }
         return battleWorldContainer.getBattle(handle.getUuid());
     }
 
     @Inject(method = "tick", at = @At("RETURN"))
-    private void tickInject(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
+    private void tickInject(final BooleanSupplier shouldKeepTicking, final CallbackInfo ci) {
         battleWorldContainer.tick();
     }
 
     @Override
-    public @Nullable Battle tryGetBattle(BattleHandle handle) {
+    public @Nullable Battle tryGetBattle(final BattleHandle handle) {
         return battleWorldContainer.getBattle(handle.getUuid());
     }
 }

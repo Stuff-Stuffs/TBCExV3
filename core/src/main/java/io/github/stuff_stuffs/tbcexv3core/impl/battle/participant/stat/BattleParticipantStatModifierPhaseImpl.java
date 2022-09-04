@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierPhase;
+import io.github.stuff_stuffs.tbcexv3core.impl.util.TopologicalSort;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +41,11 @@ public class BattleParticipantStatModifierPhaseImpl implements BattleParticipant
         if (PHASES.put(id, phase) != null) {
             throw new RuntimeException("Duplicate stat modifier phases!");
         }
+        TopologicalSort.sort(PHASES.values().stream().toList(), (parent, child, items) -> {
+            final BattleParticipantStatModifierPhase parentPhase = items.get(parent);
+            final BattleParticipantStatModifierPhase childPhase = items.get(child);
+            return parentPhase.getHappensBefore().contains(childPhase.getId()) || childPhase.getHappensAfter().contains(parentPhase.getId());
+        });
         return phase;
     }
 
