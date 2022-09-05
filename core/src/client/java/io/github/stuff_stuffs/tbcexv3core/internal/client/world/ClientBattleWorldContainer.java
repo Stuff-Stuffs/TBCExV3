@@ -1,8 +1,8 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.world;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.impl.ClientBattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRequestSender;
@@ -21,19 +21,19 @@ public class ClientBattleWorldContainer {
     private final Set<UUID> battleUpdateRequestsToSend = new ObjectOpenHashSet<>();
     private final RegistryKey<World> worldKey;
 
-    public ClientBattleWorldContainer(RegistryKey<World> worldKey) {
+    public ClientBattleWorldContainer(final RegistryKey<World> worldKey) {
         this.worldKey = worldKey;
     }
 
-    public @Nullable BattleView getBattle(UUID uuid) {
+    public @Nullable BattleView getBattle(final UUID uuid) {
         battleUpdateRequestsToSend.add(uuid);
         return battles.get(uuid);
     }
 
     public void tick() {
         if(!battleUpdateRequestsToSend.isEmpty()) {
-            List<BattleUpdateRequest> updateRequests = new ArrayList<>(battleUpdateRequestsToSend.size());
-            for (UUID uuid : battleUpdateRequestsToSend) {
+            final List<BattleUpdateRequest> updateRequests = new ArrayList<>(battleUpdateRequestsToSend.size());
+            for (final UUID uuid : battleUpdateRequestsToSend) {
                 if (battles.containsKey(uuid)) {
                     updateRequests.add(battles.get(uuid).createUpdateRequest());
                 } else {
@@ -44,11 +44,11 @@ public class ClientBattleWorldContainer {
         }
     }
 
-    public void update(BattleUpdate update) {
-        if(battles.containsKey(update.handle().getUuid())) {
+    public void update(final BattleUpdate update) {
+        if (battles.containsKey(update.handle().getUuid())) {
             battles.get(update.handle().getUuid()).update(update);
-        } else if(update.offset()==0) {
-            ClientBattleImpl battle = new ClientBattleImpl(new BattleImpl());
+        } else if (update.offset() == 0) {
+            final ClientBattleImpl battle = new ClientBattleImpl(new BattleImpl(BattleStateMode.CLIENT));
             battle.update(update);
             battles.put(update.handle().getUuid(), battle);
         }

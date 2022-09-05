@@ -15,6 +15,8 @@ public interface BattleStateView {
 
     BattleStatePhase getPhase();
 
+    BattleStateMode getMode();
+
     boolean hasEffect(BattleEffectType<?, ?> type);
 
     <View extends BattleEffect> View getEffectView(BattleEffectType<View, ?> type);

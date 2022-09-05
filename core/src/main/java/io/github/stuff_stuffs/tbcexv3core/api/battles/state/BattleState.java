@@ -45,7 +45,7 @@ public interface BattleState extends BattleStateView {
         void addEvents(EventMap.Builder builder);
     }
 
-    static BattleState createEmpty() {
-        return new BattleStateImpl();
+    static BattleState createEmpty(final BattleStateMode mode) {
+        return new BattleStateImpl(mode);
     }
 }

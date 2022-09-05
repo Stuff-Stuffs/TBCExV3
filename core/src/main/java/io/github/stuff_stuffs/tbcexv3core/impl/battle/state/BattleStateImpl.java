@@ -11,6 +11,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
@@ -25,11 +26,13 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     private final EventMap events;
     private final Map<BattleEffectType<?, ?>, BattleEffect> effects;
     private final Map<BattleParticipantHandle, AbstractBattleParticipantState> participantStates;
+    private final BattleStateMode mode;
     private BattleHandle handle;
     private BattleBounds bounds;
     private BattleStatePhase phase;
 
-    public BattleStateImpl() {
+    public BattleStateImpl(final BattleStateMode mode) {
+        this.mode = mode;
         final EventMap.Builder builder = EventMap.Builder.create();
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.invoker().addEvents(builder);
         events = builder.build();
@@ -61,6 +64,11 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     @Override
     public BattleStatePhase getPhase() {
         return phase;
+    }
+
+    @Override
+    public BattleStateMode getMode() {
+        return mode;
     }
 
     @Override

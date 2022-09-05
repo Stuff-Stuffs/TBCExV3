@@ -3,6 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.DataResult;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
@@ -70,7 +71,7 @@ public class ServerBattleWorldContainer {
     }
 
     private boolean saveBattle(final UUID uuid, final Battle battle) {
-        final Optional<NbtElement> encoded = Battle.codec().encode(battle, NbtOps.INSTANCE, NbtOps.INSTANCE.empty()).resultOrPartial(s -> TBCExV3Core.LOGGER.error("Error while saving battle: " + s));
+        final Optional<NbtElement> encoded = Battle.encoder().encode(battle, NbtOps.INSTANCE, NbtOps.INSTANCE.empty()).resultOrPartial(s -> TBCExV3Core.LOGGER.error("Error while saving battle: " + s));
         if (encoded.isPresent()) {
             try (final BufferedWriter writer = Files.newBufferedWriter(directory.resolve(toFileName(uuid)), StandardCharsets.UTF_8, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
                 try (final OutputStream stream = new WriterOutputStream(writer, StandardCharsets.UTF_8)) {
@@ -91,7 +92,7 @@ public class ServerBattleWorldContainer {
         try (final BufferedReader reader = Files.newBufferedReader(directory.resolve(toFileName(uuid)), StandardCharsets.UTF_8)) {
             try (final InputStream stream = new ReaderInputStream(reader, StandardCharsets.UTF_8)) {
                 final NbtCompound compound = NbtIo.readCompressed(stream);
-                final DataResult<Battle> dataResult = Battle.codec().decode(NbtOps.INSTANCE, compound).map(Pair::getFirst);
+                final DataResult<Battle> dataResult = Battle.decoder().decode(NbtOps.INSTANCE, compound).map(Pair::getFirst).map(f -> f.apply(BattleStateMode.SERVER));
                 final Optional<Battle> battle = dataResult.resultOrPartial(s -> TBCExV3Core.LOGGER.error("Error while loading battle: " + s));
                 return battle.orElse(null);
             }

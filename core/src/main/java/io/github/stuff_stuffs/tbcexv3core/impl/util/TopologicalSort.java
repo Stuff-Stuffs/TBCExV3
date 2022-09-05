@@ -1,6 +1,5 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.util;
 
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayFIFOQueue;
 import it.unimi.dsi.fastutil.ints.IntHeapPriorityQueue;
 import it.unimi.dsi.fastutil.ints.IntPriorityQueue;
@@ -14,8 +13,8 @@ import java.util.Set;
 public final class TopologicalSort {
     public static <T> List<T> tieBreakingSort(final List<T> items, final ChildPredicate<T> childPredicate, final Comparator<T> tieBreaker) {
         final Set<T> set = new ObjectOpenHashSet<>();
-        final Int2IntOpenHashMap indexToDependencyCount = new Int2IntOpenHashMap();
         final int size = items.size();
+        final int[] indexToDependencyCount = new int[size];
         for (int i = 0; i < size; i++) {
             final T item = items.get(i);
             if (!set.add(item)) {
@@ -23,7 +22,7 @@ public final class TopologicalSort {
             }
             for (int j = 0; j < size; j++) {
                 if (childPredicate.isChild(i, j, items)) {
-                    indexToDependencyCount.addTo(j, 1);
+                    indexToDependencyCount[j] += 1;
                 }
             }
         }
@@ -38,7 +37,7 @@ public final class TopologicalSort {
             output.add(item);
             for (int j = 0; j < size; j++) {
                 if (childPredicate.isChild(i, j, items)) {
-                    if (indexToDependencyCount.addTo(j, -1) == 1) {
+                    if ((--indexToDependencyCount[j]) == 0) {
                         queue.enqueue(j);
                     }
                 }
@@ -49,8 +48,8 @@ public final class TopologicalSort {
 
     public static <T> List<T> sort(final List<T> items, final ChildPredicate<T> childPredicate) {
         final Set<T> set = new ObjectOpenHashSet<>();
-        final Int2IntOpenHashMap indexToDependencyCount = new Int2IntOpenHashMap();
         final int size = items.size();
+        final int[] indexToDependencyCount = new int[size];
         for (int i = 0; i < size; i++) {
             final T item = items.get(i);
             if (!set.add(item)) {
@@ -58,7 +57,7 @@ public final class TopologicalSort {
             }
             for (int j = 0; j < size; j++) {
                 if (childPredicate.isChild(i, j, items)) {
-                    indexToDependencyCount.addTo(j, 1);
+                    indexToDependencyCount[j] += 1;
                 }
             }
         }
@@ -73,7 +72,7 @@ public final class TopologicalSort {
             output.add(item);
             for (int j = 0; j < size; j++) {
                 if (childPredicate.isChild(i, j, items)) {
-                    if (indexToDependencyCount.addTo(j, -1) == 1) {
+                    if ((--indexToDependencyCount[j]) == 0) {
                         queue.enqueue(j);
                     }
                 }
