@@ -2,9 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.PostBattleBoundsSet;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.PreBattleBoundsSet;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.*;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.CoreBattleParticipantEffects;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostEquipBattleParticipantEquipmentEvent;
@@ -17,7 +15,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.Pre
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattlePlayerComponentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.CoreBattleEntityComponents;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.DebugBattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.PlayerControlledBattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
 import net.fabricmc.api.ModInitializer;
@@ -33,14 +34,27 @@ public class TBCExV3Core implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        BattlePlayerComponentEvent.EVENT.register(builder -> {
+            builder.addComponent(new DebugBattleEntityComponent());
+            builder.addComponent(new PlayerControlledBattleEntityComponent());
+        });
         CoreBattleActions.init();
         CoreBattleEffects.init();
         CoreBattleParticipantEffects.init();
         BattleUpdateRequestReceiver.init();
         CoreBattleEntityComponents.init();
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.register(builder -> {
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET_EVENT, PreBattleBoundsSet::convert, PreBattleBoundsSet::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_BOUNDS_SET_EVENT, PostBattleBoundsSet::convert, PostBattleBoundsSet::invoker);
+            builder.unsorted(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET_EVENT, PreBattleBoundsSetEvent::convert, PreBattleBoundsSetEvent::invoker);
+            builder.unsorted(CoreBattleEvents.POST_BATTLE_BOUNDS_SET_EVENT, PostBattleBoundsSetEvent::convert, PostBattleBoundsSetEvent::invoker);
+
+            builder.unsorted(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT, PreBattleParticipantJoinEvent::convert, PreBattleParticipantJoinEvent::invoker);
+            builder.unsorted(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT, PostBattleParticipantJoinEvent::convert, PostBattleParticipantJoinEvent::invoker);
+
+            builder.unsorted(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT, PreBattleParticipantLeaveEvent::convert, PreBattleParticipantLeaveEvent::invoker);
+            builder.unsorted(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT, PostBattleParticipantLeaveEvent::convert, PostBattleParticipantLeaveEvent::invoker);
+
+            builder.unsorted(CoreBattleEvents.PRE_BATTLE_END_EVENT, PreBattleEndEvent::convert, PreBattleEndEvent::invoker);
+            builder.unsorted(CoreBattleEvents.POST_BATTLE_END_EVENT, PostBattleEndEvent::convert, PostBattleEndEvent::invoker);
         });
         BattleParticipantState.BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT.register(builder -> {
             builder.unsorted(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT, PreGiveBattleParticipantItemEvent::convert, PreGiveBattleParticipantItemEvent::invoker);

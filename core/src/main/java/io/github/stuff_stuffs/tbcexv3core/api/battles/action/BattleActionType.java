@@ -20,9 +20,9 @@ public interface BattleActionType<T extends BattleAction> {
     Registry<BattleActionType<?>> REGISTRY = FabricRegistryBuilder.from(new DefaultedRegistry<>(NOOP_ID.toString(), RegistryKey.<BattleActionType<?>>ofRegistry(TBCExV3Core.createId("battle_actions")), Lifecycle.stable(), BattleActionType::getReference)).buildAndRegister();
     Codec<BattleActionType<?>> CODEC = REGISTRY.getCodec();
 
-    <K> DataResult<T> decode(DynamicOps<K> ops, K encoded);
+    <K> DataResult<T> decode(DynamicOps<K> ops, K encoded, boolean network);
 
-    <K> DataResult<K> encode(DynamicOps<K> ops, BattleAction action);
+    <K> DataResult<K> encode(DynamicOps<K> ops, BattleAction action, boolean network);
 
     RegistryEntry.Reference<BattleActionType<?>> getReference();
 
@@ -39,8 +39,12 @@ public interface BattleActionType<T extends BattleAction> {
         return create(actionClass, codec, codec);
     }
 
-    static <T extends BattleAction> BattleActionType<T> create(final Class<T> actionClass, final Encoder<T> encoder, final Decoder<T> decoder) {
-        return new BattleActionTypeImpl<>(encoder, decoder, actionClass);
+    static <T extends BattleAction> BattleActionType<T> create(final Class<T> actionClass, final Codec<T> codec, final Codec<T> netCodec) {
+        return create(actionClass, codec, codec, netCodec, netCodec);
+    }
+
+    static <T extends BattleAction> BattleActionType<T> create(final Class<T> actionClass, final Encoder<T> encoder, final Decoder<T> decoder, final Encoder<T> netEncoder, final Decoder<T> netDecoder) {
+        return new BattleActionTypeImpl<>(encoder, decoder, netEncoder, netDecoder, actionClass);
     }
 
     static <T extends BattleAction> Optional<BattleActionType<T>> get(final Identifier id, final Class<T> actionClass) {

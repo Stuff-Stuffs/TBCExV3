@@ -3,13 +3,13 @@ package io.github.stuff_stuffs.tbcexv3core.api.entity;
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
-import net.minecraft.entity.Entity;
+import net.minecraft.server.world.ServerWorld;
 
 import java.util.function.BinaryOperator;
 
-public class DebugPlayerBattleEntityComponent implements BattleEntityComponent {
-    public static final Codec<DebugPlayerBattleEntityComponent> CODEC = Codec.unit(DebugPlayerBattleEntityComponent::new);
-    public static final BinaryOperator<DebugPlayerBattleEntityComponent> COMBINER = (debugPlayerBattleEntityComponent, debugPlayerBattleEntityComponent2) -> {
+public class DebugBattleEntityComponent implements BattleEntityComponent {
+    public static final Codec<DebugBattleEntityComponent> CODEC = Codec.unit(DebugBattleEntityComponent::new);
+    public static final BinaryOperator<DebugBattleEntityComponent> COMBINER = (debugBattleEntityComponent, debugBattleEntityComponent2) -> {
         throw new UnsupportedOperationException("Cannot combine components!");
     };
 
@@ -18,12 +18,12 @@ public class DebugPlayerBattleEntityComponent implements BattleEntityComponent {
     }
 
     @Override
-    public void applyToEntity(final Entity entity, final BattleView view) {
-
+    public void onLeave(BattleView view, ServerWorld world) {
+        
     }
 
     @Override
     public BattleEntityComponentType<?> getType() {
-        return null;
+        return CoreBattleEntityComponents.DEBUG_BATTLE_ENTITY_COMPONENT_TYPE;
     }
 }

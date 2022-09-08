@@ -7,6 +7,7 @@ import com.mojang.serialization.DynamicOps;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import net.minecraft.entity.Entity;
+import net.minecraft.server.world.ServerWorld;
 
 public interface BattleEntityComponent {
     Codec<BattleEntityComponent> CODEC = new Codec<>() {
@@ -23,7 +24,10 @@ public interface BattleEntityComponent {
 
     void applyToState(BattleParticipantState state);
 
-    void applyToEntity(Entity entity, BattleView view);
+    void onLeave(BattleView view, ServerWorld world);
+
+    default void applyToEntityOnJoin(final Entity entity) {
+    }
 
     BattleEntityComponentType<?> getType();
 }

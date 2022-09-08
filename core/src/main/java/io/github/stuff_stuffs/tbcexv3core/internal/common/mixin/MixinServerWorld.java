@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.*;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.world.ServerBattleWorldContainer;
 import net.minecraft.server.MinecraftServer;
@@ -23,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -37,7 +39,7 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initialize(final MinecraftServer server, final Executor workerExecutor, final LevelStorage.Session session, final ServerWorldProperties properties, final RegistryKey worldKey, final DimensionOptions dimensionOptions, final WorldGenerationProgressListener worldGenerationProgressListener, final boolean debugWorld, final long seed, final List spawners, final boolean shouldTickTime, final CallbackInfo ci) {
-        battleWorldContainer = new ServerBattleWorldContainer(session.getDirectory(TBCExV3Core.TBCEX_WORLD_SAVE_PATH));
+        battleWorldContainer = new ServerBattleWorldContainer(worldKey, session.getDirectory(TBCExV3Core.TBCEX_WORLD_SAVE_PATH));
     }
 
     @Override
@@ -56,5 +58,10 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
     @Override
     public @Nullable Battle tryGetBattle(final BattleHandle handle) {
         return battleWorldContainer.getBattle(handle.getUuid());
+    }
+
+    @Override
+    public BattleHandle createBattle(final Set<BattleEntity> entities) {
+        return battleWorldContainer.createBattle(entities);
     }
 }

@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventoryHandle;
-import io.github.stuff_stuffs.tbcexv3core.impl.util.CodecUtil;
+import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 
 public interface AbstractBattleParticipantInventoryHandle extends BattleParticipantInventoryHandle {
     long getKey();

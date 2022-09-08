@@ -3,16 +3,26 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.DataResult;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialParticipantJoinBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.jetbrains.annotations.Nullable;
@@ -29,13 +39,17 @@ public class ServerBattleWorldContainer {
     private static final long TIMEOUT_TICK_DIFF = 6000;
     private final Map<UUID, Battle> battles;
     private final Object2LongMap<UUID> lastAccessTime;
+    private final Random random;
+    private final RegistryKey<World> worldKey;
     private final Path directory;
     private long tickCount;
 
-    public ServerBattleWorldContainer(final Path directory) {
+    public ServerBattleWorldContainer(final RegistryKey<World> worldKey, final Path directory) {
+        this.worldKey = worldKey;
         battles = new Object2ReferenceOpenHashMap<>();
         lastAccessTime = new Object2LongOpenHashMap<>();
         this.directory = directory;
+        random = Random.createLocal();
     }
 
     public Battle getBattle(final UUID uuid) {
@@ -68,6 +82,38 @@ public class ServerBattleWorldContainer {
                 lastAccessTime.removeLong(uuid);
             }
         }
+    }
+
+    public BattleHandle createBattle(final Set<BattleEntity> entities) {
+        for (final BattleEntity entity : entities) {
+            if (!(entity instanceof Entity regularEntity)) {
+                throw new TBCExException("Battle entity not also instance of entity!");
+            } else if (regularEntity.isRemoved()) {
+                throw new TBCExException("Tried to add a removed entity to a battle");
+            }
+        }
+        final BattleHandle handle = BattleHandle.of(worldKey, findUnused());
+        final Battle battle = new BattleImpl(handle, BattleStateMode.SERVER);
+        battles.put(handle.getUuid(), battle);
+        for (final BattleEntity entity : entities) {
+            final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid());
+            entity.buildParticipantState(builder);
+            final BattleParticipantStateBuilder.Built built = builder.build();
+            if (entity instanceof Entity regularEntity) {
+                built.onJoin(regularEntity);
+            }
+            final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);
+            battle.pushAction(joinBattleAction);
+        }
+        return handle;
+    }
+
+    private UUID findUnused() {
+        UUID uuid;
+        do {
+            uuid = new UUID(random.nextLong(), random.nextLong());
+        } while (!battles.containsKey(uuid) && !Files.exists(directory.resolve(toFileName(uuid))));
+        return uuid;
     }
 
     private boolean saveBattle(final UUID uuid, final Battle battle) {

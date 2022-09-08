@@ -48,7 +48,7 @@ public class ClientBattleWorldContainer {
         if (battles.containsKey(update.handle().getUuid())) {
             battles.get(update.handle().getUuid()).update(update);
         } else if (update.offset() == 0) {
-            final ClientBattleImpl battle = new ClientBattleImpl(new BattleImpl(BattleStateMode.CLIENT));
+            final ClientBattleImpl battle = new ClientBattleImpl(new BattleImpl(update.handle(), BattleStateMode.CLIENT));
             battle.update(update);
             battles.put(update.handle().getUuid(), battle);
         }

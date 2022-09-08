@@ -9,6 +9,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentMap;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
@@ -16,6 +19,7 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.Abst
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public class BattleParticipantStateImpl implements AbstractBattleParticipantState {
@@ -24,11 +28,13 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     private final Map<BattleParticipantEffectType<?, ?>, BattleParticipantEffect> effects;
     private final AbstractBattleParticipantInventory inventory;
     private final BattleParticipantStatMap statMap;
+    private final BattleEntityComponentMap componentMap;
     private BattleParticipantHandle handle;
     private BattleState battleState;
     private BattleParticipantStatePhase phase;
 
-    public BattleParticipantStateImpl(final UUID uuid) {
+    public BattleParticipantStateImpl(final UUID uuid, final BattleEntityComponentMap componentMap) {
+        this.componentMap = componentMap;
         final EventMap.Builder builder = EventMap.Builder.create();
         BattleParticipantState.BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT.invoker().addEvents(builder);
         events = builder.build();
@@ -116,6 +122,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     public BattleParticipantHandle getHandle() {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, false);
         return handle;
+    }
+
+    @Override
+    public <T extends BattleEntityComponent> Optional<T> getEntityComponent(final BattleEntityComponentType<T> componentType) {
+        return componentMap.get(componentType);
     }
 
     @Override

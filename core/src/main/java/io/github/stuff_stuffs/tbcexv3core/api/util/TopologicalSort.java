@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3core.impl.util;
+package io.github.stuff_stuffs.tbcexv3core.api.util;
 
 import it.unimi.dsi.fastutil.ints.IntArrayFIFOQueue;
 import it.unimi.dsi.fastutil.ints.IntHeapPriorityQueue;

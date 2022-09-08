@@ -6,9 +6,12 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventoryView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMapView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMapView;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @ApiStatus.NonExtendable
@@ -28,4 +31,6 @@ public interface BattleParticipantStateView {
     BattleParticipantStatePhase getPhase();
 
     BattleParticipantHandle getHandle();
+
+    <T extends BattleEntityComponent> Optional<T> getEntityComponent(BattleEntityComponentType<T> componentType);
 }

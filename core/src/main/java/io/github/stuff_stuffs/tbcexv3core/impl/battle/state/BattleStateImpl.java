@@ -8,6 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
@@ -176,6 +177,24 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().preBattleParticipantJoin(participant, tracer)) {
             participantStates.put(handle, (AbstractBattleParticipantState) participant);
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeParticipant(final BattleParticipantHandle handle, final BattleParticipantRemovalReason reason, final Tracer<ActionTrace> tracer) {
+        if (!participantStates.containsKey(handle)) {
+            throw new IllegalArgumentException("Tried to remove a non-existent battle participant!");
+        }
+        if (getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, this, reason, tracer)) {
+            participantStates.remove(handle);
+            getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(handle, this, reason, tracer);
+            if (participantStates.size() == 0) {
+                getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_END_EVENT).getInvoker().preBattleEnd(this, tracer);
+                this.phase = BattleStatePhase.FINISHED;
+                getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).getInvoker().postBattleEnd(this, tracer);
+            }
             return true;
         }
         return false;

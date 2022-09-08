@@ -20,19 +20,16 @@ public final class BattleUpdateReceiver {
         ClientPlayNetworking.registerGlobalReceiver(BattleUpdateSender.CHANNEL, BattleUpdateReceiver::receive);
     }
 
-    private static void receive(MinecraftClient client, ClientPlayNetworkHandler handler, PacketByteBuf buf, PacketSender sender) {
-        int count = buf.readVarInt();
-        List<BattleUpdate> updates = new ArrayList<>(count);
+    private static void receive(final MinecraftClient client, final ClientPlayNetworkHandler handler, final PacketByteBuf buf, final PacketSender sender) {
+        final int count = buf.readVarInt();
+        final List<BattleUpdate> updates = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             updates.add(buf.decode(BattleUpdate.CODEC));
         }
-        client.execute(new Runnable() {
-            @Override
-            public void run() {
-                for (BattleUpdate update : updates) {
-                    if(client.world!=null && client.world.getRegistryKey().equals(update.handle().getWorldKey())) {
-                        ((ClientBattleWorld)client.world).update(update);
-                    }
+        client.execute(() -> {
+            for (final BattleUpdate update : updates) {
+                if (client.world != null && client.world.getRegistryKey().equals(update.handle().getWorldKey())) {
+                    ((ClientBattleWorld) client.world).update(update);
                 }
             }
         });

@@ -34,5 +34,4 @@ public final class BackgroundWidget<T> extends AbstractSingleChildWidget<T> {
             renderer.render(widgetContext.getData(), context, rect);
         }
     }
-
 }

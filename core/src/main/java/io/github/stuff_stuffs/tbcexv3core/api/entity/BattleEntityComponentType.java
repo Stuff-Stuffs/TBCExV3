@@ -4,12 +4,14 @@ import com.mojang.serialization.*;
 import io.github.stuff_stuffs.tbcexv3core.impl.entity.BattleEntityComponentTypeImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.registry.SimpleRegistry;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Set;
 import java.util.function.BinaryOperator;
 
 public interface BattleEntityComponentType<T extends BattleEntityComponent> {
@@ -19,6 +21,10 @@ public interface BattleEntityComponentType<T extends BattleEntityComponent> {
     <K> DataResult<T> decode(DynamicOps<K> ops, K encoded);
 
     <K> DataResult<K> encode(DynamicOps<K> ops, BattleEntityComponent item);
+
+    Set<Identifier> happensBefore();
+
+    Set<Identifier> happensAfter();
 
     T combine(T first, T second);
 
@@ -31,11 +37,11 @@ public interface BattleEntityComponentType<T extends BattleEntityComponent> {
         return null;
     }
 
-    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Codec<T> codec, final BinaryOperator<T> combiner) {
-        return of(codec, codec, combiner);
+    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Codec<T> codec, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
+        return of(codec, codec, combiner, happenBefore, happensAfter);
     }
 
-    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Encoder<T> encoder, final Decoder<T> decoder, final BinaryOperator<T> combiner) {
-        return new BattleEntityComponentTypeImpl<>(encoder, decoder, combiner);
+    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Encoder<T> encoder, final Decoder<T> decoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
+        return new BattleEntityComponentTypeImpl<>(encoder, decoder, combiner, happenBefore, happensAfter);
     }
 }

@@ -7,20 +7,26 @@ import com.mojang.serialization.Encoder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.RegistryEntry;
 
+import java.util.Set;
 import java.util.function.BinaryOperator;
 
 public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> implements BattleEntityComponentType<T> {
     private final Encoder<T> encoder;
     private final Decoder<T> decoder;
     private final BinaryOperator<T> combiner;
+    private final Set<Identifier> happenBefore;
+    private final Set<Identifier> happensAfter;
     private final RegistryEntry.Reference<BattleEntityComponentType<?>> reference;
 
-    public BattleEntityComponentTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final BinaryOperator<T> combiner) {
+    public BattleEntityComponentTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
         this.encoder = encoder;
         this.decoder = decoder;
         this.combiner = combiner;
+        this.happenBefore = Set.copyOf(happenBefore);
+        this.happensAfter = Set.copyOf(happensAfter);
         this.reference = BattleEntityComponentType.REGISTRY.createEntry(this);
     }
 
@@ -35,6 +41,16 @@ public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> impl
             throw new TBCExException("Type mismatch!");
         }
         return encoder.encodeStart(ops, (T) component);
+    }
+
+    @Override
+    public Set<Identifier> happensBefore() {
+        return happenBefore;
+    }
+
+    @Override
+    public Set<Identifier> happensAfter() {
+        return happensAfter;
     }
 
     @Override

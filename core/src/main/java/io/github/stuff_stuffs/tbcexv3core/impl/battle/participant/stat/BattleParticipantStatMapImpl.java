@@ -3,8 +3,8 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.impl.util.TopologicalSort;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.ArrayList;

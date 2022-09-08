@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
@@ -34,6 +35,8 @@ public interface BattleState extends BattleStateView {
     BattleParticipantState getParticipant(BattleParticipantHandle handle);
 
     boolean addParticipant(BattleParticipantState participant, Optional<BattleParticipantHandle> invitation, Tracer<ActionTrace> tracer);
+
+    boolean removeParticipant(BattleParticipantHandle handle, BattleParticipantRemovalReason reason, Tracer<ActionTrace> tracer);
 
     Event<EventInitializer> BATTLE_EVENT_INITIALIZATION_EVENT = EventFactory.createArrayBacked(EventInitializer.class, eventInitializers -> builder -> {
         for (EventInitializer initializer : eventInitializers) {
