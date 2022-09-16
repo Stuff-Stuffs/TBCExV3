@@ -6,8 +6,13 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMapView;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.Optional;
 
 @ApiStatus.NonExtendable
 public interface BattleStateView {
@@ -19,13 +24,19 @@ public interface BattleStateView {
 
     boolean hasEffect(BattleEffectType<?, ?> type);
 
-    <View extends BattleEffect> View getEffectView(BattleEffectType<View, ?> type);
+    <View extends BattleEffect> Optional<View> getEffectView(BattleEffectType<View, ?> type);
 
     BattleBounds getBattleBounds();
 
     Iterable<BattleParticipantHandle> getParticipants();
 
-    BattleParticipantStateView getParticipant(BattleParticipantHandle handle);
+    BattleParticipantStateView getParticipantByHandle(BattleParticipantHandle handle);
+
+    Optional<BattleParticipantTeam> getTeamById(Identifier id);
+
+    BattleParticipantTeamRelation getTeamRelation(BattleParticipantTeam first, BattleParticipantTeam second);
+
+    Iterable<BattleParticipantHandle> getParticipantsByTeam(BattleParticipantTeam team);
 
     BattleHandle getHandle();
 }

@@ -1,12 +1,14 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.*;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.world.ServerBattleWorldContainer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
@@ -24,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -61,7 +63,7 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
     }
 
     @Override
-    public BattleHandle createBattle(final Set<BattleEntity> entities) {
-        return battleWorldContainer.createBattle(entities);
+    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
+        return battleWorldContainer.createBattle(entities, teamSetupAction);
     }
 }

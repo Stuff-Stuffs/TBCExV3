@@ -6,6 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.impl.entity.BattleParticipantStateBuilderImpl;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.UUID;
 public interface BattleParticipantStateBuilder {
     void addComponent(BattleEntityComponent component);
 
-    Built build();
+    Built build(Identifier team);
 
     static BattleParticipantStateBuilder create(final UUID uuid) {
         return new BattleParticipantStateBuilderImpl(uuid);
@@ -24,6 +25,8 @@ public interface BattleParticipantStateBuilder {
     @ApiStatus.NonExtendable
     interface Built {
         UUID getUuid();
+
+        Identifier getTeam();
 
         List<BattleEntityComponent> getComponentList();
 

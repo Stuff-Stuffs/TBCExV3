@@ -38,9 +38,9 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
     }
 
     @Override
-    public Built build() {
+    public Built build(final Identifier team) {
         final BattleEntityComponent[] array = components.values().toArray(BattleEntityComponent[]::new);
-        return new BuiltImpl(uuid, Arrays.asList(array));
+        return new BuiltImpl(uuid, Arrays.asList(array), team);
     }
 
     private <T extends BattleEntityComponent> T combine(final BattleEntityComponent first, final BattleEntityComponent second, final BattleEntityComponentType<T> type) {
@@ -52,11 +52,11 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
         return type.combine(firstCasted, secondCasted);
     }
 
-    public record BuiltImpl(UUID uuid, List<BattleEntityComponent> components) implements Built {
-        public static final Codec<Built> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.CODEC).fieldOf("components").forGetter(Built::getComponentList)).apply(instance, BuiltImpl::new));
-        public static final Codec<Built> NETWORK_CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid)).apply(instance, i -> new BuiltImpl(i, List.of())));
+    public record BuiltImpl(UUID uuid, List<BattleEntityComponent> components, Identifier team) implements Built {
+        public static final Codec<Built> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.CODEC).fieldOf("components").forGetter(Built::getComponentList), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
+        public static final Codec<Built> NETWORK_CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, (i, j) -> new BuiltImpl(i, List.of(), j)));
 
-        public BuiltImpl(final UUID uuid, final List<BattleEntityComponent> components) {
+        public BuiltImpl(final UUID uuid, final List<BattleEntityComponent> components, final Identifier team) {
             this.uuid = uuid;
             this.components = TopologicalSort.sort(components, (parent, child, items) -> {
                 final BattleEntityComponent parentComponent = items.get(parent);
@@ -65,11 +65,17 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
                 final Identifier childId = BattleEntityComponentType.REGISTRY.getId(childComponent.getType());
                 return childComponent.getType().happensAfter().contains(parentId) || parentComponent.getType().happensBefore().contains(childId);
             });
+            this.team = team;
         }
 
         @Override
         public UUID getUuid() {
             return uuid;
+        }
+
+        @Override
+        public Identifier getTeam() {
+            return team;
         }
 
         @Override

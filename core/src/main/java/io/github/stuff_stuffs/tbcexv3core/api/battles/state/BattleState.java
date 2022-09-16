@@ -7,11 +7,14 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.BattleStateImpl;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Optional;
@@ -23,7 +26,7 @@ public interface BattleState extends BattleStateView {
     @Override
     EventMap getEventMap();
 
-    <View extends BattleEffect, Effect extends View> Effect getEffect(BattleEffectType<View, Effect> type);
+    <View extends BattleEffect, Effect extends View> Optional<Effect> getEffect(BattleEffectType<View, Effect> type);
 
     void removeEffect(BattleEffectType<?, ?> type, Tracer<ActionTrace> tracer);
 
@@ -32,11 +35,17 @@ public interface BattleState extends BattleStateView {
     boolean setBattleBounds(BattleBounds bounds, Tracer<ActionTrace> tracer);
 
     @Override
-    BattleParticipantState getParticipant(BattleParticipantHandle handle);
+    BattleParticipantState getParticipantByHandle(BattleParticipantHandle handle);
 
-    boolean addParticipant(BattleParticipantState participant, Optional<BattleParticipantHandle> invitation, Tracer<ActionTrace> tracer);
+    Optional<BattleParticipantHandle> addParticipant(BattleParticipantState participant, BattleParticipantTeam team, Optional<BattleParticipantHandle> invitation, Tracer<ActionTrace> tracer);
 
     boolean removeParticipant(BattleParticipantHandle handle, BattleParticipantRemovalReason reason, Tracer<ActionTrace> tracer);
+
+    boolean setTeamRelation(BattleParticipantTeam first, BattleParticipantTeam second, BattleParticipantTeamRelation relation, Tracer<ActionTrace> tracer);
+
+    BattleParticipantTeam addTeam(Identifier identifier);
+
+    boolean removeTeam(BattleParticipantTeam team);
 
     Event<EventInitializer> BATTLE_EVENT_INITIALIZATION_EVENT = EventFactory.createArrayBacked(EventInitializer.class, eventInitializers -> builder -> {
         for (EventInitializer initializer : eventInitializers) {

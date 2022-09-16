@@ -3,6 +3,8 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.*;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PostChangeTeamRelationEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PreChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.CoreBattleParticipantEffects;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostEquipBattleParticipantEquipmentEvent;
@@ -55,6 +57,9 @@ public class TBCExV3Core implements ModInitializer {
 
             builder.unsorted(CoreBattleEvents.PRE_BATTLE_END_EVENT, PreBattleEndEvent::convert, PreBattleEndEvent::invoker);
             builder.unsorted(CoreBattleEvents.POST_BATTLE_END_EVENT, PostBattleEndEvent::convert, PostBattleEndEvent::invoker);
+
+            builder.unsorted(CoreBattleEvents.PRE_TEAM_RELATION_CHANGE_EVENT, PreChangeTeamRelationEvent::convert, PreChangeTeamRelationEvent::invoker);
+            builder.unsorted(CoreBattleEvents.POST_TEAM_RELATION_CHANGE_EVENT, PostChangeTeamRelationEvent::convert, PostChangeTeamRelationEvent::invoker);
         });
         BattleParticipantState.BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT.register(builder -> {
             builder.unsorted(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT, PreGiveBattleParticipantItemEvent::convert, PreGiveBattleParticipantItemEvent::invoker);

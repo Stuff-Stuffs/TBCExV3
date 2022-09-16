@@ -22,6 +22,9 @@ public final class CoreBattleParticipantEvents {
     public static final EventKey<PreUnequipBattleParticipantEquipmentEvent.View, PreUnequipBattleParticipantEquipmentEvent> PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT = EventKey.create(TBCExV3Core.createId("pre_unequip_participant_equipment"), PreUnequipBattleParticipantEquipmentEvent.View.class, PreUnequipBattleParticipantEquipmentEvent.class);
     public static final EventKey<PostUnequipBattleParticipantEquipmentEvent.View, PostUnequipBattleParticipantEquipmentEvent> POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT = EventKey.create(TBCExV3Core.createId("post_unequip_participant_equipment"), PostUnequipBattleParticipantEquipmentEvent.View.class, PostUnequipBattleParticipantEquipmentEvent.class);
 
+    public static final EventKey<PreBattleParticipantSetTeamEvent.View, PreBattleParticipantSetTeamEvent> PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT = EventKey.create(TBCExV3Core.createId("pre_participant_set_team"), PreBattleParticipantSetTeamEvent.View.class, PreBattleParticipantSetTeamEvent.class);
+    public static final EventKey<PostBattleParticipantSetTeamEvent.View, PostBattleParticipantSetTeamEvent> POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT = EventKey.create(TBCExV3Core.createId("post_participant_set_team"), PostBattleParticipantSetTeamEvent.View.class, PostBattleParticipantSetTeamEvent.class);
+
     private CoreBattleParticipantEvents() {
     }
 }

@@ -1,5 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.event;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PostChangeTeamRelationEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PreChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventKey;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 
@@ -12,6 +14,8 @@ public final class CoreBattleEvents {
     public static final EventKey<PostBattleParticipantLeaveEvent.View, PostBattleParticipantLeaveEvent> POST_BATTLE_PARTICIPANT_LEAVE_EVENT = EventKey.create(TBCExV3Core.createId("post_battle_participant_leave"), PostBattleParticipantLeaveEvent.View.class, PostBattleParticipantLeaveEvent.class);
     public static final EventKey<PreBattleEndEvent.View, PreBattleEndEvent> PRE_BATTLE_END_EVENT = EventKey.create(TBCExV3Core.createId("pre_end"), PreBattleEndEvent.View.class, PreBattleEndEvent.class);
     public static final EventKey<PostBattleEndEvent.View, PostBattleEndEvent> POST_BATTLE_END_EVENT = EventKey.create(TBCExV3Core.createId("post_end"), PostBattleEndEvent.View.class, PostBattleEndEvent.class);
+    public static final EventKey<PreChangeTeamRelationEvent.View, PreChangeTeamRelationEvent> PRE_TEAM_RELATION_CHANGE_EVENT = EventKey.create(TBCExV3Core.createId("pre_team_relation_change"), PreChangeTeamRelationEvent.View.class, PreChangeTeamRelationEvent.class);
+    public static final EventKey<PostChangeTeamRelationEvent.View, PostChangeTeamRelationEvent> POST_TEAM_RELATION_CHANGE_EVENT = EventKey.create(TBCExV3Core.createId("post_team_relation_change"), PostChangeTeamRelationEvent.View.class, PostChangeTeamRelationEvent.class);
 
     private CoreBattleEvents() {
     }

@@ -1,6 +1,5 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.state;
 
-import com.google.common.collect.Iterables;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
@@ -11,6 +10,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
@@ -19,6 +20,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.AbstractBattleParticipantState;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+import net.minecraft.util.Identifier;
 
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +28,7 @@ import java.util.Optional;
 public class BattleStateImpl implements AbstractBattleStateImpl {
     private final EventMap events;
     private final Map<BattleEffectType<?, ?>, BattleEffect> effects;
-    private final Map<BattleParticipantHandle, AbstractBattleParticipantState> participantStates;
+    private final ParticipantContainer participantContainer;
     private final BattleStateMode mode;
     private BattleHandle handle;
     private BattleBounds bounds;
@@ -37,7 +39,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         final EventMap.Builder builder = EventMap.Builder.create();
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.invoker().addEvents(builder);
         events = builder.build();
-        participantStates = new Reference2ReferenceOpenHashMap<>();
+        participantContainer = new ParticipantContainer(events);
         effects = new Reference2ReferenceOpenHashMap<>();
         bounds = BattleBounds.ZERO_ORIGIN;
         phase = BattleStatePhase.SETUP;
@@ -48,6 +50,15 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         checkPhase(BattleStatePhase.SETUP, true);
         this.handle = handle;
         phase = BattleStatePhase.INITIALIZATION;
+    }
+
+    @Override
+    public void setTeam(final BattleParticipantHandle handle, final BattleParticipantTeam team) {
+        checkPhase(BattleStatePhase.SETUP, false);
+        if (!team.getOwner().equals(this.handle)) {
+            throw new TBCExException("Team owner mismatch!");
+        }
+        participantContainer.setTeam(handle, team);
     }
 
     @Override
@@ -79,13 +90,10 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
-    public <View extends BattleEffect> View getEffectView(final BattleEffectType<View, ?> type) {
+    public <View extends BattleEffect> Optional<View> getEffectView(final BattleEffectType<View, ?> type) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
         final BattleEffect effect = effects.get(type);
-        if (effect == null) {
-            throw new TBCExException();
-        }
-        return (View) effect;
+        return Optional.ofNullable((View) effect);
     }
 
     @Override
@@ -97,17 +105,14 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     @Override
     public Iterable<BattleParticipantHandle> getParticipants() {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
-        return Iterables.unmodifiableIterable(participantStates.keySet());
+        return participantContainer.getParticipants();
     }
 
     @Override
-    public <View extends BattleEffect, Effect extends View> Effect getEffect(final BattleEffectType<View, Effect> type) {
+    public <View extends BattleEffect, Effect extends View> Optional<Effect> getEffect(final BattleEffectType<View, Effect> type) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
         final BattleEffect effect = effects.get(type);
-        if (effect == null) {
-            throw new TBCExException();
-        }
-        return (Effect) effect;
+        return Optional.ofNullable((Effect) effect);
     }
 
     @Override
@@ -142,13 +147,24 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
-    public BattleParticipantState getParticipant(final BattleParticipantHandle handle) {
+    public BattleParticipantState getParticipantByHandle(final BattleParticipantHandle handle) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
-        final BattleParticipantState state = participantStates.get(handle);
-        if (state == null) {
-            throw new TBCExException();
-        }
-        return state;
+        return participantContainer.getParticipantByHandle(handle);
+    }
+
+    @Override
+    public Optional<BattleParticipantTeam> getTeamById(final Identifier id) {
+        return participantContainer.getTeamById(id);
+    }
+
+    @Override
+    public BattleParticipantTeamRelation getTeamRelation(final BattleParticipantTeam first, final BattleParticipantTeam second) {
+        return participantContainer.getTeamRelation(first, second);
+    }
+
+    @Override
+    public Iterable<BattleParticipantHandle> getParticipantsByTeam(final BattleParticipantTeam team) {
+        return participantContainer.getParticipantsByTeam(team);
     }
 
     @Override
@@ -157,16 +173,15 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
-    public boolean addParticipant(final BattleParticipantState participant, final Optional<BattleParticipantHandle> invitation, final Tracer<ActionTrace> tracer) {
+    public Optional<BattleParticipantHandle> addParticipant(final BattleParticipantState participant, final BattleParticipantTeam team, final Optional<BattleParticipantHandle> invitation, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
         if (participant.getPhase().getOrder() > BattleParticipantStatePhase.SETUP.getOrder()) {
             throw new TBCExException();
         }
-        if (!(participant instanceof AbstractBattleParticipantState)) {
-            throw new TBCExException();
+        if (!team.getOwner().equals(this.handle)) {
+            throw new TBCExException("Team owner mismatch!");
         }
-        final BattleParticipantHandle handle = BattleParticipantHandle.of(participant.getUuid(), this.handle);
-        if (participantStates.containsKey(handle)) {
+        if (!(participant instanceof AbstractBattleParticipantState)) {
             throw new TBCExException();
         }
         if (invitation.isEmpty()) {
@@ -174,30 +189,47 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
                 throw new TBCExException();
             }
         }
-        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().preBattleParticipantJoin(participant, tracer)) {
-            participantStates.put(handle, (AbstractBattleParticipantState) participant);
-            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
-            return true;
-        }
-        return false;
+        final Optional<BattleParticipantHandle> handle = participantContainer.addParticipant(participant, team, tracer, this.handle);
+        handle.ifPresent(battleParticipantHandle -> participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this));
+        return handle;
     }
 
     @Override
     public boolean removeParticipant(final BattleParticipantHandle handle, final BattleParticipantRemovalReason reason, final Tracer<ActionTrace> tracer) {
-        if (!participantStates.containsKey(handle)) {
-            throw new IllegalArgumentException("Tried to remove a non-existent battle participant!");
-        }
-        if (getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, this, reason, tracer)) {
-            participantStates.remove(handle);
-            getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(handle, this, reason, tracer);
-            if (participantStates.size() == 0) {
+        checkPhase(BattleStatePhase.FIGHT, false);
+        final boolean removed = participantContainer.removeParticipant(handle, reason, tracer, this);
+        if (removed) {
+            if (participantContainer.canEnd()) {
                 getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_END_EVENT).getInvoker().preBattleEnd(this, tracer);
                 this.phase = BattleStatePhase.FINISHED;
                 getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).getInvoker().postBattleEnd(this, tracer);
             }
-            return true;
         }
-        return false;
+        return removed;
+    }
+
+    @Override
+    public boolean setTeamRelation(final BattleParticipantTeam first, final BattleParticipantTeam second, final BattleParticipantTeamRelation relation, final Tracer<ActionTrace> tracer) {
+        if (first.equals(second)) {
+            throw new IllegalArgumentException("Cannot set the relation of a team to itself!");
+        }
+        if (!first.getOwner().equals(this.handle) || !second.getOwner().equals(this.handle)) {
+            throw new IllegalArgumentException("Tried to set a team relation from a different battle!");
+        }
+        return participantContainer.setTeamRelation(first, second, relation, tracer, this);
+    }
+
+    @Override
+    public BattleParticipantTeam addTeam(final Identifier identifier) {
+        return participantContainer.addTeam(identifier, this.handle);
+    }
+
+    @Override
+    public boolean removeTeam(final BattleParticipantTeam team) {
+        if (!team.getOwner().equals(this.handle)) {
+            throw new TBCExException("Team owner mismatch!");
+        }
+        return participantContainer.removeTeam(team);
     }
 
     private void checkPhase(final BattleStatePhase phase, final boolean exact) {

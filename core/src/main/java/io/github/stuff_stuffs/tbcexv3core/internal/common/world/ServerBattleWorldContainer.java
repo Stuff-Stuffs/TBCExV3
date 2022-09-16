@@ -5,6 +5,7 @@ import com.mojang.serialization.DataResult;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialParticipantJoinBattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
@@ -20,6 +21,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -84,8 +86,8 @@ public class ServerBattleWorldContainer {
         }
     }
 
-    public BattleHandle createBattle(final Set<BattleEntity> entities) {
-        for (final BattleEntity entity : entities) {
+    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
+        for (final BattleEntity entity : entities.keySet()) {
             if (!(entity instanceof Entity regularEntity)) {
                 throw new TBCExException("Battle entity not also instance of entity!");
             } else if (regularEntity.isRemoved()) {
@@ -95,11 +97,13 @@ public class ServerBattleWorldContainer {
         final BattleHandle handle = BattleHandle.of(worldKey, findUnused());
         final Battle battle = new BattleImpl(handle, BattleStateMode.SERVER);
         battles.put(handle.getUuid(), battle);
-        for (final BattleEntity entity : entities) {
+        battle.pushAction(teamSetupAction);
+        for (final Map.Entry<BattleEntity, Identifier> entry : entities.entrySet()) {
+            final BattleEntity entity = entry.getKey();
             final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid());
             entity.buildParticipantState(builder);
-            final BattleParticipantStateBuilder.Built built = builder.build();
-            if (entity instanceof Entity regularEntity) {
+            final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
+            if (entry instanceof Entity regularEntity) {
                 built.onJoin(regularEntity);
             }
             final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);

@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
@@ -37,7 +38,8 @@ public class InitialParticipantJoinBattleAction implements BattleAction {
             throw new TBCExException("Wrong phase!");
         }
         final BattleParticipantState participantState = BattleParticipantState.create(built.getUuid(), built.getComponents());
-        if (!state.addParticipant(participantState, Optional.empty(), trace)) {
+        final BattleParticipantTeam team = state.getTeamById(built.getTeam()).orElseThrow(() -> new TBCExException("Tried to join non-existent team!"));
+        if (state.addParticipant(participantState, team, Optional.empty(), trace).isEmpty()) {
             throw new TBCExException("Problem adding participant during initialization!");
         }
         if (participantState.getPhase() != BattleParticipantStatePhase.INITIALIZATION) {
