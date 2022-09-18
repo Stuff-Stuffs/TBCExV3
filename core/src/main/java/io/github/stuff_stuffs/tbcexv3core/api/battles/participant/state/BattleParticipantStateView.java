@@ -5,10 +5,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventoryView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMapView;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMapView;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -34,6 +33,4 @@ public interface BattleParticipantStateView {
     BattleParticipantHandle getHandle();
 
     <T extends BattleEntityComponent> Optional<T> getEntityComponent(BattleEntityComponentType<T> componentType);
-
-    BattleParticipantTeam getTeam();
 }

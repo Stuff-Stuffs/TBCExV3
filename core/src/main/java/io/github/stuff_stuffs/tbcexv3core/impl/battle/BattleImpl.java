@@ -72,6 +72,12 @@ public class BattleImpl implements Battle, BattleView {
         if (tracer.getCurrentStage().getValue() == ROOT_VALUE) {
             TBCExV3Core.LOGGER.error("Pushed action while tracer was not at root");
         }
+        if (mode == BattleStateMode.SERVER && action.getActor().isPresent()) {
+            if (!state.isCurrentTurn(action.getActor().get())) {
+                TBCExV3Core.LOGGER.error("Tried to push an action out of turn!");
+                return;
+            }
+        }
         action.apply(state, tracer);
         actions.push(action);
     }

@@ -9,18 +9,18 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBat
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.registry.RegistryKey;
@@ -37,10 +37,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 
+//TODO URGENT persistent delayed components and entity battle storage
 public class ServerBattleWorldContainer {
     private static final long TIMEOUT_TICK_DIFF = 6000;
     private final Map<UUID, Battle> battles;
     private final Object2LongMap<UUID> lastAccessTime;
+    private final Map<UUID, DelayedComponents> componentsToApply;
     private final Random random;
     private final RegistryKey<World> worldKey;
     private final Path directory;
@@ -50,6 +52,7 @@ public class ServerBattleWorldContainer {
         this.worldKey = worldKey;
         battles = new Object2ReferenceOpenHashMap<>();
         lastAccessTime = new Object2LongOpenHashMap<>();
+        componentsToApply = new Object2ReferenceOpenHashMap<>();
         this.directory = directory;
         random = Random.createLocal();
     }
@@ -88,9 +91,7 @@ public class ServerBattleWorldContainer {
 
     public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
         for (final BattleEntity entity : entities.keySet()) {
-            if (!(entity instanceof Entity regularEntity)) {
-                throw new TBCExException("Battle entity not also instance of entity!");
-            } else if (regularEntity.isRemoved()) {
+            if (entity instanceof Entity regularEntity && regularEntity.isRemoved()) {
                 throw new TBCExException("Tried to add a removed entity to a battle");
             }
         }
@@ -104,12 +105,28 @@ public class ServerBattleWorldContainer {
             entity.buildParticipantState(builder);
             final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
             if (entry instanceof Entity regularEntity) {
-                built.onJoin(regularEntity);
+                built.onJoin(handle, regularEntity);
             }
             final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);
             battle.pushAction(joinBattleAction);
         }
         return handle;
+    }
+
+    public void pushDelayedComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {
+        componentsToApply.computeIfAbsent(playerUuid, i -> new DelayedComponents()).addDelayedComponent(handle.getUuid(), component);
+    }
+
+    public boolean delayedComponent(final UUID uuid, final ServerWorld world) {
+        final DelayedComponents delayedComponents = componentsToApply.get(uuid);
+        if (delayedComponents != null) {
+            if (delayedComponents.apply(this, world)) {
+                componentsToApply.remove(uuid);
+                return true;
+            }
+            return false;
+        }
+        return true;
     }
 
     private UUID findUnused() {
@@ -142,7 +159,7 @@ public class ServerBattleWorldContainer {
         try (final BufferedReader reader = Files.newBufferedReader(directory.resolve(toFileName(uuid)), StandardCharsets.UTF_8)) {
             try (final InputStream stream = new ReaderInputStream(reader, StandardCharsets.UTF_8)) {
                 final NbtCompound compound = NbtIo.readCompressed(stream);
-                final DataResult<Battle> dataResult = Battle.decoder().decode(NbtOps.INSTANCE, compound).map(Pair::getFirst).map(f -> f.apply(BattleStateMode.SERVER));
+                final DataResult<Battle> dataResult = Battle.decoder().decode(NbtOps.INSTANCE, compound).map(Pair::getFirst).map(f -> f.apply(BattleHandle.of(worldKey, uuid), BattleStateMode.SERVER));
                 final Optional<Battle> battle = dataResult.resultOrPartial(s -> TBCExV3Core.LOGGER.error("Error while loading battle: " + s));
                 return battle.orElse(null);
             }
@@ -157,10 +174,53 @@ public class ServerBattleWorldContainer {
         return Files.exists(path) && Files.isRegularFile(path);
     }
 
+    public void syncPlayer(final ServerPlayerEntity player) {
+
+    }
+
     private static String toFileName(final UUID uuid) {
         final ByteBuffer buffer = ByteBuffer.wrap(new byte[16]);
         buffer.putLong(uuid.getLeastSignificantBits());
         buffer.putLong(uuid.getMostSignificantBits());
         return Base64.getUrlEncoder().encodeToString(buffer.array()) + ".tbcex_battle";
+    }
+
+    private static final class DelayedComponents {
+        private static final int MAX_ATTEMPTS = 32;
+        private final Map<UUID, List<BattleEntityComponent>> components;
+        private final Object2IntMap<UUID> attempts;
+
+        private DelayedComponents() {
+            components = new Object2ReferenceOpenHashMap<>();
+            attempts = new Object2IntOpenHashMap<>();
+        }
+
+        public void addDelayedComponent(final UUID battleUuid, final BattleEntityComponent component) {
+            components.computeIfAbsent(battleUuid, i -> new ArrayList<>()).add(component);
+        }
+
+        public boolean apply(final ServerBattleWorldContainer container, final ServerWorld world) {
+            final Set<UUID> toRemove = new ObjectOpenHashSet<>();
+            for (final Map.Entry<UUID, List<BattleEntityComponent>> entry : components.entrySet()) {
+                final UUID key = entry.getKey();
+                final Battle battle = container.getBattle(key);
+                if (battle == null) {
+                    if (attempts.put(key, attempts.getOrDefault(key, 0) + 1) >= MAX_ATTEMPTS) {
+                        toRemove.add(key);
+                    }
+                } else {
+                    for (final BattleEntityComponent component : entry.getValue()) {
+                        component.onLeave(battle, world);
+                    }
+                    toRemove.add(key);
+                }
+            }
+            if (!toRemove.isEmpty()) {
+                for (final UUID uuid : toRemove) {
+                    components.remove(uuid);
+                }
+            }
+            return components.isEmpty();
+        }
     }
 }

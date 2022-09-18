@@ -15,6 +15,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
@@ -25,11 +26,13 @@ import net.minecraft.util.Identifier;
 import java.util.Map;
 import java.util.Optional;
 
+//TODO phase range check
 public class BattleStateImpl implements AbstractBattleStateImpl {
     private final EventMap events;
     private final Map<BattleEffectType<?, ?>, BattleEffect> effects;
     private final ParticipantContainer participantContainer;
     private final BattleStateMode mode;
+    private TurnSelector turnSelector = TurnSelector.any();
     private BattleHandle handle;
     private BattleBounds bounds;
     private BattleStatePhase phase;
@@ -50,6 +53,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         checkPhase(BattleStatePhase.SETUP, true);
         this.handle = handle;
         phase = BattleStatePhase.INITIALIZATION;
+        turnSelector.init(this);
     }
 
     @Override
@@ -59,6 +63,12 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
             throw new TBCExException("Team owner mismatch!");
         }
         participantContainer.setTeam(handle, team);
+    }
+
+    @Override
+    public void setTurnSelector(final TurnSelector turnSelector) {
+        checkPhase(BattleStatePhase.INITIALIZATION, true);
+        this.turnSelector = turnSelector;
     }
 
     @Override
@@ -168,8 +178,22 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
+    public BattleParticipantTeam getTeamByParticipant(final BattleParticipantHandle handle) {
+        checkPhase(BattleStatePhase.INITIALIZATION, false);
+        if (!handle.getParent().equals(this.handle)) {
+            throw new TBCExException("Tried to get participant from another battle!");
+        }
+        return participantContainer.getTeam(handle);
+    }
+
+    @Override
     public BattleHandle getHandle() {
         return handle;
+    }
+
+    @Override
+    public boolean isCurrentTurn(final BattleParticipantHandle handle) {
+        return turnSelector.isCurrentTurn(this, handle);
     }
 
     @Override
@@ -233,7 +257,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     private void checkPhase(final BattleStatePhase phase, final boolean exact) {
-        if ((exact && phase != this.phase) || (!exact && this.phase.getOrder() < phase.getOrder())) {
+        if ((exact && phase != this.phase) || (!exact && this.phase.getOrder() <= phase.getOrder())) {
             throw new TBCExException();
         }
     }

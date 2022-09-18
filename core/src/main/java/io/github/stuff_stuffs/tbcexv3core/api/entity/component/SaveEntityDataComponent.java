@@ -1,13 +1,16 @@
-package io.github.stuff_stuffs.tbcexv3core.api.entity;
+package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
@@ -18,20 +21,20 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BinaryOperator;
 
-public class AIControlledBattleEntityComponent implements BattleEntityComponent {
-    public static final Codec<AIControlledBattleEntityComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("id").forGetter(component -> component.uuid), CodecUtil.conversionCodec(NbtOps.INSTANCE).fieldOf("entityData").forGetter(component -> component.entityData)).apply(instance, AIControlledBattleEntityComponent::new));
-    public static final BinaryOperator<AIControlledBattleEntityComponent> COMBINER = (first, second) -> {
+public class SaveEntityDataComponent implements BattleEntityComponent {
+    public static final Codec<SaveEntityDataComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("id").forGetter(component -> component.uuid), CodecUtil.conversionCodec(NbtOps.INSTANCE).fieldOf("entityData").forGetter(component -> component.entityData)).apply(instance, SaveEntityDataComponent::new));
+    public static final BinaryOperator<SaveEntityDataComponent> COMBINER = (first, second) -> {
         throw new UnsupportedOperationException("Cannot combine entity data components!");
     };
     private final UUID uuid;
     private final NbtCompound entityData;
 
-    public AIControlledBattleEntityComponent(final UUID uuid, final NbtCompound entityData) {
+    public SaveEntityDataComponent(final UUID uuid, final NbtCompound entityData) {
         this.uuid = uuid;
         this.entityData = entityData;
     }
 
-    private AIControlledBattleEntityComponent(final UUID uuid, final NbtElement entityData) {
+    private SaveEntityDataComponent(final UUID uuid, final NbtElement entityData) {
         this.uuid = uuid;
         this.entityData = (NbtCompound) entityData;
     }
@@ -49,8 +52,12 @@ public class AIControlledBattleEntityComponent implements BattleEntityComponent 
             if (optionalEntity.isEmpty()) {
                 throw new TBCExException("Error while respawning entity into world!");
             }
-            entity = optionalEntity.get();
-            world.spawnEntity(entity);
+            if (optionalEntity.get().getType() != EntityType.PLAYER) {
+                entity = optionalEntity.get();
+                world.spawnEntity(entity);
+            } else {
+                ((ServerBattleWorld) world).pushDelayedComponent(uuid, view.getState().getHandle(), this);
+            }
         } else {
             final Optional<EntityType<?>> type = EntityType.fromNbt(entityData);
             if (type.isEmpty()) {
@@ -64,8 +71,10 @@ public class AIControlledBattleEntityComponent implements BattleEntityComponent 
     }
 
     @Override
-    public void applyToEntityOnJoin(final Entity entity) {
-        entity.remove(Entity.RemovalReason.DISCARDED);
+    public void applyToEntityOnJoin(final BattleParticipantHandle handle, final Entity entity) {
+        if (!(entity instanceof PlayerEntity)) {
+            entity.remove(Entity.RemovalReason.DISCARDED);
+        }
     }
 
     @Override

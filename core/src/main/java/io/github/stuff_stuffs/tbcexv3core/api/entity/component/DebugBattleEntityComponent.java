@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3core.api.entity;
+package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
@@ -18,7 +18,7 @@ public class DebugBattleEntityComponent implements BattleEntityComponent {
     }
 
     @Override
-    public void onLeave(BattleView view, ServerWorld world) {
+    public void onLeave(final BattleView view, final ServerWorld world) {
         
     }
 

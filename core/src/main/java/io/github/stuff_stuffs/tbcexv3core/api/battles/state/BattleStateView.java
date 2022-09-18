@@ -38,5 +38,9 @@ public interface BattleStateView {
 
     Iterable<BattleParticipantHandle> getParticipantsByTeam(BattleParticipantTeam team);
 
+    BattleParticipantTeam getTeamByParticipant(BattleParticipantHandle handle);
+
     BattleHandle getHandle();
+
+    boolean isCurrentTurn(BattleParticipantHandle handle);
 }

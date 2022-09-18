@@ -1,8 +1,8 @@
 package io.github.stuff_stuffs.tbcexv3_test.common.entity;
 
-import io.github.stuff_stuffs.tbcexv3core.api.entity.AIControlledBattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.SaveEntityDataComponent;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -22,7 +22,7 @@ public class TestEntity extends LivingEntity implements BattleEntity {
     public void buildParticipantState(final BattleParticipantStateBuilder builder) {
         final NbtCompound compound = new NbtCompound();
         writeNbt(compound);
-        builder.addComponent(new AIControlledBattleEntityComponent(getUuid(), compound));
+        builder.addComponent(new SaveEntityDataComponent(getUuid(), compound));
     }
 
     @Override

@@ -1,10 +1,11 @@
-package io.github.stuff_stuffs.tbcexv3core.api.entity;
+package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
@@ -26,7 +27,7 @@ public interface BattleEntityComponent {
 
     void onLeave(BattleView view, ServerWorld world);
 
-    default void applyToEntityOnJoin(final Entity entity) {
+    default void applyToEntityOnJoin(final BattleParticipantHandle handle, final Entity entity) {
     }
 
     BattleEntityComponentType<?> getType();

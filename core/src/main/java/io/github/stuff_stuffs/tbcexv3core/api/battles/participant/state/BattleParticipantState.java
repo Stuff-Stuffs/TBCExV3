@@ -5,9 +5,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentMap;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.BattleParticipantStateImpl;
@@ -37,8 +36,6 @@ public interface BattleParticipantState extends BattleParticipantStateView {
 
     @Override
     BattleState getBattleState();
-
-    boolean setTeam(BattleParticipantTeam team);
 
     Event<EventInitializer> BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT = EventFactory.createArrayBacked(EventInitializer.class, eventInitializers -> builder -> {
         for (EventInitializer initializer : eventInitializers) {

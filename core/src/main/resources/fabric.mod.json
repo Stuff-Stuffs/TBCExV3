@@ -40,6 +40,9 @@
       ],
       "net/minecraft/class_3218": [
         "io/github/stuff_stuffs/tbcexv3core/api/battles/ServerBattleWorld"
+      ],
+      "net/minecraft/class_1657": [
+        "io/github/stuff_stuffs/tbcexv3core/api/entity/TBCExPlayerEntity"
       ]
     }
   }

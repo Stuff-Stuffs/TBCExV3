@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3core.api.entity;
+package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import com.mojang.serialization.*;
 import io.github.stuff_stuffs.tbcexv3core.impl.entity.BattleEntityComponentTypeImpl;

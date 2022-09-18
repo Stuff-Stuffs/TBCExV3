@@ -140,6 +140,10 @@ public class ParticipantContainer {
         teamByHandle.put(handle, team);
     }
 
+    public BattleParticipantTeam getTeam(final BattleParticipantHandle handle) {
+        return teamByHandle.get(handle);
+    }
+
     public BattleParticipantTeam addTeam(final Identifier identifier, final BattleHandle handle) {
         BattleParticipantTeam team = teams.get(identifier);
         if (team != null) {

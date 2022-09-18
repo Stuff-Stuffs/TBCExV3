@@ -1,8 +1,8 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.entity;
 
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentMap;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.Map;

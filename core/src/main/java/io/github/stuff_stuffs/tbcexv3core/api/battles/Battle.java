@@ -8,7 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 @ApiStatus.NonExtendable
 public interface Battle extends BattleView {
@@ -23,7 +23,7 @@ public interface Battle extends BattleView {
         return BattleImpl.CASTED_ENCODER;
     }
 
-    static Decoder<Function<BattleStateMode, Battle>> decoder() {
+    static Decoder<BiFunction<BattleHandle, BattleStateMode, Battle>> decoder() {
         return BattleImpl.CASTED_DECODER;
     }
 }

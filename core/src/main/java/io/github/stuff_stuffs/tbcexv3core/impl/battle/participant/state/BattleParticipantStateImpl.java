@@ -8,11 +8,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.Batt
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentMap;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
@@ -105,12 +104,6 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     }
 
     @Override
-    public boolean setTeam(final BattleParticipantTeam team) {
-        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
-        return false;
-    }
-
-    @Override
     public UUID getUuid() {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         return uuid;
@@ -134,15 +127,10 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     }
 
     @Override
-    public BattleParticipantTeam getTeam() {
-        return null;
-    }
-
-    @Override
     public void setup(final AbstractBattleStateImpl state) {
         checkPhaseExact(BattleParticipantStatePhase.SETUP);
         battleState = state;
-        handle = BattleParticipantHandle.of(getUuid(), state.getHandle());
+        handle = BattleParticipantHandle.of(uuid, state.getHandle());
         inventory.setup(this, handle);
         phase = BattleParticipantStatePhase.INITIALIZATION;
     }

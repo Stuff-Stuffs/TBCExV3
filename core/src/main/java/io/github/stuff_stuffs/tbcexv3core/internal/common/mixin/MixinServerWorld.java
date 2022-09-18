@@ -2,11 +2,15 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.*;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.world.ServerBattleWorldContainer;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.WorldGenerationProgressListener;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.profiler.Profiler;
@@ -27,6 +31,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -65,5 +71,23 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
     @Override
     public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
         return battleWorldContainer.createBattle(entities, teamSetupAction);
+    }
+
+    @Override
+    public void pushDelayedComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {
+        battleWorldContainer.pushDelayedComponent(playerUuid, handle, component);
+    }
+
+    @Inject(method = "tickEntity", at = @At("HEAD"))
+    private void entityTickHook(final Entity entity, final CallbackInfo ci) {
+        if (entity.age == 0 && entity instanceof ServerPlayerEntity player) {
+            battleWorldContainer.syncPlayer(player);
+        }
+        battleWorldContainer.delayedComponent(entity.getUuid(), (ServerWorld) (Object) this);
+    }
+
+    @Override
+    public Set<BattleParticipantHandle> getBattles(final UUID playerUuid) {
+        return battleWorldContainer.getBattles(playerUuid);
     }
 }

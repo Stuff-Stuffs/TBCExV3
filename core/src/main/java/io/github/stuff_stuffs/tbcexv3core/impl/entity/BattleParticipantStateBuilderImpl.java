@@ -2,12 +2,14 @@ package io.github.stuff_stuffs.tbcexv3core.impl.entity;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentMap;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
@@ -109,9 +111,9 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
         }
 
         @Override
-        public void onJoin(final Entity entity) {
+        public void onJoin(final BattleHandle handle, final Entity entity) {
             for (final BattleEntityComponent component : components) {
-                component.applyToEntityOnJoin(entity);
+                component.applyToEntityOnJoin(BattleParticipantHandle.of(entity.getUuid(), handle), entity);
             }
         }
     }
