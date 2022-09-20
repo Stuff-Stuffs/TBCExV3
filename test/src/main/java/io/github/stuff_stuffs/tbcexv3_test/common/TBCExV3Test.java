@@ -2,7 +2,12 @@ package io.github.stuff_stuffs.tbcexv3_test.common;
 
 import com.mojang.brigadier.CommandDispatcher;
 import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntities;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
@@ -11,12 +16,15 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
@@ -41,6 +49,19 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
                 context.getSource().sendError(Text.translatable("tbcex.test.empty_battle_entities"));
                 return 1;
             }
+            final Map<BattleEntity, Identifier> teamMap = new Object2ReferenceOpenHashMap<>();
+            for (final BattleEntity entity : battleEntities) {
+                if (entity instanceof PlayerEntity) {
+                    teamMap.put(entity, TBCExV3Core.createId("player"));
+                } else {
+                    teamMap.put(entity, TBCExV3Core.createId("enemy"));
+                }
+            }
+            final InitialTeamSetupBattleAction.Builder builder = InitialTeamSetupBattleAction.builder();
+            builder.addTeam(TBCExV3Core.createId("player"));
+            builder.addTeam(TBCExV3Core.createId("enemy"));
+            builder.setRelation(TBCExV3Core.createId("player"), TBCExV3Core.createId("enemy"), BattleParticipantTeamRelation.ENEMIES);
+            ((ServerBattleWorld) context.getSource().getWorld()).createBattle(teamMap, builder.build());
             return 0;
         })));
     }

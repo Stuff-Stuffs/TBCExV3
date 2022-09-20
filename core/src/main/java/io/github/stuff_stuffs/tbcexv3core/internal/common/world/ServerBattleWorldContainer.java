@@ -70,6 +70,11 @@ public class ServerBattleWorldContainer implements AutoCloseable {
                 database.onBattleJoin(handle.getUuid(), handle.getParent().getUuid(), false);
             }
         });
+        battle.getState().getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).registerListener((state, tracer) -> {
+            for (final BattleParticipantHandle participant : state.getParticipants()) {
+                database.onBattleJoin(participant.getUuid(), state.getHandle().getUuid(), false);
+            }
+        });
     }
 
     public void tick() {

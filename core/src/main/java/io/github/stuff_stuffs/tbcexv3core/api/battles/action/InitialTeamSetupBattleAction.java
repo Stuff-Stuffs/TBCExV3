@@ -59,6 +59,10 @@ public class InitialTeamSetupBattleAction implements BattleAction {
         }
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     private record Entry(Identifier team, List<Identifier> allies, List<Identifier> enemies) {
         public static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(Identifier.CODEC.fieldOf("team").forGetter(Entry::team), Codec.list(Identifier.CODEC).fieldOf("allies").forGetter(Entry::allies), Codec.list(Identifier.CODEC).fieldOf("enemies").forGetter(Entry::enemies)).apply(instance, Entry::new));
     }
@@ -67,7 +71,7 @@ public class InitialTeamSetupBattleAction implements BattleAction {
         private final Set<Identifier> teams;
         private final Map<Pair<Identifier, Identifier>, BattleParticipantTeamRelation> relations;
 
-        public Builder() {
+        private Builder() {
             teams = new ObjectOpenHashSet<>();
             relations = new Object2ReferenceOpenHashMap<>();
         }
