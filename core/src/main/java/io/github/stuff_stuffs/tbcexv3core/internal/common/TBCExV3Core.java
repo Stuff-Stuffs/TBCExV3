@@ -22,6 +22,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityC
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.PlayerControlledBattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.network.EntityBattlesUpdateRequestReceiver;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
@@ -42,6 +43,7 @@ public class TBCExV3Core implements ModInitializer {
         CoreBattleEffects.init();
         CoreBattleParticipantEffects.init();
         BattleUpdateRequestReceiver.init();
+        EntityBattlesUpdateRequestReceiver.init();
         CoreBattleEntityComponents.init();
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.register(builder -> {
             builder.unsorted(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET_EVENT, PreBattleBoundsSetEvent::convert, PreBattleBoundsSetEvent::invoker);

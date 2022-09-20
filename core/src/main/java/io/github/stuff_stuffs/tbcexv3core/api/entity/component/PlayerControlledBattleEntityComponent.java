@@ -43,7 +43,6 @@ public class PlayerControlledBattleEntityComponent implements BattleEntityCompon
         if (!(maybePlayer instanceof PlayerEntity player)) {
             throw new TBCExException("Gave non-player uuid to player controlled component");
         }
-        player.tbcex_controllingEntity(handle);
     }
 
     @Override

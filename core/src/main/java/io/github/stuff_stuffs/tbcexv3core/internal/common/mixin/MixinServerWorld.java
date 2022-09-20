@@ -5,12 +5,13 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBat
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.DelayedEntityComponentEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.world.ServerBattleWorldContainer;
+import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.WorldGenerationProgressListener;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.profiler.Profiler;
@@ -31,7 +32,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
@@ -80,14 +80,24 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
 
     @Inject(method = "tickEntity", at = @At("HEAD"))
     private void entityTickHook(final Entity entity, final CallbackInfo ci) {
-        if (entity.age == 0 && entity instanceof ServerPlayerEntity player) {
-            battleWorldContainer.syncPlayer(player);
+        if (!((DelayedEntityComponentEntity) entity).tbcex_getDelayedComponentsCheck()) {
+            if (battleWorldContainer.delayedComponent(entity.getUuid(), (ServerWorld) (Object) this)) {
+                ((DelayedEntityComponentEntity) entity).tbcex_setDelayedComponentsCheck(true);
+            }
         }
-        battleWorldContainer.delayedComponent(entity.getUuid(), (ServerWorld) (Object) this);
+    }
+
+    @Inject(method = "tickPassenger", at = @At("HEAD"))
+    private void entityPassengerTickHook(final Entity vehicle, final Entity passenger, final CallbackInfo ci) {
+        if (!((DelayedEntityComponentEntity) passenger).tbcex_getDelayedComponentsCheck()) {
+            if (battleWorldContainer.delayedComponent(passenger.getUuid(), (ServerWorld) (Object) this)) {
+                ((DelayedEntityComponentEntity) passenger).tbcex_setDelayedComponentsCheck(true);
+            }
+        }
     }
 
     @Override
-    public Set<BattleParticipantHandle> getBattles(final UUID playerUuid) {
-        return battleWorldContainer.getBattles(playerUuid);
+    public List<BattleParticipantHandle> getBattles(final UUID entityUuid, final TriState active) {
+        return battleWorldContainer.getBattles(entityUuid, active);
     }
 }

@@ -1,1 +1,6 @@
-archivesBaseName="tbcexv3core"
+archivesBaseName = "tbcexv3core"
+
+dependencies {
+    implementation group: 'org.mapdb', name: 'mapdb', version: '3.0.8'
+    include group: 'org.mapdb', name: 'mapdb', version: '3.0.8'
+}
