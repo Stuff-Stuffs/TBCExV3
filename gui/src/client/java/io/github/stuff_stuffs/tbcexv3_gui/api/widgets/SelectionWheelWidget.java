@@ -74,10 +74,10 @@ public class SelectionWheelWidget<T> implements Widget<T> {
         final double innerRadius = radiusSizer.getInnerRadius(context.getData(), range);
         final double outerRadius = radiusSizer.getOuterRadius(context.getData(), range);
         final double outerHoverRadius = radiusSizer.getOuterHoverRadius(context.getData(), range);
-        if (innerRadius > outerRadius || innerRadius > outerHoverRadius) {
+        if (innerRadius > outerRadius || outerRadius > outerHoverRadius) {
             throw new IllegalStateException();
         }
-        final Rectangle rect = new Rectangle(center.combine(new Point2d(-outerRadius, -outerRadius), Double::sum), center.combine(new Point2d(outerRadius, outerRadius), Double::sum));
+        final Rectangle rect = new Rectangle(center.combine(new Point2d(-outerHoverRadius, -outerHoverRadius), Double::sum), center.combine(new Point2d(outerHoverRadius, outerHoverRadius), Double::sum));
         if (!range.getMaxRectangle().contains(rect)) {
             throw new IllegalStateException();
         }
