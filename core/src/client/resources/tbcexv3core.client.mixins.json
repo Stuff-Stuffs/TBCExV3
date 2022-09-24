@@ -3,6 +3,7 @@
   "package": "io.github.stuff_stuffs.tbcexv3core.internal.client.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "MixinClientPlayer",
     "MixinClientWorld"
   ],
   "injectors": {

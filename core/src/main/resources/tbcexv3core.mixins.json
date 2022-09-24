@@ -6,6 +6,7 @@
     "AccessorWorldSavePath",
     "MixinEntity",
     "MixinServerPlayer",
+    "MixinServerPlayerInteractionManager",
     "MixinServerWorld"
   ],
   "injectors": {

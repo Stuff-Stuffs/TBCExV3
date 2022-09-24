@@ -46,7 +46,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
                 }
             }
             if (battleEntities.size() < 2) {
-                context.getSource().sendError(Text.translatable("tbcex.test.empty_battle_entities"));
+                context.getSource().sendError(Text.translatable("tbcex.test.not_enough_battle_entities"));
                 return 1;
             }
             final Map<BattleEntity, Identifier> teamMap = new Object2ReferenceOpenHashMap<>();
