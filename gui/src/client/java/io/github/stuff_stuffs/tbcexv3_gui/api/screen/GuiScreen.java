@@ -10,6 +10,8 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 import io.github.stuff_stuffs.tbcexv3_gui.impl.widget.RootWidgetRenderContextImpl;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
@@ -39,7 +41,7 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
     @Override
     public boolean keyPressed(final int keyCode, final int scanCode, final int modifiers) {
         final boolean b = root.handleEvent(new WidgetEvent.KeyPressEvent(keyCode, modifiers));
-        if(keyCode== GLFW.GLFW_KEY_ESCAPE && !b) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && !b) {
             close();
             return true;
         }
@@ -91,6 +93,10 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         root.draw(renderContext);
 
         renderContext.draw();
+
+        final VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(Tessellator.getInstance().getBuffer());
+        root.postDraw(matrices, immediate, screenBounds);
+        immediate.draw();
 
         matrices.pop();
         RenderSystem.setProjectionMatrix(prevProjection);
