@@ -4,10 +4,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Point2d;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.RectangleRange;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
-import io.github.stuff_stuffs.tbcexv3_gui.impl.widget.WidgetRenderContextImpl;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
+import io.github.stuff_stuffs.tbcexv3_gui.impl.widget.RootWidgetRenderContextImpl;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.Window;
@@ -15,6 +15,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Matrix4f;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Optional;
 
@@ -33,6 +34,16 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
             lastScreenBounds = null;
             checkSize(true);
         }));
+    }
+
+    @Override
+    public boolean keyPressed(final int keyCode, final int scanCode, final int modifiers) {
+        final boolean b = root.handleEvent(new WidgetEvent.KeyPressEvent(keyCode, modifiers));
+        if(keyCode== GLFW.GLFW_KEY_ESCAPE && !b) {
+            close();
+            return true;
+        }
+        return b;
     }
 
     public RootWidget getRoot() {
@@ -76,7 +87,7 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         final Matrix4f matrix4f = Matrix4f.projectionMatrix(0.0F, window.getFramebufferWidth(), 0.0F, window.getFramebufferHeight(), 1000.0F, 3000.0F);
         RenderSystem.setProjectionMatrix(matrix4f);
 
-        final WidgetRenderContextImpl renderContext = new WidgetRenderContextImpl(time(delta), screenBounds, matrices.peek().getPositionMatrix());
+        final RootWidgetRenderContextImpl renderContext = new RootWidgetRenderContextImpl(matrices.peek().getPositionMatrix(), screenBounds, time(delta));
         root.draw(renderContext);
 
         renderContext.draw();

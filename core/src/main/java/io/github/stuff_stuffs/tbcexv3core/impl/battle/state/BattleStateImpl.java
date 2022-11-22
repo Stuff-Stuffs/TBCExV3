@@ -215,6 +215,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         }
         final Optional<BattleParticipantHandle> handle = participantContainer.addParticipant(participant, team, tracer, this.handle);
         handle.ifPresent(battleParticipantHandle -> participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this));
+        events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
         return handle;
     }
 
@@ -257,7 +258,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     private void checkPhase(final BattleStatePhase phase, final boolean exact) {
-        if ((exact && phase != this.phase) || (!exact && this.phase.getOrder() <= phase.getOrder())) {
+        if ((exact && phase != this.phase) || (!exact && this.phase.getOrder() < phase.getOrder())) {
             throw new TBCExException();
         }
     }

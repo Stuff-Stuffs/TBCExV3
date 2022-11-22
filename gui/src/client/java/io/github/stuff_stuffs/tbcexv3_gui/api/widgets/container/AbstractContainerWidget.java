@@ -1,9 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
@@ -71,10 +71,10 @@ public abstract class AbstractContainerWidget<T> implements Widget<T> {
             while (iterator.hasNext()) {
                 final Widget<?> widget = iterator.next();
                 if (widget.handleEvent(event)) {
+                    setFocus(widget);
                     if (!event.alwaysPass()) {
                         return true;
                     }
-                    setFocus(widget);
                 }
             }
         }
@@ -84,7 +84,7 @@ public abstract class AbstractContainerWidget<T> implements Widget<T> {
     @Override
     public void draw(final WidgetRenderContext context) {
         drawSelf(context);
-        getChildrenByDrawDepth().forEachRemaining(widget -> widget.draw(context));
+        getChildrenByDrawDepth().forEachRemaining(widget -> widget.draw(context.child()));
     }
 
     protected static <T, K> void setupChild(final WidgetContext<T> context, final WidgetInfo<T, K> widgetInfo) {

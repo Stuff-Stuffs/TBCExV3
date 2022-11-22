@@ -4,15 +4,18 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.util.Point2d;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Trapezoid;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widget.StateUpdater;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widget.*;
+import io.github.stuff_stuffs.tbcexv3_gui.internal.client.TBCExV3GuiClient;
 import it.unimi.dsi.fastutil.objects.ObjectAVLTreeSet;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.text.OrderedText;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 public class SelectionWheelWidget<T> implements Widget<T> {
     private final RadiusSizer<? super T> radiusSizer;
@@ -81,11 +84,12 @@ public class SelectionWheelWidget<T> implements Widget<T> {
         if (!range.getMaxRectangle().contains(rect)) {
             throw new IllegalStateException();
         }
-        final int i = 0;
+        int i = 0;
         final int size = entries.size();
         for (final Entry<T, ?> entry : entries) {
             final Trapezoid trapezoid = new Trapezoid(innerRadius, outerRadius, i / (double) size * Math.PI * 2, (i + 1) / (double) size * Math.PI * 2, center);
             final Trapezoid hoverTrapezoid = new Trapezoid(innerRadius, outerHoverRadius, i / (double) size * Math.PI * 2, (i + 1) / (double) size * Math.PI * 2, center);
+            i++;
             entry.section.setTrapezoid(trapezoid, hoverTrapezoid);
         }
         return rect;
@@ -114,6 +118,30 @@ public class SelectionWheelWidget<T> implements Widget<T> {
         double getOuterHoverRadius(T data, RectangleRange range);
 
         Point2d getCenter(T data, RectangleRange range);
+
+        static <T> RadiusSizer<T> max(final double innerRadRatio, final double outerRadRatio) {
+            return new RadiusSizer<>() {
+                @Override
+                public double getInnerRadius(final T data, final RectangleRange range) {
+                    return Math.min(range.getMaxRectangle().width(), range.getMaxRectangle().height()) / 2.0 * innerRadRatio * 0.99999;
+                }
+
+                @Override
+                public double getOuterRadius(final T data, final RectangleRange range) {
+                    return Math.min(range.getMaxRectangle().width(), range.getMaxRectangle().height()) / 2.0 * outerRadRatio * 0.99999;
+                }
+
+                @Override
+                public double getOuterHoverRadius(final T data, final RectangleRange range) {
+                    return Math.min(range.getMaxRectangle().width(), range.getMaxRectangle().height()) / 2.0 * 0.99999;
+                }
+
+                @Override
+                public Point2d getCenter(final T data, final RectangleRange range) {
+                    return range.getMaxRectangle().lower().combine(range.getMaxRectangle().upper(), Double::sum).combine(0.5, (x, y) -> x * y);
+                }
+            };
+        }
     }
 
     public interface Section<T> {
@@ -157,12 +185,12 @@ public class SelectionWheelWidget<T> implements Widget<T> {
 
         @Override
         public boolean handleEvent(final WidgetEvent event) {
-            return stateUpdater.handleEvent(widgetContext.getData(), bounds, hoverBounds);
+            return stateUpdater.handleEvent(widgetContext.getData(), bounds, hoverBounds, event);
         }
     }
 
     public interface SectionStateUpdater<T> {
-        boolean handleEvent(T data, Trapezoid bounds, Trapezoid hoverBounds);
+        boolean handleEvent(T data, Trapezoid bounds, Trapezoid hoverBounds, WidgetEvent event);
 
         default void resize(final Trapezoid bounds, final Trapezoid hoverBounds) {
         }
@@ -173,6 +201,25 @@ public class SelectionWheelWidget<T> implements Widget<T> {
 
         static <T> SectionRenderer<T> empty() {
             return (data, renderContext, bounds, hoverBounds) -> {
+            };
+        }
+
+        static <T> SectionRenderer<T> flat(final Predicate<? super T> hovered, final ToIntFunction<? super T> color, final Function<? super T, Optional<OrderedText>> textExtractor) {
+            return (data, renderContext, bounds, hoverBounds) -> {
+                final WidgetQuadEmitter emitter = renderContext.emitter();
+                final Trapezoid trapezoid = hovered.test(data) ? hoverBounds : bounds;
+                emitter.quad(trapezoid);
+                final int c = color.applyAsInt(data);
+                emitter.color(c, c, c, c);
+                final int l = LightmapTextureManager.MAX_LIGHT_COORDINATE;
+                emitter.light(l, l, l, l);
+                emitter.sprite(TBCExV3GuiClient.FLAT_SPRITE_CACHE.getSprite());
+                emitter.emit();
+                final Optional<OrderedText> opt = textExtractor.apply(data);
+                if (opt.isPresent()) {
+                    final Point2d center = trapezoid.center();
+                    renderContext.textEmitter().emit(opt.get(), center.x(), center.y(), -1, true);
+                }
             };
         }
     }

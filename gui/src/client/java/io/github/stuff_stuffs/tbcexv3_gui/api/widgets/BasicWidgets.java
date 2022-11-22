@@ -60,7 +60,7 @@ public final class BasicWidgets {
             public void updateBounds(final Rectangle bounds, final T data) {
 
             }
-        }, WidgetRenderUtils.basicPanelTerminal(colourGetter, renderLayer), sizer);
+        }, WidgetRenderUtils.basicPanelTerminal(colourGetter), sizer);
     }
 
 

@@ -41,11 +41,17 @@ public record Rectangle(Point2d lower, Point2d upper) implements Quadrilateral {
 
     @Override
     public double getVertexX(final int vertexIndex) {
-        return (vertexIndex & 2) == 0 ? lower().x() : upper().x();
+        return switch (vertexIndex) {
+            case 0, 1 -> lower.x();
+            default -> upper.x();
+        };
     }
 
     @Override
     public double getVertexY(final int vertexIndex) {
-        return (vertexIndex & 1) == 0 ? lower().x() : upper().x();
+        return  switch (vertexIndex) {
+            case 0, 3 -> lower.y();
+            default -> upper.y();
+        };
     }
 }

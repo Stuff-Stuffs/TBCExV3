@@ -41,7 +41,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
         lastAccessTime = new Object2LongOpenHashMap<>();
         componentsToApply = new Object2ReferenceOpenHashMap<>();
         random = Random.createLocal();
-        database = new ServerBattleWorldDatabase(directory);
+        database = new ServerBattleWorldDatabase(directory.resolve(worldKey.getValue().toUnderscoreSeparatedString()));
     }
 
     public Battle getBattle(final UUID uuid) {
@@ -107,7 +107,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
             final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid());
             entity.buildParticipantState(builder);
             final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
-            if (entry instanceof Entity regularEntity) {
+            if (entry.getKey() instanceof Entity regularEntity) {
                 built.onJoin(handle, regularEntity);
             }
             final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);

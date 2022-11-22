@@ -1,13 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3_gui.api.widget.*;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetRenderUtils;
+import io.github.stuff_stuffs.tbcexv3_gui.api.Sizer;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Point2d;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.RectangleRange;
-import io.github.stuff_stuffs.tbcexv3_gui.api.Sizer;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widget.*;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetRenderUtils;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetUtils;
-import io.github.stuff_stuffs.tbcexv3_gui.internal.client.TBCExV3GuiRenderLayers;
 import net.minecraft.util.math.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
@@ -71,9 +70,11 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
         final double criticalLength = axis.choose(bounds.width(), bounds.height());
         final double criticalInnerLength = axis.choose(innerBounds.width(), innerBounds.height());
         final double scrollNorm = (scrollAmount / criticalInnerLength) * (criticalInnerLength - criticalLength);
-        final Matrix4f translate = Matrix4f.translate((float) axis.choose(-scrollNorm, 0), (float) axis.choose(0, -scrollNorm), 1);
-        final WidgetRenderContext childContext = context.pushScissor(withoutScroll).pushMatrix(translate);
-        getChildrenByDrawDepth().forEachRemaining(widget -> widget.draw(childContext));
+        context.pushTransform(new WidgetRenderContext.ScissorTransform(withoutScroll));
+        context.pushTransform(new WidgetRenderContext.Translate(axis.choose(scrollNorm, 0), axis.choose(0, scrollNorm)));
+        getChildrenByDrawDepth().forEachRemaining(widget -> widget.draw(context));
+        context.popTransform();
+        context.popTransform();
     }
 
     @Override
@@ -223,7 +224,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
                 final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
                 rectangle = new Rectangle(start, end);
             }
-            WidgetRenderUtils.drawRectangle(renderContext.getVertexConsumer(TBCExV3GuiRenderLayers.getPosColorCull()), rectangle, colorFunction.applyAsInt(data));
+            WidgetRenderUtils.drawRectangle(renderContext.emitter(), rectangle, colorFunction.applyAsInt(data));
         };
     }
 }

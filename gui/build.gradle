@@ -1,4 +1,4 @@
-archivesBaseName="tbcexv3gui"
+archivesBaseName = "tbcexv3gui"
 
 loom {
     accessWidenerPath = file("src/main/resources/tbcexv3gui.accesswidener")

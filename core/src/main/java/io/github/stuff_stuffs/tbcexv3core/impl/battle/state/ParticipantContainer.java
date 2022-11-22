@@ -79,7 +79,6 @@ public class ParticipantContainer {
             participantStates.put(handle, (AbstractBattleParticipantState) participant);
             teamByHandle.put(handle, team);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
-            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
             return Optional.of(handle);
         }
         return Optional.empty();

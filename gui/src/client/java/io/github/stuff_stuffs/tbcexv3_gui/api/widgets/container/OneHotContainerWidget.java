@@ -13,14 +13,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.Function;
 
 public class OneHotContainerWidget<T> implements Widget<T> {
-    private final Function<? super T, @Nullable Handle> activeScreenGetter;
+    private Function<? super T, @Nullable Handle> activeScreenGetter = data -> null;
     private final Int2ObjectSortedMap<AbstractContainerWidget.WidgetInfo<T, ?>> entries = new Int2ObjectAVLTreeMap<>();
     private AbstractContainerWidget.WidgetInfo<T, ?> defaultWidget;
     private int nextId = 0;
     private WidgetContext<T> widgetContext;
-    private Rectangle bounds;
 
-    public OneHotContainerWidget(final Function<? super T, @Nullable Handle> activeScreenGetter) {
+    public OneHotContainerWidget() {
+    }
+
+    public Function<? super T, @Nullable Handle> activeScreenGetter() {
+        return activeScreenGetter;
+    }
+
+    public void activeScreenGetter(Function<? super T, @Nullable Handle> activeScreenGetter) {
         this.activeScreenGetter = activeScreenGetter;
     }
 
@@ -35,6 +41,10 @@ public class OneHotContainerWidget<T> implements Widget<T> {
         final AbstractContainerWidget.WidgetInfo<T, K> info = new AbstractContainerWidget.WidgetInfo<>(widget, contextFactory);
         final int id = nextId++;
         entries.put(id, info);
+        if (widgetContext != null) {
+            setupChild(widgetContext, info);
+            widgetContext.forceResize();
+        }
         return new Handle(this, id);
     }
 

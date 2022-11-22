@@ -47,6 +47,9 @@ public final class TopologicalSort {
     }
 
     public static <T> List<T> sort(final List<T> items, final ChildPredicate<T> childPredicate) {
+        if (items.isEmpty()) {
+            return List.of();
+        }
         final Set<T> set = new ObjectOpenHashSet<>();
         final int size = items.size();
         final int[] indexToDependencyCount = new int[size];
@@ -62,6 +65,7 @@ public final class TopologicalSort {
             }
         }
         final IntPriorityQueue queue = new IntArrayFIFOQueue();
+        queue.enqueue(0);
         final List<T> output = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             if (queue.isEmpty()) {

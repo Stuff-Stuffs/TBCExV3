@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.function.Function;
 
-public sealed interface WidgetEvent permits WidgetEvent.GainedFocusEvent, WidgetEvent.LostFocusEvent, WidgetEvent.MouseMoveEvent, WidgetEvent.MousePressEvent, WidgetEvent.MouseScrollEvent, WidgetEvent.TickEvent {
+public sealed interface WidgetEvent permits WidgetEvent.GainedFocusEvent, WidgetEvent.KeyPressEvent, WidgetEvent.LostFocusEvent, WidgetEvent.MouseMoveEvent, WidgetEvent.MousePressEvent, WidgetEvent.MouseScrollEvent, WidgetEvent.TickEvent {
     final class LostFocusEvent implements WidgetEvent {
     }
 
@@ -61,6 +61,9 @@ public sealed interface WidgetEvent permits WidgetEvent.GainedFocusEvent, Widget
             }
             return Optional.of(new MouseScrollEvent(transformedPoint, amount));
         }
+    }
+
+    record KeyPressEvent(int keyCode, int modifiers) implements WidgetEvent {
     }
 
     default boolean alwaysPass() {

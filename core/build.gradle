@@ -1,6 +1,8 @@
 archivesBaseName = "tbcexv3core"
 
 dependencies {
-    implementation group: 'org.mapdb', name: 'mapdb', version: '3.0.8'
-    include group: 'org.mapdb', name: 'mapdb', version: '3.0.8'
+    api project(path: ':gui', configuration: "namedElements")
+    clientImplementation findProject(":gui").sourceSets.client.output
+    implementation 'org.jetbrains.xodus:xodus-environment:2.0.1'
+    include 'org.jetbrains.xodus:xodus-environment:2.0.1'
 }

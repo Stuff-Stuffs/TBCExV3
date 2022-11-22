@@ -1,6 +1,5 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common;
 
-import com.mojang.brigadier.CommandDispatcher;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.*;
@@ -25,19 +24,10 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSav
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.EntityBattlesUpdateRequestReceiver;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.argument.UuidArgumentType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 public class TBCExV3Core implements ModInitializer {
     public static final String MOD_ID = "tbcexv3_core";
@@ -81,18 +71,6 @@ public class TBCExV3Core implements ModInitializer {
             builder.unsorted(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PostEquipBattleParticipantEquipmentEvent::convert, PostEquipBattleParticipantEquipmentEvent::invoker);
             builder.unsorted(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PreUnequipBattleParticipantEquipmentEvent::convert, PreUnequipBattleParticipantEquipmentEvent::invoker);
             builder.unsorted(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PostUnequipBattleParticipantEquipmentEvent::convert, PostUnequipBattleParticipantEquipmentEvent::invoker);
-        });
-
-        CommandRegistrationCallback.EVENT.register(new CommandRegistrationCallback() {
-            @Override
-            public void register(final CommandDispatcher<ServerCommandSource> dispatcher, final CommandRegistryAccess registryAccess, final CommandManager.RegistrationEnvironment environment) {
-                dispatcher.register(CommandManager.literal("tbcexCoreTryPlayerJoinBattle").then(CommandManager.argument("playerTarget", EntityArgumentType.player()).then(CommandManager.argument("battleUuid", UuidArgumentType.uuid()).executes(context -> {
-                    final PlayerEntity entity = EntityArgumentType.getPlayer(context, "playerTarget");
-                    final UUID battleUuid = UuidArgumentType.getUuid(context, "battleUuid");
-
-                    return 0;
-                }))));
-            }
         });
     }
 

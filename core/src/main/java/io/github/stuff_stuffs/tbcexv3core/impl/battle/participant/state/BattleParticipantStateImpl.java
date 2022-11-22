@@ -105,13 +105,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
 
     @Override
     public UUID getUuid() {
-        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         return uuid;
     }
 
     @Override
     public BattleParticipantStatePhase getPhase() {
-        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         return phase;
     }
 

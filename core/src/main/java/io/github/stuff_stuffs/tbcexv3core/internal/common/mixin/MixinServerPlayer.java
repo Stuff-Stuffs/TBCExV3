@@ -2,6 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
@@ -49,8 +50,8 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Override
     public void tbcex$setCurrentBattle(@Nullable final BattleHandle handle) {
         if (!Objects.equals(handle, tbcex$currentBattle)) {
-            if(tbcex$preBattleGameMode ==null) {
-                tbcex$preBattleGameMode = this.interactionManager.getGameMode();
+            if (tbcex$preBattleGameMode == null) {
+                tbcex$preBattleGameMode = interactionManager.getGameMode();
             }
             tbcex$currentBattle = handle;
             interactionManager.changeGameMode(GameMode.SPECTATOR);
@@ -61,12 +62,12 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Inject(at = @At("HEAD"), method = "tick")
     private void tickHook(final CallbackInfo ci) {
         if (tbcex$currentBattle != null) {
-            @Nullable final BattleView view = world.tryGetBattleView(tbcex$currentBattle);
+            @Nullable final BattleView view = ((BattleWorld) world).tryGetBattleView(tbcex$currentBattle);
             if (view == null || view.getState().getPhase() == BattleStatePhase.FINISHED) {
                 tbcex$setCurrentBattle(null);
             }
         }
-        if(tbcex$currentBattle==null && tbcex$preBattleGameMode !=null) {
+        if (tbcex$currentBattle == null && tbcex$preBattleGameMode != null) {
             interactionManager.changeGameMode(tbcex$preBattleGameMode);
         }
     }

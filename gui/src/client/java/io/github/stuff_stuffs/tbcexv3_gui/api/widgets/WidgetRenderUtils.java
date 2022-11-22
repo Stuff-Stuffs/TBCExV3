@@ -1,34 +1,31 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets;
 
-import io.github.stuff_stuffs.tbcexv3_gui.api.util.Point2d;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetQuadEmitter;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
+import io.github.stuff_stuffs.tbcexv3_gui.internal.client.TBCExV3GuiClient;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public final class WidgetRenderUtils {
-    public static <T> WidgetRenderUtils.Renderer<T> basicPanelTerminal(final int color, final RenderLayer renderLayer) {
-        return basicPanelTerminal(data -> color, date -> renderLayer);
+    public static <T> WidgetRenderUtils.Renderer<T> basicPanelTerminal(final int color) {
+        return basicPanelTerminal(data -> color);
     }
 
-    public static <T> WidgetRenderUtils.Renderer<T> basicPanelTerminal(final ToIntFunction<? super T> colourGetter, final RenderLayer renderLayer) {
-        return basicPanelTerminal(colourGetter, date -> renderLayer);
+    public static <T> WidgetRenderUtils.Renderer<T> basicPanelTerminal(final ToIntFunction<? super T> colourGetter) {
+        return (data, context, bounds) -> drawRectangle(context.emitter(), bounds, colourGetter.applyAsInt(data));
     }
 
-    public static <T> WidgetRenderUtils.Renderer<T> basicPanelTerminal(final ToIntFunction<? super T> colourGetter, final Function<? super T, RenderLayer> renderLayer) {
-        return (data, context, bounds) -> drawRectangle(context.getVertexConsumer(renderLayer.apply(data)), bounds, colourGetter.applyAsInt(data));
-    }
-
-    public static void drawRectangle(final VertexConsumer vertexConsumer, final Rectangle rectangle, final int c) {
-        final Point2d lower = rectangle.lower();
-        final Point2d upper = rectangle.upper();
-        vertexConsumer.vertex(lower.x(), lower.y(), 0).color(c).next();
-        vertexConsumer.vertex(lower.x(), upper.y(), 0).color(c).next();
-        vertexConsumer.vertex(upper.x(), upper.y(), 0).color(c).next();
-        vertexConsumer.vertex(upper.x(), lower.y(), 0).color(c).next();
+    public static void drawRectangle(final WidgetQuadEmitter emitter, final Rectangle rectangle, final int c) {
+        emitter.quad(rectangle);
+        emitter.color(c, c, c, c);
+        final int l = LightmapTextureManager.MAX_LIGHT_COORDINATE;
+        emitter.light(l, l, l, l);
+        emitter.sprite(TBCExV3GuiClient.FLAT_SPRITE_CACHE.getSprite());
+        emitter.emit();
     }
 
     private WidgetRenderUtils() {

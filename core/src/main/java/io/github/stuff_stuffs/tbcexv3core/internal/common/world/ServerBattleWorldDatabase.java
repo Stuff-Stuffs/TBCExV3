@@ -5,9 +5,14 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import jetbrains.exodus.ArrayByteIterable;
+import jetbrains.exodus.ByteIterable;
+import jetbrains.exodus.CompoundByteIterable;
+import jetbrains.exodus.FixedLengthByteIterable;
+import jetbrains.exodus.bindings.ComparableBinding;
+import jetbrains.exodus.env.*;
+import jetbrains.exodus.util.ByteArraySizedInputStream;
+import jetbrains.exodus.util.LightOutputStream;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -15,231 +20,276 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.NotNull;
-import org.mapdb.*;
-import org.mapdb.serializer.SerializerArray;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 
 //TODO off thread file loading
 public class ServerBattleWorldDatabase implements AutoCloseable {
-    private static final BattleOrPartialSerializer PARTIAL_BATTLE_SERIALIZER = new BattleOrPartialSerializer();
-    private static final Serializer<PastBattle[]> UUID_ARRAY_SERIALIZER = new SerializerArray<>(new PastBattleSerializer());
-    private static final PackedSerializer DELAYED_COMPONENT_SERIALIZER = new PackedSerializer();
-    private final DB db;
-    private final HTreeMap<UUID, BattleOrPartial> battles;
-    private final HTreeMap<UUID, PastBattle[]> battleEntities;
-    private final HTreeMap<UUID, DelayedComponentsPacked> delayedComponents;
+    private static final StoreConfig STORE_CONFIG = StoreConfig.getStoreConfig(false, false);
+    private static final String BATTLE_STORE = "battles";
+    private static final String BATTLE_ACTIVE_ENTITIES_STORE = "battle_entities";
+    private static final String BATTLE_INACTIVE_ENTITIES_STORE = "battle_entities";
+    private static final String DELAYED_COMPONENT_STORE = "delayed_components";
+    private static final UUIDBinding UUID_BINDING = new UUIDBinding();
+    private final Environment backing;
 
     public ServerBattleWorldDatabase(final Path file) {
-        db = DBMaker.fileDB(file.toFile()).fileMmapEnableIfSupported().make();
-        battles = db.hashMap("battles", Serializer.UUID, PARTIAL_BATTLE_SERIALIZER).createOrOpen();
-        battleEntities = db.hashMap("battle_entities", Serializer.UUID, UUID_ARRAY_SERIALIZER).createOrOpen();
-        delayedComponents = db.hashMap("delayed_components", Serializer.UUID, DELAYED_COMPONENT_SERIALIZER).createOrOpen();
+        backing = Environments.newInstance(file.toFile(), new EnvironmentConfig().setEnvCompactOnOpen(true));
     }
 
     public void saveBattle(final UUID uuid, final Battle battle) {
-        battles.put(uuid, new NonPartialBattle(battle));
+        final ByteIterable encoded = encodeBattle(battle);
+        final ByteIterable key = UUID_BINDING.objectToEntry(uuid);
+        final Transaction transaction = backing.beginTransaction();
+        do {
+            final Store store = backing.openStore(BATTLE_STORE, STORE_CONFIG, transaction);
+            store.put(transaction, key, encoded);
+        } while (!transaction.commit());
     }
 
     public UUID[] getParticipatedBattles(final UUID uuid, final TriState active) {
-        if (active == TriState.TRUE) {
-            return Arrays.stream(battleEntities.getOrDefault(uuid, new PastBattle[0])).filter(PastBattle::active).map(PastBattle::id).toArray(UUID[]::new);
-        } else if (active == TriState.FALSE) {
-            return Arrays.stream(battleEntities.getOrDefault(uuid, new PastBattle[0])).filter(Predicate.not(PastBattle::active)).map(PastBattle::id).toArray(UUID[]::new);
+        final Transaction transaction = backing.beginReadonlyTransaction();
+        final List<UUID> uuids = new ArrayList<>();
+        if (active == TriState.TRUE || active == TriState.DEFAULT) {
+            if (backing.storeExists(BATTLE_ACTIVE_ENTITIES_STORE, transaction)) {
+                final Store store = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
+                final ByteIterable iterable = store.get(transaction, UUID_BINDING.objectToEntry(uuid));
+                if (iterable != null) {
+                    final Iterator<UUID> iterator = asPastBattles(iterable);
+                    while (iterator.hasNext()) {
+                        final UUID next = iterator.next();
+                        uuids.add(next);
+                    }
+                }
+            }
         }
-        return Arrays.stream(battleEntities.getOrDefault(uuid, new PastBattle[0])).map(PastBattle::id).toArray(UUID[]::new);
+        if (active == TriState.FALSE || active == TriState.DEFAULT) {
+            if (backing.storeExists(BATTLE_INACTIVE_ENTITIES_STORE, transaction)) {
+                final Store store = backing.openStore(BATTLE_INACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
+                final ByteIterable iterable = store.get(transaction, UUID_BINDING.objectToEntry(uuid));
+                if (iterable != null) {
+                    final Iterator<UUID> iterator = asPastBattles(iterable);
+                    while (iterator.hasNext()) {
+                        final UUID next = iterator.next();
+                        uuids.add(next);
+                    }
+                }
+            }
+        }
+        transaction.abort();
+        return uuids.toArray(new UUID[0]);
     }
 
     public DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> loadBattle(final UUID uuid) {
-        final BattleOrPartial partial = battles.get(uuid);
-        if (partial == null) {
+        final Transaction transaction = backing.beginReadonlyTransaction();
+        if (!backing.storeExists(BATTLE_STORE, transaction)) {
+            transaction.abort();
             return DataResult.error("Battle does not exist");
         }
-        return DataResult.success(((PartialBattle) partial).partial);
+        final Store store = backing.openStore(BATTLE_STORE, STORE_CONFIG, transaction);
+        final ByteIterable iterable = store.get(transaction, UUID_BINDING.objectToEntry(uuid));
+        if (iterable == null) {
+            transaction.abort();
+            return DataResult.error("Battle does not exist");
+        }
+        transaction.abort();
+        return decodeBattle(iterable);
     }
 
     public void onBattleJoin(final UUID entityId, final UUID battleId, final boolean active) {
-        battleEntities.merge(entityId, new PastBattle[]{new PastBattle(battleId, active)}, (currentIds, newId) -> {
-            final PastBattle key = newId[0];
-            final int i = Arrays.binarySearch(currentIds, key, PastBattle.COMPARATOR);
-            final PastBattle[] copy;
-            if (i < 0) {
-                copy = Arrays.copyOf(currentIds, currentIds.length + 1);
-                final int index = (-i) - 1;
-                if (index == 0) {
-                    System.arraycopy(copy, 0, copy, 1, copy.length - 1);
-                    copy[0] = key;
-                } else if (index == copy.length - 1) {
-                    copy[index] = key;
+        final ByteIterable key = UUID_BINDING.objectToEntry(entityId);
+        final ByteIterable data = UUID_BINDING.objectToEntry(battleId);
+        if (active) {
+            final Transaction transaction = backing.beginTransaction();
+            do {
+                final Store store = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
+                final ByteIterable existing = store.get(transaction, key);
+                if (existing == null) {
+                    store.put(transaction, key, UUID_BINDING.objectToEntry(battleId));
                 } else {
-                    System.arraycopy(copy, index, copy, index + 1, copy.length - index - 1);
-                    copy[index] = key;
+                    final ByteBuffer buffer = ByteBuffer.wrap(existing.getBytesUnsafe());
+                    final int UUID_SIZE = Long.BYTES * 2;
+                    final int i = binarySearch(buffer, battleId);
+                    final FixedLengthByteIterable prefix = new FixedLengthByteIterable(existing, 0, Math.abs(i) * UUID_SIZE) {
+                    };
+                    final int offset;
+                    if (i < 0) {
+                        offset = Math.abs(i) * UUID_SIZE;
+                    } else {
+                        offset = i * UUID_SIZE + UUID_SIZE;
+                    }
+                    final FixedLengthByteIterable suffix = new FixedLengthByteIterable(existing, offset, existing.getLength() - offset) {
+                    };
+                    store.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{prefix, data, suffix}));
                 }
+            } while (!transaction.commit());
+        } else {
+            final Transaction transaction = backing.beginTransaction();
+            do {
+                final Store activeStore = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
+                final ByteIterable activeExisting = activeStore.get(transaction, key);
+                if (activeExisting != null) {
+                    final ByteBuffer buffer = ByteBuffer.wrap(activeExisting.getBytesUnsafe());
+                    final int UUID_SIZE = Long.BYTES * 2;
+                    final int i = binarySearch(buffer, battleId);
+                    if (i >= 0) {
+                        final FixedLengthByteIterable prefix = new FixedLengthByteIterable(activeExisting, 0, Math.abs(i) * UUID_SIZE) {
+                        };
+                        final int offset = i * UUID_SIZE + UUID_SIZE;
+                        final FixedLengthByteIterable suffix = new FixedLengthByteIterable(activeExisting, offset, activeExisting.getLength() - offset) {
+                        };
+                        activeStore.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{prefix, suffix}));
+                    }
+                }
+                final Store inactiveStore = backing.openStore(BATTLE_INACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
+                final ByteIterable inactiveExisting = inactiveStore.get(transaction, key);
+                if (inactiveExisting == null) {
+                    inactiveStore.put(transaction, key, data);
+                } else {
+                    final ByteBuffer buffer = ByteBuffer.wrap(inactiveExisting.getBytesUnsafe());
+                    final int i = binarySearch(buffer, battleId);
+                    final int UUID_SIZE = Long.BYTES * 2;
+                    if (i < 0) {
+                        final FixedLengthByteIterable prefix = new FixedLengthByteIterable(inactiveExisting, 0, Math.abs(i) * UUID_SIZE) {
+                        };
+                        final FixedLengthByteIterable suffix = new FixedLengthByteIterable(inactiveExisting, Math.abs(i) * UUID_SIZE, inactiveExisting.getLength() - Math.abs(i) * UUID_SIZE) {
+                        };
+                        activeStore.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{prefix, data, suffix}));
+                    }
+                }
+            } while (!transaction.commit());
+        }
+    }
+
+    private static int binarySearch(final ByteBuffer buffer, final UUID key) {
+        final int UUID_SIZE = Long.BYTES * 2;
+        int low = 0;
+        int high = buffer.remaining() / UUID_SIZE - 1;
+
+        while (low <= high) {
+            final int mid = (low + high) >>> 1;
+            final UUID midVal = new UUID(buffer.getLong(mid * UUID_SIZE), buffer.getLong(mid * UUID_SIZE + UUID_SIZE / 2));
+
+            final int comp = midVal.compareTo(key);
+            if (comp < 0) {
+                low = mid + 1;
+            } else if (comp > 0) {
+                high = mid - 1;
             } else {
-                copy = Arrays.copyOf(currentIds, currentIds.length);
-                copy[i] = key;
+                return mid; // key found
             }
-            return copy;
-        });
+        }
+        return -(low + 1);  // key not found.
     }
 
     @Override
     public void close() {
-        db.close();
+        backing.close();
     }
 
     public UUID findUnusedBattleUuid(final Random random) {
-        UUID uuid;
-        do {
-            uuid = new UUID(random.nextLong(), random.nextLong());
-        } while (battles.containsKey(uuid));
-        return uuid;
+        final Transaction transaction = backing.beginReadonlyTransaction();
+        if (backing.storeExists(BATTLE_STORE, transaction)) {
+            final Store store = backing.openStore(BATTLE_STORE, STORE_CONFIG, transaction);
+            UUID uuid;
+            do {
+                uuid = new UUID(random.nextLong(), random.nextLong());
+            } while (store.get(transaction, UUID_BINDING.objectToEntry(uuid)) != null);
+            transaction.abort();
+            return uuid;
+        } else {
+            transaction.abort();
+            return new UUID(random.nextLong(), random.nextLong());
+        }
     }
 
     public ServerBattleWorldContainer.DelayedComponents getDelayedComponents(final UUID uuid) {
-        final DelayedComponentsPacked packed = delayedComponents.get(uuid);
-        if (packed == null) {
-            return new ServerBattleWorldContainer.DelayedComponents(Map.of());
-        }
-        return new ServerBattleWorldContainer.DelayedComponents(packed.map);
+        //TODO don't forget about this!
+        return new ServerBattleWorldContainer.DelayedComponents(Map.of());
     }
 
     public void saveDelayedComponents(final UUID entityId, final ServerBattleWorldContainer.DelayedComponents components) {
-        if (components == null) {
-            delayedComponents.remove(entityId);
-        } else {
-            final DelayedComponentsPacked packed = new DelayedComponentsPacked(Map.copyOf(components.components));
-            delayedComponents.put(entityId, packed);
-        }
-    }
-
-    private sealed interface BattleOrPartial {
-
-    }
-
-    private record NonPartialBattle(Battle battle) implements BattleOrPartial {
-    }
-
-    private record PartialBattle(BiFunction<BattleHandle, BattleStateMode, Battle> partial) implements BattleOrPartial {
-    }
-
-    private static final class BattleOrPartialSerializer implements Serializer<BattleOrPartial> {
-        @Override
-        public void serialize(@NotNull final DataOutput2 out, @NotNull final BattleOrPartial value) throws IOException {
-            final NbtCompound wrapper = new NbtCompound();
-            if (!(value instanceof NonPartialBattle nonPartial)) {
-                throw new TBCExException("Tried to save a partial battle!");
-            }
-            wrapper.put("data", Battle.encoder().encodeStart(NbtOps.INSTANCE, nonPartial.battle).getOrThrow(false, s -> {
-                throw new TBCExException(s);
-            }));
-            NbtIo.write(wrapper, out);
-        }
-
-        @Override
-        public BattleOrPartial deserialize(@NotNull final DataInput2 input, final int available) throws IOException {
-            final NbtCompound wrapper = NbtIo.read(input);
-            final NbtElement element = wrapper.get("data");
-            final DataResult<BattleOrPartial> result = Battle.decoder().parse(NbtOps.INSTANCE, element).map(PartialBattle::new);
-            return result.getOrThrow(false, s -> {
-                throw new TBCExException(s);
-            });
-        }
-
-        @Override
-        public boolean isTrusted() {
-            return true;
-        }
+        //TODO don't forget about this!
     }
 
     private record DelayedComponentsPacked(Map<UUID, List<BattleEntityComponent>> map) {
     }
 
-    private static final class PackedSerializer implements Serializer<DelayedComponentsPacked> {
+    private static final class UUIDBinding extends ComparableBinding {
+        private final byte[] bytes = new byte[16];
+        private final ByteBuffer buffer = ByteBuffer.wrap(bytes);
 
         @Override
-        public void serialize(@NotNull final DataOutput2 out, @NotNull final ServerBattleWorldDatabase.DelayedComponentsPacked value) throws IOException {
-            final Map<java.util.UUID, List<BattleEntityComponent>> map = value.map;
-            out.writeInt(map.size());
-            for (final Map.Entry<java.util.UUID, List<BattleEntityComponent>> entry : map.entrySet()) {
-                final java.util.UUID key = entry.getKey();
-                out.writeLong(key.getLeastSignificantBits());
-                out.writeLong(key.getMostSignificantBits());
-                final List<BattleEntityComponent> components = entry.getValue();
-                out.writeInt(components.size());
-                for (final BattleEntityComponent component : components) {
-                    encodeComponent(out, component, component.getType());
-                }
+        public UUID readObject(@NotNull final ByteArrayInputStream stream) {
+            final int i = stream.read(bytes, 0, 16);
+            if (i != 16) {
+                throw new RuntimeException();
             }
+            buffer.position(0);
+            return new UUID(buffer.getLong(), buffer.getLong());
         }
 
         @Override
-        public DelayedComponentsPacked deserialize(@NotNull final DataInput2 input, final int available) throws IOException {
-            final int size = input.readInt();
-            final Map<java.util.UUID, List<BattleEntityComponent>> componentMap = new Object2ReferenceOpenHashMap<>();
-            for (int i = 0; i < size; i++) {
-                final long least = input.readLong();
-                final long most = input.readLong();
-                final java.util.UUID uuid = new java.util.UUID(most, least);
-                final int count = input.readInt();
-                final List<BattleEntityComponent> components = new ArrayList<>(count);
-                for (int j = 0; j < count; j++) {
-                    components.add(decodeComponent(input));
-                }
-                componentMap.put(uuid, components);
+        public void writeObject(@NotNull final LightOutputStream output, @NotNull final Comparable object) {
+            if (object instanceof UUID uuid) {
+                buffer.position(0);
+                buffer.putLong(uuid.getMostSignificantBits());
+                buffer.putLong(uuid.getLeastSignificantBits());
+                output.write(bytes);
+            } else {
+                throw new RuntimeException();
             }
-            return new DelayedComponentsPacked(componentMap);
         }
     }
 
-    private static <T extends BattleEntityComponent> void encodeComponent(final DataOutput2 out, final BattleEntityComponent component, final BattleEntityComponentType<T> type) throws IOException {
-        final DataResult<NbtElement> encode = type.encode(NbtOps.INSTANCE, component);
+    private Iterator<UUID> asPastBattles(final ByteIterable iterable) {
+        final int objectLength = Long.BYTES * 2;
+        final byte[] unsafe = iterable.getBytesUnsafe();
+        final int length = iterable.getLength();
+        return new Iterator<>() {
+            private int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return index < length;
+            }
+
+            @Override
+            public UUID next() {
+                final UUID uuid = UUID_BINDING.readObject(new ByteArraySizedInputStream(unsafe, index, 16));
+                index = index + objectLength;
+                return uuid;
+            }
+        };
+    }
+
+    private static ByteIterable encodeBattle(final Battle battle) {
         final NbtCompound wrapper = new NbtCompound();
-        wrapper.put("data", encode.getOrThrow(false, s -> {
-            throw new TBCExException(s);
+        wrapper.put("data", Battle.encoder().encodeStart(NbtOps.INSTANCE, battle).getOrThrow(false, s -> {
+            throw new RuntimeException(s);
         }));
-        NbtIo.write(wrapper, out);
-    }
-
-    private static BattleEntityComponent decodeComponent(final DataInput2 in) throws IOException {
-        final NbtCompound wrapper = NbtIo.read(in);
-        final NbtElement encoded = wrapper.get("data");
-        final DataResult<BattleEntityComponent> parsed = BattleEntityComponent.CODEC.parse(NbtOps.INSTANCE, encoded);
-        return parsed.getOrThrow(false, s -> {
-            throw new TBCExException(s);
-        });
-    }
-
-    private static final class PastBattleSerializer implements Serializer<PastBattle> {
-        @Override
-        public void serialize(@NotNull final DataOutput2 out, @NotNull final ServerBattleWorldDatabase.PastBattle value) throws IOException {
-            out.writeLong(value.id().getMostSignificantBits());
-            out.writeLong(value.id().getLeastSignificantBits());
-            out.writeBoolean(value.active());
-        }
-
-        @Override
-        public PastBattle deserialize(@NotNull final DataInput2 input, final int available) throws IOException {
-            return new PastBattle(new UUID(input.readLong(), input.readLong()), input.readBoolean());
-        }
-
-        @Override
-        public boolean equals(final PastBattle first, final PastBattle second) {
-            return Objects.equals(first, second);
-        }
-
-        @Override
-        public int hashCode(@NotNull final ServerBattleWorldDatabase.PastBattle o, final int seed) {
-            final long a = o.id().getLeastSignificantBits() ^ o.id().getMostSignificantBits();
-            return ((int) (a >> 32)) ^ (int) a ^ (o.active ? ((int) (a * 65535)) : 0);
+        final ByteArrayOutputStream stream = new ByteArrayOutputStream(65535);
+        try {
+            NbtIo.writeCompressed(wrapper, stream);
+            return new ArrayByteIterable(stream.toByteArray());
+        } catch (final IOException e) {
+            throw new RuntimeException("Error while saving battle", e);
         }
     }
 
-    private record PastBattle(UUID id, boolean active) {
-        private static final Comparator<PastBattle> COMPARATOR = Comparator.comparingLong((PastBattle o) -> o.id().getMostSignificantBits()).thenComparingLong(o -> o.id().getLeastSignificantBits());
+    private static DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> decodeBattle(final ByteIterable iterable) {
+        try {
+            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(iterable.getBytesUnsafe()));
+            final NbtElement data = compound.get("data");
+            return Battle.decoder().parse(NbtOps.INSTANCE, data);
+        } catch (final IOException e) {
+            throw new RuntimeException("Error while loading battle", e);
+        }
     }
 }

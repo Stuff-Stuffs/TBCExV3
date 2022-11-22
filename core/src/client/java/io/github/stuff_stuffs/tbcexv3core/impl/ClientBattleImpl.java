@@ -38,7 +38,7 @@ public class ClientBattleImpl implements BattleView {
         for (BattleAction action : update.actions()) {
             battle.pushAction(action);
         }
-        lastKnownGoodState = update.offset() + update.actions().size() - 1;
+        lastKnownGoodState = update.offset() + update.actions().size();
     }
 
     public BattleUpdateRequest createUpdateRequest() {

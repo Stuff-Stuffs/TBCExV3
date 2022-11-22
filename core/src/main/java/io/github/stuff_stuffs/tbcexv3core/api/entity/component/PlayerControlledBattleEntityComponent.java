@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -43,6 +44,7 @@ public class PlayerControlledBattleEntityComponent implements BattleEntityCompon
         if (!(maybePlayer instanceof PlayerEntity player)) {
             throw new TBCExException("Gave non-player uuid to player controlled component");
         }
+        ((TBCExPlayerEntity) player).tbcex$setCurrentBattle(handle.getParent());
     }
 
     @Override
