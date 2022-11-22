@@ -1,8 +1,10 @@
 package io.github.stuff_stuffs.tbcexv3_gui.impl.widget;
 
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetQuadEmitter;
+import net.minecraft.util.Identifier;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class WidgetQuadEmitterImpl implements WidgetQuadEmitter {
@@ -87,13 +89,13 @@ public class WidgetQuadEmitterImpl implements WidgetQuadEmitter {
     }
 
     @Override
-    public boolean text() {
-        return false;
+    public Optional<Identifier> texture() {
+        return Optional.empty();
     }
 
     @Override
     public void emit() {
-        consumer.accept(new EmittedQuad(z, Arrays.copyOf(xs, xs.length), Arrays.copyOf(ys, ys.length), Arrays.copyOf(us, us.length), Arrays.copyOf(vs, vs.length), Arrays.copyOf(lights, lights.length), Arrays.copyOf(colors, colors.length), false));
+        consumer.accept(new EmittedQuad(z, Arrays.copyOf(xs, xs.length), Arrays.copyOf(ys, ys.length), Arrays.copyOf(us, us.length), Arrays.copyOf(vs, vs.length), Arrays.copyOf(lights, lights.length), Arrays.copyOf(colors, colors.length), false, Optional.empty()));
         Arrays.fill(xs, 0);
         Arrays.fill(ys, 0);
         Arrays.fill(us, 0);

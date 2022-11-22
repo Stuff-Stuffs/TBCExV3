@@ -1,11 +1,15 @@
 package io.github.stuff_stuffs.tbcexv3_gui.impl.widget;
 
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetTextEmitter;
+import io.github.stuff_stuffs.tbcexv3_gui.internal.client.mixin.AccessorMultiPhaseParameters;
+import io.github.stuff_stuffs.tbcexv3_gui.internal.client.mixin.AccessorTextureBase;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
 import net.minecraft.text.OrderedText;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Matrix4f;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class WidgetTextEmitterImpl implements WidgetTextEmitter {
@@ -13,6 +17,7 @@ public class WidgetTextEmitterImpl implements WidgetTextEmitter {
 
     static {
         IDENTITY.loadIdentity();
+        IDENTITY.multiply(Matrix4f.translate(0, 0, 0.00001F));
     }
 
     private final Consumer<EmittedQuad> consumer;
@@ -21,6 +26,11 @@ public class WidgetTextEmitterImpl implements WidgetTextEmitter {
     public WidgetTextEmitterImpl(final Consumer<EmittedQuad> consumer, final float z) {
         this.consumer = consumer;
         this.z = z;
+    }
+
+    @Override
+    public double width(final OrderedText text) {
+        return MinecraftClient.getInstance().textRenderer.getWidth(text);
     }
 
     @Override
@@ -41,24 +51,33 @@ public class WidgetTextEmitterImpl implements WidgetTextEmitter {
             if (layer.getVertexFormat() != VertexFormats.POSITION_COLOR_TEXTURE_LIGHT) {
                 throw new RuntimeException();
             }
-            return new Wrapped(x, y);
+            if (layer instanceof RenderLayer.MultiPhase multiPhase) {
+                final RenderPhase.TextureBase texture = ((AccessorMultiPhaseParameters) (Object) multiPhase.getPhases()).getTexture();
+                final Optional<Identifier> id = ((AccessorTextureBase) texture).getId();
+                if (id.isPresent()) {
+                    return new Wrapped(x, y, id);
+                }
+            }
+            throw new IllegalStateException();
         }
     }
 
     private final class Wrapped implements VertexConsumer {
         private final float x, y;
+        private final Optional<Identifier> texture;
         private EmittedQuad building;
         private int index = 0;
 
-        public Wrapped(final double x, final double y) {
+        public Wrapped(final double x, final double y, final Optional<Identifier> texture) {
             this.x = (float) x;
             this.y = (float) y;
+            this.texture = texture;
             reset();
         }
 
         private void reset() {
             index = 0;
-            building = new EmittedQuad(z, new float[4], new float[4], new float[4], new float[4], new int[4], new int[4], true);
+            building = new EmittedQuad(z, new float[4], new float[4], new float[4], new float[4], new int[4], new int[4], true, texture);
         }
 
         @Override

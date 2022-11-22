@@ -2,6 +2,9 @@ package io.github.stuff_stuffs.tbcexv3_gui.api.widget;
 
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Quadrilateral;
 import net.minecraft.client.texture.Sprite;
+import net.minecraft.util.Identifier;
+
+import java.util.Optional;
 
 public interface WidgetQuadEmitter {
     default void pos(final Axis axis, final int index, final float p) {
@@ -72,7 +75,7 @@ public interface WidgetQuadEmitter {
         color(3, c3);
     }
 
-    boolean text();
+    Optional<Identifier> texture();
 
     void emit();
 }

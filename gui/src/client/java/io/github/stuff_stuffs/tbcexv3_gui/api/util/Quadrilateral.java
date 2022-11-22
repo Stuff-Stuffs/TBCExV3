@@ -14,6 +14,6 @@ public interface Quadrilateral {
         for (int i = 0; i < 4; i++) {
             c = c.sum(getVertex(i));
         }
-        return c.combine(0.25, (x, y) -> x * y);
+        return c.scale(0.25);
     }
 }

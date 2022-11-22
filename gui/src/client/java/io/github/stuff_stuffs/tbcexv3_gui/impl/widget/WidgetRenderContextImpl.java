@@ -8,6 +8,8 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetTextEmitter;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
+import java.util.Optional;
+
 public class WidgetRenderContextImpl implements AbstractWidgetRenderContext {
     private final float z;
     private final WidgetTextEmitter textEmitter;
@@ -30,6 +32,11 @@ public class WidgetRenderContextImpl implements AbstractWidgetRenderContext {
     }
 
     @Override
+    public Rectangle screenBounds() {
+        return parent.screenBounds();
+    }
+
+    @Override
     public WidgetQuadEmitter emitter() {
         return new WidgetQuadEmitterImpl(z, this::draw);
     }
@@ -44,7 +51,7 @@ public class WidgetRenderContextImpl implements AbstractWidgetRenderContext {
 
     private ScissorTransform transformScissors(final ScissorTransform transform) {
         final Rectangle rect = transform.rectangle;
-        final EmittedQuad emittedQuad = new EmittedQuad(z, new float[]{(float) rect.lower().x(), (float) rect.lower().x(), (float) rect.upper().x(), (float) rect.upper().x()}, new float[]{(float) rect.lower().y(), (float) rect.upper().y(), (float) rect.upper().y(), (float) rect.lower().y()}, new float[4], new float[4], new int[4], new int[4], false);
+        final EmittedQuad emittedQuad = new EmittedQuad(z, new float[]{(float) rect.lower().x(), (float) rect.lower().x(), (float) rect.upper().x(), (float) rect.upper().x()}, new float[]{(float) rect.lower().y(), (float) rect.upper().y(), (float) rect.upper().y(), (float) rect.lower().y()}, new float[4], new float[4], new int[4], new int[4], false, Optional.empty());
         transformScissors(emittedQuad);
         final Point2d lower = new Point2d(emittedQuad.x(0), emittedQuad.y(0));
         final Point2d upper = new Point2d(emittedQuad.x(2), emittedQuad.y(2));
@@ -88,7 +95,8 @@ public class WidgetRenderContextImpl implements AbstractWidgetRenderContext {
         if (quad.scissorState() == -1 && !scissorStates.isEmpty()) {
             quad.scissorState(scissorStates.peekInt(0));
         }
-        for (final Transform transform : transforms) {
+        for (int i = transforms.size() - 1; i >= 0; i--) {
+            Transform transform = transforms.get(i);
             if (transform instanceof QuadTransform quadTransform) {
                 quadTransform.transform(quad);
                 if (!quad.clear()) {

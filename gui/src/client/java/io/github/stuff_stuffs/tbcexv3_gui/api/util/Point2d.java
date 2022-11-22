@@ -20,6 +20,18 @@ public record Point2d(double x, double y) implements Comparable<Point2d> {
         return new Point2d(operator.applyAsDouble(x, v), operator.applyAsDouble(y, v));
     }
 
+    public double distanceSq(final Point2d o) {
+        return (x - o.x) * (x - o.x) + (y - o.y) * (y - o.y);
+    }
+
+    public double distance(final Point2d o) {
+        return Math.sqrt(distanceSq(o));
+    }
+
+    public Point2d scale(final double s) {
+        return new Point2d(x * s, y * s);
+    }
+
     public Point2d sum(final Point2d o) {
         return combine(o, Double::sum);
     }

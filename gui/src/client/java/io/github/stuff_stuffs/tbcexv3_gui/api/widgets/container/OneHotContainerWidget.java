@@ -8,6 +8,8 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
 import it.unimi.dsi.fastutil.ints.Int2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
@@ -106,6 +108,22 @@ public class OneHotContainerWidget<T> implements Widget<T> {
         }
         final AbstractContainerWidget.WidgetInfo<T, ?> info = entries.get(handle.id);
         info.widget.draw(context);
+    }
+
+    @Override
+    public void postDraw(MatrixStack stack, VertexConsumerProvider vertexConsumers, Rectangle screenBounds) {
+        final Handle handle = activeScreenGetter.apply(widgetContext.getData());
+        if (handle == null) {
+            if (defaultWidget != null) {
+                defaultWidget.widget.postDraw(stack, vertexConsumers, screenBounds);
+            }
+        } else {
+            if (handle.removed) {
+                throw new IllegalStateException();
+            }
+            final AbstractContainerWidget.WidgetInfo<T, ?> info = entries.get(handle.id);
+            info.widget.postDraw(stack, vertexConsumers, screenBounds);
+        }
     }
 
     public static final class Handle {

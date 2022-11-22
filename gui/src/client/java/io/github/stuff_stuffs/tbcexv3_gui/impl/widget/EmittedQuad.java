@@ -1,6 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3_gui.impl.widget;
 
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetQuadEmitter;
+import net.minecraft.util.Identifier;
+
+import java.util.Optional;
 
 class EmittedQuad implements WidgetQuadEmitter {
     private final float z;
@@ -10,11 +13,11 @@ class EmittedQuad implements WidgetQuadEmitter {
     private final float[] vs;
     private final int[] lights;
     private final int[] colors;
-    private final boolean text;
+    private final Optional<Identifier> texture;
     private int scissorState = -1;
     private boolean emitted = false;
 
-    EmittedQuad(final float z, final float[] xs, final float[] ys, final float[] us, final float[] vs, final int[] lights, final int[] colors, final boolean text) {
+    EmittedQuad(final float z, final float[] xs, final float[] ys, final float[] us, final float[] vs, final int[] lights, final int[] colors, final boolean text, final Optional<Identifier> texture) {
         this.z = z;
         this.xs = xs;
         this.ys = ys;
@@ -22,7 +25,7 @@ class EmittedQuad implements WidgetQuadEmitter {
         this.vs = vs;
         this.lights = lights;
         this.colors = colors;
-        this.text = text;
+        this.texture = texture;
     }
 
     public int scissorState() {
@@ -98,8 +101,8 @@ class EmittedQuad implements WidgetQuadEmitter {
     }
 
     @Override
-    public boolean text() {
-        return text;
+    public Optional<Identifier> texture() {
+        return texture;
     }
 
     @Override

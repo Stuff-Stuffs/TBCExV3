@@ -1,6 +1,5 @@
 package io.github.stuff_stuffs.tbcexv3_gui.impl.widget;
 
-import com.mojang.blaze3d.platform.GlConst;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Point2d;
@@ -18,16 +17,14 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.*;
 import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext {
-    private static final Comparator<EmittedQuad> COMPARATOR = Comparator.comparingDouble(EmittedQuad::z).thenComparingInt(EmittedQuad::scissorState);
+    private static final Comparator<EmittedQuad> COMPARATOR = Comparator.comparingDouble(EmittedQuad::z).thenComparing(quad -> quad.texture().map(Identifier::toString).orElse("")).thenComparingInt(EmittedQuad::scissorState);
     private final WidgetQuadEmitterImpl emitter = new WidgetQuadEmitterImpl(0, this::draw);
     private final ObjectArrayList<WidgetRenderContext.Transform> transforms = new ObjectArrayList<>();
     private final IntArrayList scissorStates = new IntArrayList();
@@ -50,6 +47,11 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
     @Override
     public float time() {
         return time;
+    }
+
+    @Override
+    public Rectangle screenBounds() {
+        return screenBounds;
     }
 
     @Override
@@ -84,7 +86,7 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
 
     private WidgetRenderContext.ScissorTransform transformScissors(final WidgetRenderContext.ScissorTransform transform) {
         final Rectangle rect = transform.rectangle;
-        final EmittedQuad emittedQuad = new EmittedQuad(0, new float[]{(float) rect.lower().x(), (float) rect.lower().x(), (float) rect.upper().x(), (float) rect.upper().x()}, new float[]{(float) rect.lower().y(), (float) rect.upper().y(), (float) rect.upper().y(), (float) rect.lower().y()}, new float[4], new float[4], new int[4], new int[4], false);
+        final EmittedQuad emittedQuad = new EmittedQuad(0, new float[]{(float) rect.lower().x(), (float) rect.lower().x(), (float) rect.upper().x(), (float) rect.upper().x()}, new float[]{(float) rect.lower().y(), (float) rect.upper().y(), (float) rect.upper().y(), (float) rect.lower().y()}, new float[4], new float[4], new int[4], new int[4], false, Optional.empty());
         transformScissors(emittedQuad);
         final Point2d lower = new Point2d(emittedQuad.x(0), emittedQuad.y(0));
         final Point2d upper = new Point2d(emittedQuad.x(2), emittedQuad.y(2));
@@ -119,7 +121,8 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
         if (quad.scissorState() == -1 && !scissorStates.isEmpty()) {
             quad.scissorState(scissorStates.peekInt(0));
         }
-        for (final WidgetRenderContext.Transform transform : transforms) {
+        for (int i = transforms.size() - 1; i >= 0; i--) {
+            final Transform transform = transforms.get(i);
             if (transform instanceof WidgetRenderContext.QuadTransform quadTransform) {
                 quadTransform.transform(quad);
                 if (!quad.clear()) {
@@ -134,42 +137,53 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
         if (quads.isEmpty()) {
             return;
         }
-        quads.sort(COMPARATOR.reversed());
+        quads.sort(COMPARATOR);
         int lastScissorState = -1;
         int i = 0;
+        Optional<Identifier> texture = Optional.empty();
         final StencilFrameBuffer frameBuffer = TBCExV3GuiClient.getGuiFrameBuffer();
+        frameBuffer.clear(MinecraftClient.IS_SYSTEM_MAC);
         frameBuffer.beginWrite(true);
-        RenderSystem.clear(GlConst.GL_DEPTH_BUFFER_BIT | GlConst.GL_COLOR_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC);
         final BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-
         buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
         do {
             final EmittedQuad quad = quads.get(i);
-            if (!quad.text()) {
-                if (quad.scissorState() != lastScissorState) {
-                    RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapShader);
-                    RenderSystem.enableBlend();
-                    RenderSystem.defaultBlendFunc();
-                    RenderSystem._setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
-                    Tessellator.getInstance().draw();
-                    copy(buffer);
-                    lastScissorState = quad.scissorState();
-                    setupStencil(buffer, lastScissorState);
-                }
-                buffer.vertex(posMat, quad.x(0), quad.y(0), quad.z()).color(quad.color(1)).texture(quad.spriteU(0), quad.spriteV(0)).light(quad.light(0)).next();
-                buffer.vertex(posMat, quad.x(1), quad.y(1), quad.z()).color(quad.color(1)).texture(quad.spriteU(1), quad.spriteV(1)).light(quad.light(1)).next();
-                buffer.vertex(posMat, quad.x(2), quad.y(2), quad.z()).color(quad.color(2)).texture(quad.spriteU(2), quad.spriteV(2)).light(quad.light(2)).next();
-                buffer.vertex(posMat, quad.x(3), quad.y(3), quad.z()).color(quad.color(3)).texture(quad.spriteU(3), quad.spriteV(3)).light(quad.light(3)).next();
+            boolean drew = false;
+            if (quad.scissorState() != lastScissorState) {
+                lastScissorState = quad.scissorState();
+                draw(buffer, texture, lastScissorState, false);
+                drew = true;
             }
+            if (!texture.equals(quad.texture())) {
+                if (!drew) {
+                    draw(buffer, texture, -2, false);
+                }
+                texture = quad.texture();
+            }
+            buffer.vertex(posMat, quad.x(0), quad.y(0), quad.z()).color(quad.color(1)).texture(quad.spriteU(0), quad.spriteV(0)).light(quad.light(0)).next();
+            buffer.vertex(posMat, quad.x(1), quad.y(1), quad.z()).color(quad.color(1)).texture(quad.spriteU(1), quad.spriteV(1)).light(quad.light(1)).next();
+            buffer.vertex(posMat, quad.x(2), quad.y(2), quad.z()).color(quad.color(2)).texture(quad.spriteU(2), quad.spriteV(2)).light(quad.light(2)).next();
+            buffer.vertex(posMat, quad.x(3), quad.y(3), quad.z()).color(quad.color(3)).texture(quad.spriteU(3), quad.spriteV(3)).light(quad.light(3)).next();
             i++;
         } while (i < quads.size());
+        draw(buffer, texture, -2, true);
+        frameBuffer.endWrite();
+        copy(buffer);
+    }
+
+    private void draw(final BufferBuilder buffer, final Optional<Identifier> texture, final int stencil, final boolean last) {
         RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapShader);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem._setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+        GlStateManager._depthMask(false);
+        RenderSystem._setShaderTexture(0, texture.orElse(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE));
         Tessellator.getInstance().draw();
-        frameBuffer.endWrite();
-        copy(buffer);
+        if (stencil != -2) {
+            setupStencil(buffer, stencil);
+        }
+        if (!last) {
+            buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
+        }
     }
 
     private void copy(final BufferBuilder builder) {

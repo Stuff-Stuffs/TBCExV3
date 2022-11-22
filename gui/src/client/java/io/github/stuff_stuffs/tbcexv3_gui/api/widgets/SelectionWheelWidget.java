@@ -7,7 +7,10 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.util.Trapezoid;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.*;
 import io.github.stuff_stuffs.tbcexv3_gui.internal.client.TBCExV3GuiClient;
 import it.unimi.dsi.fastutil.objects.ObjectAVLTreeSet;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 
 import java.util.Comparator;
@@ -102,6 +105,11 @@ public class SelectionWheelWidget<T> implements Widget<T> {
         }
     }
 
+    @Override
+    public void postDraw(final MatrixStack stack, final VertexConsumerProvider vertexConsumers, final Rectangle screenBounds) {
+        entries.forEach(entry -> entry.section.postDraw(stack, vertexConsumers, screenBounds));
+    }
+
     private void remove(final int id) {
         final Entry<T, ?> entry = new Entry<>(null, null, id);
         final SortedSet<Entry<T, ?>> tailSet = entries.tailSet(entry);
@@ -138,7 +146,7 @@ public class SelectionWheelWidget<T> implements Widget<T> {
 
                 @Override
                 public Point2d getCenter(final T data, final RectangleRange range) {
-                    return range.getMaxRectangle().lower().combine(range.getMaxRectangle().upper(), Double::sum).combine(0.5, (x, y) -> x * y);
+                    return range.getMaxRectangle().lower().combine(range.getMaxRectangle().upper(), Double::sum).scale(0.5);
                 }
             };
         }
@@ -152,6 +160,8 @@ public class SelectionWheelWidget<T> implements Widget<T> {
         void draw(WidgetRenderContext context);
 
         boolean handleEvent(WidgetEvent event);
+
+        void postDraw(final MatrixStack stack, final VertexConsumerProvider vertexConsumers, Rectangle screenBounds);
     }
 
     public static class BasicSection<T> implements Section<T> {
@@ -187,6 +197,11 @@ public class SelectionWheelWidget<T> implements Widget<T> {
         public boolean handleEvent(final WidgetEvent event) {
             return stateUpdater.handleEvent(widgetContext.getData(), bounds, hoverBounds, event);
         }
+
+        @Override
+        public void postDraw(final MatrixStack stack, final VertexConsumerProvider vertexConsumers, final Rectangle screenBounds) {
+            renderer.postDraw(widgetContext.getData(), stack, vertexConsumers, bounds, hoverBounds, screenBounds);
+        }
     }
 
     public interface SectionStateUpdater<T> {
@@ -198,6 +213,9 @@ public class SelectionWheelWidget<T> implements Widget<T> {
 
     public interface SectionRenderer<T> {
         void render(T data, WidgetRenderContext renderContext, Trapezoid bounds, Trapezoid hoverBounds);
+
+        default void postDraw(final T data, final MatrixStack stack, final VertexConsumerProvider vertexConsumers, final Trapezoid bounds, final Trapezoid hoverBounds, final Rectangle screenBounds) {
+        }
 
         static <T> SectionRenderer<T> empty() {
             return (data, renderContext, bounds, hoverBounds) -> {
@@ -217,8 +235,34 @@ public class SelectionWheelWidget<T> implements Widget<T> {
                 emitter.emit();
                 final Optional<OrderedText> opt = textExtractor.apply(data);
                 if (opt.isPresent()) {
+                    final OrderedText text = opt.get();
                     final Point2d center = trapezoid.center();
-                    renderContext.textEmitter().emit(opt.get(), center.x(), center.y(), -1, true);
+                    final Point2d centerStart = trapezoid.getVertex(0).sum(trapezoid.getVertex(1)).scale(0.5);
+                    final Point2d centerEnd = trapezoid.getVertex(2).sum(trapezoid.getVertex(3)).scale(0.5);
+                    final Point2d delta = centerEnd.sum(centerStart.scale(-1));
+                    double angle = Math.atan2(delta.y(), delta.x());
+                    final boolean swap = centerStart.x() > centerEnd.x();
+                    if (swap) {
+                        angle = angle - Math.PI;
+                    }
+                    final double maxWidth = centerStart.distance(centerEnd);
+                    final double width = renderContext.textEmitter().width(text);
+                    final double scale = maxWidth / width;
+                    renderContext.pushTransform(WidgetRenderContext.Transform.translate(center.x(), center.y()));
+                    renderContext.pushTransform(WidgetRenderContext.Transform.rotate(angle));
+                    double off;
+                    if(swap) {
+                        off = -scale * MinecraftClient.getInstance().textRenderer.fontHeight;
+                    } else {
+                        off = 0;
+                    }
+                    renderContext.pushTransform(WidgetRenderContext.Transform.translate(-maxWidth / 2.0, off));
+                    renderContext.pushTransform(WidgetRenderContext.Transform.scale(scale, scale));
+                    renderContext.textEmitter().emit(text, 0, 0, -1, true);
+                    renderContext.popTransform();
+                    renderContext.popTransform();
+                    renderContext.popTransform();
+                    renderContext.popTransform();
                 }
             };
         }

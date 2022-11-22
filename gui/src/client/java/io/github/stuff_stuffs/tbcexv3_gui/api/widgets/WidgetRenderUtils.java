@@ -4,9 +4,9 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetQuadEmitter;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
 import io.github.stuff_stuffs.tbcexv3_gui.internal.client.TBCExV3GuiClient;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 
 import java.util.function.ToIntFunction;
 
@@ -33,6 +33,9 @@ public final class WidgetRenderUtils {
 
     public interface Renderer<T> {
         void render(T data, WidgetRenderContext renderContext, Rectangle bounds);
+
+        default void postDraw(final T data, final MatrixStack stack, final VertexConsumerProvider vertexConsumers) {
+        }
 
         static <T> Renderer<T> empty() {
             return (data, renderContext, bounds) -> {

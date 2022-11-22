@@ -1,9 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets.container;
 
+import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
@@ -85,6 +88,11 @@ public abstract class AbstractContainerWidget<T> implements Widget<T> {
     public void draw(final WidgetRenderContext context) {
         drawSelf(context);
         getChildrenByDrawDepth().forEachRemaining(widget -> widget.draw(context.child()));
+    }
+
+    @Override
+    public void postDraw(MatrixStack stack, VertexConsumerProvider vertexConsumers, Rectangle screenBounds) {
+        getChildrenByDrawDepth().forEachRemaining(widget -> widget.postDraw(stack, vertexConsumers, screenBounds));
     }
 
     protected static <T, K> void setupChild(final WidgetContext<T> context, final WidgetInfo<T, K> widgetInfo) {
