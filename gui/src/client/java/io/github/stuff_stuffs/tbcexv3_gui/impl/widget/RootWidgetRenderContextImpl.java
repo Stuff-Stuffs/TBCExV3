@@ -174,7 +174,7 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
     private void draw(final BufferBuilder buffer, final Optional<Identifier> texture, final int stencil, final boolean last) {
         RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapShader);
         RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE_MINUS_DST_ALPHA, GlStateManager.DstFactor.ONE);
         GlStateManager._depthMask(false);
         RenderSystem._setShaderTexture(0, texture.orElse(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE));
         Tessellator.getInstance().draw();
@@ -183,6 +183,8 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
         }
         if (!last) {
             buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
+        } else {
+            setupStencil(buffer, -1);
         }
     }
 

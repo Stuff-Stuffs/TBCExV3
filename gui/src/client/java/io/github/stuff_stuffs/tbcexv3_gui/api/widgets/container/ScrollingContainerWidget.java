@@ -40,7 +40,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
         if (widgetContext == null) {
             throw new NullPointerException();
         }
-        final double scrollAmount = scrollbarInfo.getScrollAmount(widgetContext.getData(), bounds, innerBounds);
+        final double scrollAmount = -scrollbarInfo.getScrollAmount(widgetContext.getData(), bounds, innerBounds);
         final Optional<WidgetEvent> transform = event.transform(p -> {
             if (withoutScroll.contains(p)) {
                 final Point2d offset = new Point2d(0, -scrollAmount).convert(axis);
@@ -66,7 +66,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
             throw new NullPointerException();
         }
         drawSelf(context);
-        final double scrollAmount = scrollbarInfo.getScrollAmount(widgetContext.getData(), bounds, innerBounds);
+        final double scrollAmount = -scrollbarInfo.getScrollAmount(widgetContext.getData(), bounds, innerBounds);
         final double criticalLength = axis.choose(bounds.width(), bounds.height());
         final double criticalInnerLength = axis.choose(innerBounds.width(), innerBounds.height());
         final double scrollNorm = (scrollAmount / criticalInnerLength) * (criticalInnerLength - criticalLength);
@@ -209,7 +209,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
     public static <T> ScrollbarRenderer<T> basicScrollbarRenderer(final boolean scrollBarUpper, final ScrollbarInfo<? super T> scrollbarInfo, final ToIntFunction<? super T> colorFunction) {
         return (data, renderContext, bounds, innerBounds, axis) -> {
             final double scrollbarSize = scrollbarInfo.calculateScrollbarSize(data, bounds);
-            final double progress = scrollbarInfo.getScrollAmount(data, bounds, innerBounds);
+            final double progress = -scrollbarInfo.getScrollAmount(data, bounds, innerBounds);
             final double a2Size = axis.choose(bounds.width(), bounds.height());
             final double a2InnerSize = axis.choose(innerBounds.width(), innerBounds.height());
             final double scrollBarLength = scrollbarInfo.getScrollbarLength(data, bounds, innerBounds);
