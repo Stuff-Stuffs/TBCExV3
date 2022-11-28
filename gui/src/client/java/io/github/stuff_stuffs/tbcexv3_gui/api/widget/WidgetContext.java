@@ -11,7 +11,7 @@ public interface WidgetContext<T> {
     T getData();
 
     static <T> WidgetContext<T> root(final T data, final Runnable forceResize) {
-        return new WidgetContext<T>() {
+        return new WidgetContext<>() {
             @Override
             public void forceResize() {
                 forceResize.run();
@@ -32,8 +32,13 @@ public interface WidgetContext<T> {
         return lens(parentContext, p -> data);
     }
 
+    static <T, K> WidgetContext<T> dependent(final WidgetContext<K> parentContext, final Function<? super K, ? extends T> factory) {
+        final T data = factory.apply(parentContext.getData());
+        return standalone(parentContext, data);
+    }
+
     static <T, K> WidgetContext<T> lens(final WidgetContext<K> parentContext, final Function<? super K, ? extends T> lens) {
-        return new WidgetContext<T>() {
+        return new WidgetContext<>() {
             @Override
             public void forceResize() {
                 parentContext.forceResize();

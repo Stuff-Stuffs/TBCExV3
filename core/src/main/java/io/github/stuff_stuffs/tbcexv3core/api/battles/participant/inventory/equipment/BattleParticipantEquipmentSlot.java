@@ -6,6 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.equi
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.minecraft.tag.TagKey;
+import net.minecraft.text.Text;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
@@ -17,13 +18,15 @@ public interface BattleParticipantEquipmentSlot {
     Registry<BattleParticipantEquipmentSlot> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.ofRegistry(TBCExV3Core.createId("battle_participant_equipment_slots")), Lifecycle.stable(), BattleParticipantEquipmentSlot::getReference)).buildAndRegister();
     Codec<BattleParticipantEquipmentSlot> CODEC = REGISTRY.getCodec();
 
+    Text name();
+
     TagKey<BattleParticipantEquipmentSlot> getBlockedBy();
 
     TagKey<BattleParticipantEquipmentSlot> getBlocks();
 
     RegistryEntry.Reference<BattleParticipantEquipmentSlot> getReference();
 
-    static BattleParticipantEquipmentSlot create(final TagKey<BattleParticipantEquipmentSlot> blockedBy, final TagKey<BattleParticipantEquipmentSlot> blocks) {
-        return new BattleParticipantEquipmentSlotImpl(blockedBy, blocks);
+    static BattleParticipantEquipmentSlot create(final Text name, final TagKey<BattleParticipantEquipmentSlot> blockedBy, final TagKey<BattleParticipantEquipmentSlot> blocks) {
+        return new BattleParticipantEquipmentSlotImpl(name, blockedBy, blocks);
     }
 }

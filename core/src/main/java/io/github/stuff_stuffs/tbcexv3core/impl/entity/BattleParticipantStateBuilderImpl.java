@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
@@ -12,6 +13,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityCompo
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
@@ -56,7 +58,7 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
 
     public record BuiltImpl(UUID uuid, List<BattleEntityComponent> components, Identifier team) implements Built {
         public static final Codec<Built> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.CODEC).fieldOf("components").forGetter(Built::getComponentList), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
-        public static final Codec<Built> NETWORK_CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, (i, j) -> new BuiltImpl(i, List.of(), j)));
+        public static final Codec<Built> NETWORK_CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.NETWORK_CODEC).fieldOf("components").forGetter(Built::getComponentList), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
 
         public BuiltImpl(final UUID uuid, final List<BattleEntityComponent> components, final Identifier team) {
             this.uuid = uuid;
@@ -99,8 +101,8 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
         }
 
         @Override
-        public void forEach(final BattleParticipantState state) {
-            components.forEach(c -> c.applyToState(state));
+        public void forEach(final BattleParticipantState state, final Tracer<ActionTrace> tracer) {
+            components.forEach(c -> c.applyToState(state, tracer));
         }
 
         @Override

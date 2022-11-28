@@ -44,7 +44,7 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
 
     @Override
     public void buildParticipantState(final BattleParticipantStateBuilder builder) {
-        BattlePlayerComponentEvent.EVENT.invoker().onStateBuilder((PlayerEntity) (Object) this, builder);
+        BattlePlayerComponentEvent.EVENT.invoker().onStateBuilder((ServerPlayerEntity) (Object) this, builder);
     }
 
     @Override

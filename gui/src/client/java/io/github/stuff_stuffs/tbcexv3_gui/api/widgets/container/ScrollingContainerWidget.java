@@ -7,7 +7,6 @@ import io.github.stuff_stuffs.tbcexv3_gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.*;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetRenderUtils;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetUtils;
-import net.minecraft.util.math.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Optional;
@@ -41,12 +40,12 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
             throw new NullPointerException();
         }
         final double scrollAmount = -scrollbarInfo.getScrollAmount(widgetContext.getData(), bounds, innerBounds);
+        final double criticalLength = axis.choose(bounds.width(), bounds.height());
+        final double criticalInnerLength = axis.choose(innerBounds.width(), innerBounds.height());
+        final double scrollNorm = (scrollAmount / criticalInnerLength) * (criticalInnerLength - criticalLength);
         final Optional<WidgetEvent> transform = event.transform(p -> {
-            if (withoutScroll.contains(p)) {
-                final Point2d offset = new Point2d(0, -scrollAmount).convert(axis);
-                return p.combine(offset, Double::sum);
-            }
-            return null;
+            final Point2d offset = new Point2d(-scrollNorm, 0).convert(axis);
+            return p.combine(offset, Double::sum);
         }, Function.identity());
         if (transform.isPresent()) {
             final WidgetInfo<T, ?> child = getChild();
@@ -131,10 +130,56 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
         double getScrollAmount(T data, Rectangle bounds, Rectangle innerBounds);
 
         double getScrollbarLength(T data, Rectangle bounds, Rectangle innerBounds);
+
+        static <T extends ScrollbarState> ScrollbarInfo<T> basic(final double scrollbarSizeFactor, final double scrollbarLengthFactor, final Axis axis) {
+            return new ScrollbarInfo<>() {
+                @Override
+                public double calculateScrollbarSize(final T data, final Rectangle bounds) {
+                    return bounds.size(axis.other()) * scrollbarSizeFactor;
+                }
+
+                @Override
+                public double getScrollAmount(final T data, final Rectangle bounds, final Rectangle innerBounds) {
+                    return data.getScrollAmount();
+                }
+
+                @Override
+                public double getScrollbarLength(final T data, final Rectangle bounds, final Rectangle innerBounds) {
+                    return bounds.size(axis) * scrollbarLengthFactor;
+                }
+            };
+        }
     }
 
     public interface ScrollbarRenderer<T> {
         void render(T data, WidgetRenderContext renderContext, Rectangle bounds, Rectangle innerBounds, Axis axis);
+
+        static <T> ScrollbarRenderer<T> basicScrollbarRenderer(final boolean scrollBarUpper, final ScrollbarInfo<? super T> scrollbarInfo, final ToIntFunction<? super T> colorFunction) {
+            return (data, renderContext, bounds, innerBounds, axis) -> {
+                final double scrollbarSize = scrollbarInfo.calculateScrollbarSize(data, bounds);
+                final double progress = -scrollbarInfo.getScrollAmount(data, bounds, innerBounds);
+                final double a2Size = axis.choose(bounds.width(), bounds.height());
+                final double a2InnerSize = axis.choose(innerBounds.width(), innerBounds.height());
+                final double scrollBarLength = scrollbarInfo.getScrollbarLength(data, bounds, innerBounds);
+                final double startAxis = axis.choose(bounds.lower().x(), bounds.lower().y()) + (progress / a2InnerSize) * (a2Size - scrollBarLength);
+                final Rectangle rectangle;
+                if (scrollBarUpper) {
+                    final Point2d start = new Point2d(startAxis, axis.choose(bounds.upper().y(), bounds.upper().x()) - scrollbarSize).convert(axis);
+                    final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
+                    rectangle = new Rectangle(start, end);
+                } else {
+                    final Point2d start = new Point2d(startAxis, axis.choose(bounds.lower().y(), bounds.lower().x())).convert(axis);
+                    final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
+                    rectangle = new Rectangle(start, end);
+                }
+                WidgetRenderUtils.drawRectangle(renderContext.emitter(), rectangle, colorFunction.applyAsInt(data));
+            };
+        }
+
+        static <T> ScrollbarRenderer<T> none() {
+            return (data, renderContext, bounds, innerBounds, axis) -> {
+            };
+        }
     }
 
     public interface ScrollbarState extends InnerBoundsHolder {
@@ -143,9 +188,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
         void setScrollAmount(double scrollAmount);
 
         static <T extends ScrollbarState> StateUpdater<T> stateUpdater(final Axis axis) {
-            final WidgetUtils.StateUpdaterBuilder<T> builder = WidgetUtils.builder();
-            builder.addTransforming(data -> data, WidgetUtils.MutableBoundsHolder.stateUpdater());
-            builder.add((event, data) -> {
+            return ((StateUpdater<T>) (event, data) -> {
                 if (event instanceof WidgetEvent.MouseScrollEvent scrollEvent) {
                     if (data.bounds().contains(scrollEvent.point())) {
                         data.setScrollAmount(Math.max(0, Math.min(data.getScrollAmount() + scrollEvent.amount(), axis.choose(data.innerBounds().width(), data.innerBounds().height()))));
@@ -163,8 +206,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
                     }
                 }
                 return false;
-            });
-            return builder.build();
+            }).compose(WidgetUtils.MutableBoundsHolder.stateUpdater());
         }
 
         static <K> WidgetContext<ScrollbarState> standalone(final WidgetContext<K> parentContext) {
@@ -204,27 +246,5 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
                 }
             });
         }
-    }
-
-    public static <T> ScrollbarRenderer<T> basicScrollbarRenderer(final boolean scrollBarUpper, final ScrollbarInfo<? super T> scrollbarInfo, final ToIntFunction<? super T> colorFunction) {
-        return (data, renderContext, bounds, innerBounds, axis) -> {
-            final double scrollbarSize = scrollbarInfo.calculateScrollbarSize(data, bounds);
-            final double progress = -scrollbarInfo.getScrollAmount(data, bounds, innerBounds);
-            final double a2Size = axis.choose(bounds.width(), bounds.height());
-            final double a2InnerSize = axis.choose(innerBounds.width(), innerBounds.height());
-            final double scrollBarLength = scrollbarInfo.getScrollbarLength(data, bounds, innerBounds);
-            final double startAxis = axis.choose(bounds.lower().x(), bounds.lower().y()) + (progress / a2InnerSize) * (a2Size - scrollBarLength);
-            final Rectangle rectangle;
-            if (scrollBarUpper) {
-                final Point2d start = new Point2d(startAxis, axis.choose(bounds.upper().y(), bounds.upper().x()) - scrollbarSize).convert(axis);
-                final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
-                rectangle = new Rectangle(start, end);
-            } else {
-                final Point2d start = new Point2d(startAxis, axis.choose(bounds.lower().y(), bounds.lower().x())).convert(axis);
-                final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
-                rectangle = new Rectangle(start, end);
-            }
-            WidgetRenderUtils.drawRectangle(renderContext.emitter(), rectangle, colorFunction.applyAsInt(data));
-        };
     }
 }

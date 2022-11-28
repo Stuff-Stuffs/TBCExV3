@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets;
 
-import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.Sizer;
+import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.StateUpdater;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
@@ -30,17 +30,7 @@ public final class BasicWidgets {
     }
 
     public static <T> Widget<T> button(final Function<? super T, ? extends WidgetUtils.MutableButtonStateHolder> stateGetter, final WidgetRenderUtils.Renderer<T> renderer, final Sizer<? super T> sizer) {
-        final ModifiableWidget<T> widget = new ModifiableWidget<>(new ModifiableWidget.Animation<>() {
-            @Override
-            public Optional<WidgetRenderContext> animate(final T data, final WidgetRenderContext parent) {
-                return Optional.of(parent);
-            }
-
-            @Override
-            public Optional<WidgetEvent> animateEvent(final T data, final WidgetEvent event) {
-                return Optional.of(event);
-            }
-        }, WidgetUtils.<T>builder().addTransforming(stateGetter, WidgetUtils.MutableButtonStateHolder.stateUpdater()).build(), ModifiableWidget.WidgetEventPhase.POST_CHILD);
+        final ModifiableWidget<T> widget = new ModifiableWidget<>(ModifiableWidget.Animation.none(), WidgetUtils.MutableButtonStateHolder.stateUpdater().lens(stateGetter), ModifiableWidget.WidgetEventPhase.POST_CHILD);
         widget.setChild(new TerminalWidget<>(StateUpdater.none(), renderer, sizer), Function.identity());
         return widget;
     }

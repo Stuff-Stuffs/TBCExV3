@@ -2,9 +2,11 @@ package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -26,7 +28,7 @@ public class PlayerControlledBattleEntityComponent implements BattleEntityCompon
     }
 
     @Override
-    public void applyToState(final BattleParticipantState state) {
+    public void applyToState(final BattleParticipantState state, final Tracer<ActionTrace> tracer) {
 
     }
 

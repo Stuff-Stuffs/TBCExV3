@@ -84,6 +84,20 @@ public class ModifiableWidget<T> extends AbstractSingleChildWidget<T> {
         }
 
         Optional<WidgetEvent> animateEvent(T data, WidgetEvent event);
+
+        static <T> Animation<T> none() {
+            return new Animation<>() {
+                @Override
+                public Optional<WidgetRenderContext> animate(final T data, final WidgetRenderContext parent) {
+                    return Optional.of(parent);
+                }
+
+                @Override
+                public Optional<WidgetEvent> animateEvent(final T data, final WidgetEvent event) {
+                    return Optional.of(event);
+                }
+            };
+        }
     }
 
     public enum WidgetEventPhase {

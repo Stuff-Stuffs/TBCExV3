@@ -1,13 +1,13 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetRenderUtils;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Point2d;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.RectangleRange;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.Axis;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetRenderContext;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.WidgetRenderUtils;
 import it.unimi.dsi.fastutil.objects.ObjectAVLTreeSet;
 import org.jetbrains.annotations.Nullable;
 
@@ -195,6 +195,13 @@ public abstract class AbstractListLikeContainerWidget<T> extends AbstractContain
 
         default double getA2End(final T data, final RectangleRange range, final Axis axis) {
             return axis.choose(range.getOuterHigh().y(), range.getOuterHigh().x());
+        }
+    }
+
+    public interface UnboundedListLikeEntrySize<T> extends ListLikeEntrySizer<T> {
+        @Override
+        default double getMaxSize(final T data, final double startA1, final double maxA1, final double remainingA1, final int rowIndex, final int maxIndex, final Axis axis) {
+            return remainingA1;
         }
     }
 

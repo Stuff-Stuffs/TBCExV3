@@ -2,7 +2,9 @@ package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import net.minecraft.server.world.ServerWorld;
 
 import java.util.function.BinaryOperator;
@@ -14,7 +16,8 @@ public class DebugBattleEntityComponent implements BattleEntityComponent {
     };
 
     @Override
-    public void applyToState(final BattleParticipantState state) {
+    public void applyToState(BattleParticipantState state, Tracer<ActionTrace> tracer) {
+
     }
 
     @Override

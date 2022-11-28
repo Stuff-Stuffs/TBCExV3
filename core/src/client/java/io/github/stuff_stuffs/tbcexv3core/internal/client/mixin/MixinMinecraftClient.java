@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.mixin;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.screen.BattleMenuScreen;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import net.minecraft.client.MinecraftClient;
@@ -23,7 +24,7 @@ public abstract class MixinMinecraftClient {
     private Screen modify(final Screen screen) {
         final BattleHandle handle = ((TBCExPlayerEntity) player).tbcex$getCurrentBattle();
         if (handle != null) {
-            return new BattleMenuScreen(handle);
+            return new BattleMenuScreen(BattleParticipantHandle.of(player.getUuid(), handle));
         }
         return screen;
     }

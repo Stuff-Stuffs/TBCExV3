@@ -31,8 +31,8 @@ public record BattleParticipantItemStackImpl(
         @Override
         public <T> DataResult<T> encode(final BattleParticipantItemStack input, final DynamicOps<T> ops, final T prefix) {
             return ops.mapBuilder()
-                    .add("item", input.getItem().getType().encode(ops, input.getItem()))
-                    .add("type", BattleParticipantItemType.CODEC.encode(input.getItem().getType(), ops, ops.empty()))
+                    .add("item", input.getItem().type().encode(ops, input.getItem()))
+                    .add("type", BattleParticipantItemType.CODEC.encode(input.getItem().type(), ops, ops.empty()))
                     .add("count", Codec.INT.encode(input.getCount(), ops, ops.empty()))
                     .build(prefix);
         }
@@ -46,5 +46,10 @@ public record BattleParticipantItemStackImpl(
     @Override
     public int getCount() {
         return count;
+    }
+
+    @Override
+    public boolean matches(final BattleParticipantItemStack other) {
+        return count == other.getCount() && item.matches(other.getItem());
     }
 }

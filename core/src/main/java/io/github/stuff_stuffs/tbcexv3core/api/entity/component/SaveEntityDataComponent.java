@@ -4,10 +4,12 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -15,6 +17,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Util;
 import net.minecraft.util.dynamic.Codecs;
 
 import java.util.Optional;
@@ -39,8 +42,13 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
         this.entityData = (NbtCompound) entityData;
     }
 
+    public SaveEntityDataComponent() {
+        uuid = Util.NIL_UUID;
+        entityData = new NbtCompound();
+    }
+
     @Override
-    public void applyToState(final BattleParticipantState state) {
+    public void applyToState(final BattleParticipantState state, final Tracer<ActionTrace> tracer) {
 
     }
 

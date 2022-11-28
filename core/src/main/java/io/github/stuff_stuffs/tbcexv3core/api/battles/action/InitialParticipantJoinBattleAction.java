@@ -45,6 +45,6 @@ public class InitialParticipantJoinBattleAction implements BattleAction {
         if (participantState.getPhase() != BattleParticipantStatePhase.INITIALIZATION) {
             throw new TBCExException("Error, participant initialized before it should have been!");
         }
-        built.forEach(participantState);
+        built.forEach(participantState, trace);
     }
 }

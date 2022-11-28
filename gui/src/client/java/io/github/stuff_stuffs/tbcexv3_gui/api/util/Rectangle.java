@@ -1,5 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.util;
 
+import io.github.stuff_stuffs.tbcexv3_gui.api.widget.Axis;
+
 public record Rectangle(Point2d lower, Point2d upper) implements Quadrilateral {
     public Rectangle(final Point2d lower, final Point2d upper) {
         if (lower.x() <= upper.x() && lower.y() <= upper.y()) {
@@ -9,6 +11,13 @@ public record Rectangle(Point2d lower, Point2d upper) implements Quadrilateral {
             this.lower = new Point2d(Math.min(lower.x(), upper.x()), Math.min(lower.y(), upper.y()));
             this.upper = new Point2d(Math.max(lower.x(), upper.x()), Math.max(lower.y(), upper.y()));
         }
+    }
+
+    public double size(final Axis axis) {
+        return switch (axis) {
+            case X -> width();
+            case Y -> height();
+        };
     }
 
     public double width() {
@@ -49,7 +58,7 @@ public record Rectangle(Point2d lower, Point2d upper) implements Quadrilateral {
 
     @Override
     public double getVertexY(final int vertexIndex) {
-        return  switch (vertexIndex) {
+        return switch (vertexIndex) {
             case 0, 3 -> lower.y();
             default -> upper.y();
         };

@@ -39,7 +39,7 @@ public class BattleParticipantItemTypeImpl<T extends BattleParticipantItem> impl
 
     @Override
     public <K> DataResult<K> encode(final DynamicOps<K> ops, final BattleParticipantItem item) {
-        if (item.getType() != this) {
+        if (item.type() != this) {
             return DataResult.error("Type mismatch");
         }
         return encoder.encode((T) item, ops, ops.empty());

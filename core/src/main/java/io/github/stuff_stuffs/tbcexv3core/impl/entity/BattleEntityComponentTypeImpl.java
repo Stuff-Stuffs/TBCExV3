@@ -16,18 +16,22 @@ import java.util.function.BinaryOperator;
 public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> implements BattleEntityComponentType<T> {
     private final Encoder<T> encoder;
     private final Decoder<T> decoder;
+    private final Encoder<T> networkEncoder;
+    private final Decoder<T> networkDecoder;
     private final BinaryOperator<T> combiner;
     private final Set<Identifier> happenBefore;
     private final Set<Identifier> happensAfter;
     private final RegistryEntry.Reference<BattleEntityComponentType<?>> reference;
 
-    public BattleEntityComponentTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
+    public BattleEntityComponentTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final Encoder<T> networkEncoder, final Decoder<T> networkDecoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
         this.encoder = encoder;
         this.decoder = decoder;
+        this.networkEncoder = networkEncoder;
+        this.networkDecoder = networkDecoder;
         this.combiner = combiner;
         this.happenBefore = Set.copyOf(happenBefore);
         this.happensAfter = Set.copyOf(happensAfter);
-        this.reference = BattleEntityComponentType.REGISTRY.createEntry(this);
+        reference = BattleEntityComponentType.REGISTRY.createEntry(this);
     }
 
     @Override
@@ -41,6 +45,19 @@ public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> impl
             throw new TBCExException("Type mismatch!");
         }
         return encoder.encodeStart(ops, (T) component);
+    }
+
+    @Override
+    public <K> DataResult<T> networkDecode(final DynamicOps<K> ops, final K encoded) {
+        return networkDecoder.parse(ops, encoded);
+    }
+
+    @Override
+    public <K> DataResult<K> networkEncode(final DynamicOps<K> ops, final BattleEntityComponent component) {
+        if (component.getType() != this) {
+            throw new TBCExException("Type mismatch!");
+        }
+        return networkEncoder.encodeStart(ops, (T) component);
     }
 
     @Override

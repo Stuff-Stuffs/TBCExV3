@@ -69,7 +69,7 @@ public class BattleImpl implements Battle, BattleView {
 
     @Override
     public void pushAction(final BattleAction action) {
-        if (tracer.getCurrentStage().getValue() == ROOT_VALUE) {
+        if (tracer.getCurrentStage().getValue() != ROOT_VALUE) {
             TBCExV3Core.LOGGER.error("Pushed action while tracer was not at root");
         }
         if (mode == BattleStateMode.SERVER && action.getActor().isPresent()) {

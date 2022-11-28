@@ -65,7 +65,11 @@ public final class TopologicalSort {
             }
         }
         final IntPriorityQueue queue = new IntArrayFIFOQueue();
-        queue.enqueue(0);
+        for (int i = 0; i < size; i++) {
+            if (indexToDependencyCount[i] == 0) {
+                queue.enqueue(i);
+            }
+        }
         final List<T> output = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             if (queue.isEmpty()) {

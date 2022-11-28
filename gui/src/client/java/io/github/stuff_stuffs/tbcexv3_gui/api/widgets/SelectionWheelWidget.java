@@ -12,13 +12,12 @@ import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.SortedSet;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
+import java.util.function.*;
 
 public class SelectionWheelWidget<T> implements Widget<T> {
     private final RadiusSizer<? super T> radiusSizer;
@@ -209,6 +208,28 @@ public class SelectionWheelWidget<T> implements Widget<T> {
 
         default void resize(final Trapezoid bounds, final Trapezoid hoverBounds) {
         }
+
+        static <T> SectionStateUpdater<T> basic(final Consumer<? super T> onClick, final BiConsumer<Boolean, ? super T> hoverUpdate, final Predicate<? super T> hovered) {
+            return (data, bounds, hoverBounds, event) -> {
+                if (event instanceof WidgetEvent.MouseMoveEvent mouseMove) {
+                    final boolean isHovered = hovered.test(data);
+                    final Trapezoid b = isHovered ? hoverBounds : bounds;
+                    final Point2d mouse = mouseMove.end();
+                    if (b.isIn(mouse.x(), mouse.y()) ^ isHovered) {
+                        hoverUpdate.accept(!isHovered, data);
+                    }
+                } else if (event instanceof WidgetEvent.MousePressEvent mousePress) {
+                    final boolean isHovered = hovered.test(data);
+                    final Trapezoid b = isHovered ? hoverBounds : bounds;
+                    final Point2d mouse = mousePress.point();
+                    if (mousePress.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && b.isIn(mouse.x(), mouse.y())) {
+                        onClick.accept(data);
+                        return true;
+                    }
+                }
+                return false;
+            };
+        }
     }
 
     public interface SectionRenderer<T> {
@@ -250,8 +271,8 @@ public class SelectionWheelWidget<T> implements Widget<T> {
                     final double scale = maxWidth / width;
                     renderContext.pushTransform(WidgetRenderContext.Transform.translate(center.x(), center.y()));
                     renderContext.pushTransform(WidgetRenderContext.Transform.rotate(angle));
-                    double off;
-                    if(swap) {
+                    final double off;
+                    if (swap) {
                         off = -scale * MinecraftClient.getInstance().textRenderer.fontHeight;
                     } else {
                         off = 0;

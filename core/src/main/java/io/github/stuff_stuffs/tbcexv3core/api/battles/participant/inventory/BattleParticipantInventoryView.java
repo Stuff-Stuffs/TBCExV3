@@ -14,4 +14,6 @@ public interface BattleParticipantInventoryView {
     Optional<BattleParticipantEquipmentSlot> getSlot(BattleParticipantInventoryHandle handle);
 
     Iterator<BattleParticipantInventoryHandle> getHandles();
+
+    int size();
 }

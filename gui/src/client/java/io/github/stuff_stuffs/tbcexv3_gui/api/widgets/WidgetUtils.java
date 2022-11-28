@@ -1,69 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets;
 
 import io.github.stuff_stuffs.tbcexv3_gui.api.util.Rectangle;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widget.StateUpdater;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetEvent;
-import io.github.stuff_stuffs.tbcexv3_gui.api.widget.StateUpdater;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-
 public final class WidgetUtils {
-    public static <T> StateUpdaterBuilder<T> builder() {
-        return new StateUpdaterBuilder<>();
-    }
-
-    public static final class StateUpdaterBuilder<T> {
-        private final List<StateUpdater<? super T>> stateUpdaters = new ArrayList<>();
-
-        private StateUpdaterBuilder() {
-        }
-
-        public StateUpdaterBuilder<T> add(final StateUpdater<? super T> stateUpdater) {
-            stateUpdaters.add(stateUpdater);
-            return this;
-        }
-
-        public <K> StateUpdaterBuilder<T> addTransforming(final Function<? super T, ? extends K> transformer, final StateUpdater<K> stateUpdater) {
-            stateUpdaters.add(new StateUpdater<>() {
-                @Override
-                public boolean event(final WidgetEvent event, final T data) {
-                    return stateUpdater.event(event, transformer.apply(data));
-                }
-
-                @Override
-                public void updateBounds(final Rectangle bounds, final T data) {
-                    stateUpdater.updateBounds(bounds, transformer.apply(data));
-                }
-            });
-            return this;
-        }
-
-        public StateUpdater<T> build() {
-            final List<StateUpdater<? super T>> defensiveCopy = List.copyOf(stateUpdaters);
-            return new StateUpdater<T>() {
-                @Override
-                public boolean event(final WidgetEvent event, final T data) {
-                    for (final StateUpdater<? super T> stateUpdater : defensiveCopy) {
-                        if (stateUpdater.event(event, data)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                @Override
-                public void updateBounds(final Rectangle bounds, final T data) {
-                    for (final StateUpdater<? super T> stateUpdater : defensiveCopy) {
-                        stateUpdater.updateBounds(bounds, data);
-                    }
-                }
-            };
-        }
-    }
-
     public interface BoundsHolder {
         Rectangle bounds();
     }

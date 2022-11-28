@@ -14,8 +14,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
-import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceAVLTreeMap;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceSortedMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.tag.TagKey;
@@ -31,14 +31,14 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
             Codec.unboundedMap(Codec.LONG, BattleParticipantItemStack.codec()).fieldOf("stacks").forGetter(inventory -> inventory.stacks),
             Codec.simpleMap(BattleParticipantEquipmentSlot.CODEC, BattleParticipantInventoryHandle.codec(), BattleParticipantEquipmentSlot.REGISTRY).fieldOf("equipped").forGetter(inventory -> inventory.equipped)
     ).apply(instance, BattleParticipantInventoryImpl::new));
-    private final Long2ReferenceMap<BattleParticipantItemStack> stacks;
+    private final Long2ReferenceSortedMap<BattleParticipantItemStack> stacks;
     private final BiMap<BattleParticipantEquipmentSlot, BattleParticipantInventoryHandle> equipped;
     private BattleParticipantHandle handle;
     private BattleParticipantState state;
     private long nextKey;
 
     private BattleParticipantInventoryImpl(final Map<Long, BattleParticipantItemStack> stacks, final Map<BattleParticipantEquipmentSlot, BattleParticipantInventoryHandle> equipped) {
-        this.stacks = new Long2ReferenceOpenHashMap<>();
+        this.stacks = new Long2ReferenceAVLTreeMap<>();
         long max = 0;
         for (final Map.Entry<Long, BattleParticipantItemStack> entry : stacks.entrySet()) {
             this.stacks.put((long) entry.getKey(), entry.getValue());
@@ -49,14 +49,14 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     }
 
     public BattleParticipantInventoryImpl() {
-        stacks = new Long2ReferenceOpenHashMap<>();
+        stacks = new Long2ReferenceAVLTreeMap<>();
         equipped = HashBiMap.create();
     }
 
     @Override
     public Optional<BattleParticipantItemStack> getStack(final BattleParticipantInventoryHandle handle) {
         checkSetup();
-        if (this.handle.equals(handle.getParentHandle())) {
+        if (!this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
         }
         if (!(handle instanceof AbstractBattleParticipantInventoryHandle abstractHandle)) {
@@ -77,7 +77,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     @Override
     public Optional<BattleParticipantEquipmentSlot> getSlot(final BattleParticipantInventoryHandle handle) {
         checkSetup();
-        if (this.handle.equals(handle.getParentHandle())) {
+        if (!this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
         }
         if (!(handle instanceof AbstractBattleParticipantInventoryHandle)) {
@@ -94,9 +94,14 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     }
 
     @Override
+    public int size() {
+        return stacks.size();
+    }
+
+    @Override
     public boolean swapStack(final BattleParticipantInventoryHandle handle, final BattleParticipantItemStack stack, final Tracer<ActionTrace> tracer) {
         checkSetup();
-        if (this.handle.equals(handle.getParentHandle())) {
+        if (!this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
         }
         if (!(handle instanceof AbstractBattleParticipantInventoryHandle abstractHandle)) {
@@ -134,7 +139,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     @Override
     public Optional<BattleParticipantItemStack> takeStack(final BattleParticipantInventoryHandle handle, final Tracer<ActionTrace> tracer) {
         checkSetup();
-        if (this.handle.equals(handle.getParentHandle())) {
+        if (!this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
         }
         if (!(handle instanceof AbstractBattleParticipantInventoryHandle abstractHandle)) {
@@ -163,7 +168,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
     @Override
     public boolean equip(final BattleParticipantEquipmentSlot slot, final BattleParticipantInventoryHandle handle, final boolean swap, final Tracer<ActionTrace> tracer) {
         checkSetup();
-        if (this.handle.equals(handle.getParentHandle())) {
+        if (!this.handle.equals(handle.getParentHandle())) {
             throw new TBCExException();
         }
         if (!checkSlot(slot)) {
@@ -176,7 +181,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
         if (stack == null) {
             return false;
         }
-        final Optional<TagKey<BattleParticipantEquipmentSlot>> acceptableSlots = stack.getItem().getType().getAcceptableSlots();
+        final Optional<TagKey<BattleParticipantEquipmentSlot>> acceptableSlots = stack.getItem().type().getAcceptableSlots();
         if (acceptableSlots.isEmpty() || !slot.getReference().isIn(acceptableSlots.get())) {
             return false;
         }

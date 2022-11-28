@@ -23,4 +23,11 @@ public enum Axis {
             case Y -> y;
         };
     }
+
+    public Axis other() {
+        return switch (this) {
+            case X -> Y;
+            case Y -> X;
+        };
+    }
 }

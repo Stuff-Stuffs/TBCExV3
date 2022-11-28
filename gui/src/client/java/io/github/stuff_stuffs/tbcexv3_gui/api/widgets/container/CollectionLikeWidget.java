@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3_gui.api.widgets.container;
 
-import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 import io.github.stuff_stuffs.tbcexv3_gui.api.widget.WidgetContext;
+import io.github.stuff_stuffs.tbcexv3_gui.api.widgets.Widget;
 
 import java.util.function.Function;
 

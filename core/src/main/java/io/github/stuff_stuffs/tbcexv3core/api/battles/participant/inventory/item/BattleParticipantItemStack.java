@@ -11,6 +11,8 @@ public interface BattleParticipantItemStack {
 
     int getCount();
 
+    boolean matches(BattleParticipantItemStack other);
+
     static BattleParticipantItemStack of(final BattleParticipantItem item, final int count) {
         Preconditions.checkArgument(count > 0);
         return new BattleParticipantItemStackImpl(item, count);
