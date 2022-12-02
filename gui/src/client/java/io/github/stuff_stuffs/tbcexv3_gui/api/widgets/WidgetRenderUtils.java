@@ -11,6 +11,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 public final class WidgetRenderUtils {
@@ -31,18 +32,18 @@ public final class WidgetRenderUtils {
         emitter.emit();
     }
 
-    public static <T> WidgetRenderUtils.Renderer<T> centeredText(final ToIntFunction<? super T> colorGetter, final Function<? super T, OrderedText> textGetter) {
-        return (data, renderContext, bounds) -> centeredText(renderContext, bounds, colorGetter.applyAsInt(data), textGetter.apply(data));
+    public static <T> WidgetRenderUtils.Renderer<T> centeredText(final ToIntFunction<? super T> colorGetter, final Predicate<? super T> shadow, final Function<? super T, OrderedText> textGetter) {
+        return (data, renderContext, bounds) -> centeredText(renderContext, bounds, colorGetter.applyAsInt(data), shadow.test(data), textGetter.apply(data));
     }
 
-    public static void centeredText(final WidgetRenderContext context, final Rectangle rectangle, final int c, final OrderedText text) {
+    public static void centeredText(final WidgetRenderContext context, final Rectangle rectangle, final int c, final boolean shadow, final OrderedText text) {
         final double width = rectangle.width();
         final double textWidth = context.textEmitter().width(text);
         final double scale = width / textWidth;
         final Point2d start = rectangle.center().sum(new Point2d(-width / 2.0, 0));
         context.pushTransform(WidgetRenderContext.Transform.translate(start.x(), start.y()));
         context.pushTransform(WidgetRenderContext.Transform.scale(scale, scale));
-        context.textEmitter().emit(text, 0, 0, c, false);
+        context.textEmitter().emit(text, 0, 0, c, shadow);
         context.popTransform();
         context.popTransform();
     }

@@ -12,6 +12,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -69,7 +70,7 @@ public class BattleImpl implements Battle, BattleView {
 
     @Override
     public void pushAction(final BattleAction action) {
-        if (tracer.getCurrentStage().getValue() != ROOT_VALUE) {
+        if (tracer.activeStage().value() != ROOT_VALUE) {
             TBCExV3Core.LOGGER.error("Pushed action while tracer was not at root");
         }
         if (mode == BattleStateMode.SERVER && action.getActor().isPresent()) {
@@ -90,5 +91,10 @@ public class BattleImpl implements Battle, BattleView {
     @Override
     public BattleAction getAction(final int index) {
         return actions.get(index);
+    }
+
+    @Override
+    public TracerView<ActionTrace> tracer() {
+        return tracer;
     }
 }

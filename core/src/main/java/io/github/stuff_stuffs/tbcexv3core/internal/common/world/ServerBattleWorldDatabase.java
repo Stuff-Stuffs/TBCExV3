@@ -135,7 +135,7 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
                 final Store activeStore = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
                 final ByteIterable activeExisting = activeStore.get(transaction, key);
                 if (activeExisting != null) {
-                    final ByteBuffer buffer = ByteBuffer.wrap(activeExisting.getBytesUnsafe());
+                    final ByteBuffer buffer = ByteBuffer.wrap(activeExisting.getBytesUnsafe(), 0, activeExisting.getLength());
                     final int UUID_SIZE = Long.BYTES * 2;
                     final int i = binarySearch(buffer, battleId);
                     if (i >= 0) {
@@ -152,7 +152,7 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
                 if (inactiveExisting == null) {
                     inactiveStore.put(transaction, key, data);
                 } else {
-                    final ByteBuffer buffer = ByteBuffer.wrap(inactiveExisting.getBytesUnsafe());
+                    final ByteBuffer buffer = ByteBuffer.wrap(inactiveExisting.getBytesUnsafe(), 0, inactiveExisting.getLength());
                     final int i = binarySearch(buffer, battleId);
                     final int UUID_SIZE = Long.BYTES * 2;
                     if (i < 0) {
@@ -285,7 +285,7 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
 
     private static DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> decodeBattle(final ByteIterable iterable) {
         try {
-            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(iterable.getBytesUnsafe()));
+            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(iterable.getBytesUnsafe(), 0, iterable.getLength()));
             final NbtElement data = compound.get("data");
             return Battle.decoder().parse(NbtOps.INSTANCE, data);
         } catch (final IOException e) {

@@ -4,12 +4,13 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 
 public interface PostBattleEndEvent {
     void postBattleEnd(BattleState state, Tracer<ActionTrace> tracer);
 
     interface View {
-        void postBattleEnd(BattleStateView state, Tracer<ActionTrace> tracer);
+        void postBattleEnd(BattleStateView state, TracerView<ActionTrace> tracer);
     }
 
     static PostBattleEndEvent convert(final View view) {

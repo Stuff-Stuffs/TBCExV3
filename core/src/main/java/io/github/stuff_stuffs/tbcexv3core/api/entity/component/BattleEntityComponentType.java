@@ -9,12 +9,14 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.registry.SimpleRegistry;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
 
+@ApiStatus.NonExtendable
 public interface BattleEntityComponentType<T extends BattleEntityComponent> {
     Registry<BattleEntityComponentType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleEntityComponentType<?>>ofRegistry(TBCExV3Core.createId("battle_entity_components")), Lifecycle.stable(), BattleEntityComponentType::getReference)).buildAndRegister();
     Codec<BattleEntityComponentType<?>> CODEC = REGISTRY.getCodec();

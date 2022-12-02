@@ -100,7 +100,7 @@ public final class RectangleRange {
             throw new IllegalArgumentException();
         }
         final Point2d other = new Point2d(width, height);
-        return new RectangleRange(outerLow, innerLow, outerHigh.combine(other, Double::sum), innerHigh.combine(other, Double::sum));
+        return new RectangleRange(outerLow, innerLow, outerHigh.sum(other), innerHigh.sum(other));
     }
 
     public RectangleRange shrinkExtents(final double width, final double height) {
@@ -108,12 +108,12 @@ public final class RectangleRange {
             throw new IllegalArgumentException();
         }
         final Point2d other = new Point2d(width, height);
-        return new RectangleRange(outerLow, innerLow, outerHigh.combine(other, Double::sum).combine(outerLow, Math::max), innerHigh.combine(other, Double::sum).combine(innerLow, Math::max));
+        return new RectangleRange(outerLow, innerLow, outerHigh.sum(other).combine(outerLow, Math::max), innerHigh.sum(other).combine(innerLow, Math::max));
     }
 
     public RectangleRange move(final double x, final double y) {
         final Point2d vec = new Point2d(x, y);
-        return new RectangleRange(outerLow.combine(vec, Double::sum), innerLow.combine(vec, Double::sum), outerHigh.combine(vec, Double::sum), innerHigh.combine(vec, Double::sum));
+        return new RectangleRange(outerLow.sum(vec), innerLow.sum(vec), outerHigh.sum(vec), innerHigh.sum(vec));
     }
 
     public static RectangleRange max(final Rectangle rectangle) {

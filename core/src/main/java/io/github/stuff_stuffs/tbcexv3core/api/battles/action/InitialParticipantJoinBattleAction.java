@@ -13,7 +13,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 
 import java.util.Optional;
 
-public class InitialParticipantJoinBattleAction implements BattleAction {
+public class InitialParticipantJoinBattleAction implements AbstractParticipantJoinBattleAction {
     public static final Codec<InitialParticipantJoinBattleAction> CODEC = BattleParticipantStateBuilder.Built.codec(false).xmap(InitialParticipantJoinBattleAction::new, action -> action.built);
     public static final Codec<InitialParticipantJoinBattleAction> NETWORK_CODEC = BattleParticipantStateBuilder.Built.codec(true).xmap(InitialParticipantJoinBattleAction::new, action -> action.built);
     private final BattleParticipantStateBuilder.Built built;
@@ -46,5 +46,10 @@ public class InitialParticipantJoinBattleAction implements BattleAction {
             throw new TBCExException("Error, participant initialized before it should have been!");
         }
         built.forEach(participantState, trace);
+    }
+
+    @Override
+    public BattleParticipantStateBuilder.Built built() {
+        return built;
     }
 }

@@ -6,12 +6,13 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 
 public interface PreBattleParticipantLeaveEvent {
     boolean preParticipantLeaveEvent(BattleParticipantHandle handle, BattleState battleState, BattleParticipantRemovalReason reason, Tracer<ActionTrace> tracer);
 
     interface View {
-        void preParticipantLeaveEvent(BattleParticipantHandle handle, BattleStateView battleStateView, BattleParticipantRemovalReason reason, Tracer<ActionTrace> tracer);
+        void preParticipantLeaveEvent(BattleParticipantHandle handle, BattleStateView battleStateView, BattleParticipantRemovalReason reason, TracerView<ActionTrace> tracer);
     }
 
     static PreBattleParticipantLeaveEvent convert(final PreBattleParticipantLeaveEvent.View view) {

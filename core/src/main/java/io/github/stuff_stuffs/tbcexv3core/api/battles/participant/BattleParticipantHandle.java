@@ -3,9 +3,11 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.participant;
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.BattleParticipantHandleImpl;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.UUID;
 
+@ApiStatus.NonExtendable
 public interface BattleParticipantHandle {
     UUID getUuid();
 

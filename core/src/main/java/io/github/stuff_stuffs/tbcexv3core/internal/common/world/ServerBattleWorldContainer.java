@@ -2,15 +2,23 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleListenerEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialParticipantJoinBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.PreBattleParticipantLeaveEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import it.unimi.dsi.fastutil.objects.*;
 import net.fabricmc.fabric.api.util.TriState;
@@ -60,21 +68,25 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     private void attachListeners(final Battle battle) {
-        battle.getState().getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).registerListener((state, tracer) -> {
+        final EventMap eventMap = battle.getState().getEventMap();
+        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).registerListener((state, tracer) -> {
             if (!closed) {
                 database.onBattleJoin(state.getUuid(), state.getBattleState().getHandle().getUuid(), true);
             }
         });
-        battle.getState().getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((handle, battleStateView, reason, tracer) -> {
+        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((handle, battleStateView, reason, tracer) -> {
             if (!closed) {
                 database.onBattleJoin(handle.getUuid(), handle.getParent().getUuid(), false);
             }
         });
-        battle.getState().getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).registerListener((state, tracer) -> {
-            for (final BattleParticipantHandle participant : state.getParticipants()) {
-                database.onBattleJoin(participant.getUuid(), state.getHandle().getUuid(), false);
+        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).registerListener((state, tracer) -> {
+            if (!closed) {
+                for (final BattleParticipantHandle participant : state.getParticipants()) {
+                    database.onBattleJoin(participant.getUuid(), state.getHandle().getUuid(), false);
+                }
             }
         });
+        BattleListenerEvent.EVENT.invoker().attachListener(battle);
     }
 
     public void tick() {

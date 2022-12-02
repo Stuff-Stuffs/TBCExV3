@@ -43,14 +43,19 @@ public class TracerImpl<T> implements Tracer<T> {
     }
 
     @Override
-    public StageImpl<T> getCurrentStage() {
+    public Stage<T> rootStage() {
+        return root;
+    }
+
+    @Override
+    public StageImpl<T> activeStage() {
         return stack.isEmpty() ? root : stack.top();
     }
 
     @Override
-    public Stream<Stage<T>> getLeaves(final boolean includeUnfinishedLeaves) {
+    public Stream<Stage<T>> leaves(final boolean includeUnfinishedLeaves) {
         final Stream.Builder<Stage<T>> builder = Stream.builder();
-        addLeaves(builder, root, includeUnfinishedLeaves ? null : getCurrentStage());
+        addLeaves(builder, root, includeUnfinishedLeaves ? null : activeStage());
         return builder.build();
     }
 
@@ -78,17 +83,17 @@ public class TracerImpl<T> implements Tracer<T> {
         }
 
         @Override
-        public Optional<Stage<T>> getParent() {
+        public Optional<Stage<T>> parent() {
             return Optional.ofNullable(parent);
         }
 
         @Override
-        public Collection<Stage<T>> getChildren() {
+        public Collection<Stage<T>> children() {
             return Collections.unmodifiableCollection(children);
         }
 
         @Override
-        public T getValue() {
+        public T value() {
             return value;
         }
     }

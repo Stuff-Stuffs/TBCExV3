@@ -27,6 +27,8 @@ import net.minecraft.world.World;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 public final class InventoryWidget {
@@ -46,8 +48,7 @@ public final class InventoryWidget {
             public double ySize(final InventoryState data, final int index, final double max, final double total) {
                 return switch (index) {
                     case 0 -> total * 0.15;
-                    case 1 -> total * (1 - 0.15) / 2.0;
-                    case 2 -> max;
+                    case 1 -> max;
                     default -> throw new IllegalStateException("Unexpected value: " + index);
                 };
             }
@@ -59,7 +60,7 @@ public final class InventoryWidget {
 
             @Override
             public int yCellCount(final InventoryState data) {
-                return 3;
+                return 2;
             }
         });
         container.add(createSorter(handle), context -> WidgetContext.dependent(context, SorterScrollState::new), 1, 0);
@@ -94,7 +95,7 @@ public final class InventoryWidget {
                     }
                 }
                 return false;
-            }).compose(WidgetUtils.MutableBoundsHolder.stateUpdater()), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(data -> data.parent.parent.sort == data.sort ? 0xFF7F7F7F : 0x3F3F3F3F), WidgetRenderUtils.centeredText(data -> 0xFF7F7F7F, data -> sort.name())), Sizer.min()), context -> WidgetContext.dependent(context, data -> new SortButtonState(data, sort)));
+            }).compose(WidgetUtils.MutableBoundsHolder.stateUpdater()), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(data -> data.parent.parent.sort == data.sort ? 0xFF7F7F7F : 0x3F3F3F3F), WidgetRenderUtils.centeredText(data -> 0xFF7F7F7F, data -> false, data -> sort.name())), Sizer.min()), context -> WidgetContext.dependent(context, data -> new SortButtonState(data, sort)));
         }
         return sortScroller;
     }
@@ -125,7 +126,7 @@ public final class InventoryWidget {
                     }
                 }
                 return false;
-            }).compose(WidgetUtils.MutableBoundsHolder.stateUpdater()), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(data -> data.parent.parent.filter == data.filter ? 0xFF7F7F7F : 0x3F3F3F3F), WidgetRenderUtils.centeredText(data -> 0xFF7F7F7F, data -> filter.name())), Sizer.min()), context -> WidgetContext.dependent(context, data -> new FilterButtonState(data, filter)));
+            }).compose(WidgetUtils.MutableBoundsHolder.stateUpdater()), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(data -> data.parent.parent.filter == data.filter ? 0xFF7F7F7F : 0x3F3F3F3F), WidgetRenderUtils.centeredText(data -> 0xFF7F7F7F, data -> false, data -> filter.name())), Sizer.min()), context -> WidgetContext.dependent(context, data -> new FilterButtonState(data, filter)));
         }
         return filterScroller;
     }
@@ -162,8 +163,10 @@ public final class InventoryWidget {
                         data.handles.forEach(ExpandableListContainerWidget.Handle::remove);
                         data.handles.clear();
                         data.cache.addAll(stacks);
+                        boolean even = true;
                         for (final Pair<BattleParticipantInventoryHandle, BattleParticipantItemStack> stack : stacks) {
-                            data.handles.add(itemList.add(createItemEntry(), context -> WidgetContext.dependent(context, d -> new InventoryItemEntryState(stack.getFirst(), stack.getSecond(), d))));
+                            data.handles.add(itemList.add(createItemEntry(even), context -> WidgetContext.dependent(context, d -> new InventoryItemEntryState(stack.getFirst(), stack.getSecond(), d))));
+                            even = !even;
                         }
                     }
                 }
@@ -179,7 +182,7 @@ public final class InventoryWidget {
         return scroller;
     }
 
-    private static Widget<InventoryItemEntryState> createItemEntry() {
+    private static Widget<InventoryItemEntryState> createItemEntry(boolean even) {
         final GridContainerWidget<InventoryItemEntryState> container = new GridContainerWidget<>(new GridContainerWidget.GridContainerSizer<>() {
             @Override
             public double xSize(final InventoryItemEntryState data, final int index, final double max, final double total) {
@@ -201,7 +204,15 @@ public final class InventoryWidget {
                 return 1;
             }
         });
-        container.add(new TerminalWidget<>(StateUpdater.none(), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(state -> state.hovered ? 0xFF00FF00 : 0x7F9F9F9F), WidgetRenderUtils.centeredText(state -> -1, state -> {
+        int normColor = even?0x7F9F9F9F:0x7F3F3F3F;
+        ToIntFunction<InventoryItemEntryState> colorGetter = state -> {
+            if(state.state.state.selectedIndex.isPresent() && state.state.state.selectedIndex.get().equals(state.handle)) {
+                return 0xFFF9F9F9;
+            }
+            return state.hovered?0xFFF3F3F3 : normColor;
+        };
+        Predicate<InventoryItemEntryState> shadow = state -> state.state.state.selectedIndex.isPresent() && state.state.state.selectedIndex.get().equals(state.handle);
+        container.add(new TerminalWidget<>(StateUpdater.none(), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(colorGetter), WidgetRenderUtils.centeredText(state -> -1, shadow,  state -> {
             final BattleParticipantHandle handle = state.state.state.parent.handle;
             final BattleView view = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(handle.getParent());
             if (view != null) {
@@ -212,7 +223,7 @@ public final class InventoryWidget {
             }
             return Text.empty().asOrderedText();
         })), Sizer.max()), WidgetContext::passthrough, 0, 0);
-        container.add(new TerminalWidget<>(StateUpdater.none(), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(state -> state.hovered ? 0xFF00FF00 : 0x7F9F9F9F), WidgetRenderUtils.centeredText(state -> -1, state -> {
+        container.add(new TerminalWidget<>(StateUpdater.none(), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(colorGetter), WidgetRenderUtils.centeredText(state -> -1, shadow, state -> {
             final BattleParticipantHandle handle = state.state.state.parent.handle;
             final BattleView view = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(handle.getParent());
             if (view != null) {

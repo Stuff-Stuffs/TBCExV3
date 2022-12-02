@@ -125,6 +125,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     }
 
     @Override
+    public Iterable<? extends BattleEntityComponent> entityComponents() {
+        return componentMap.components();
+    }
+
+    @Override
     public void setup(final AbstractBattleStateImpl state) {
         checkPhaseExact(BattleParticipantStatePhase.SETUP);
         battleState = state;

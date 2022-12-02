@@ -21,7 +21,7 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
 
     @Override
     public BattleParticipantStatModifierKey addModifier(final BattleParticipantStat stat, final BattleParticipantStatModifier modifier, final Tracer<ActionTrace> tracer) {
-        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier, tracer.getCurrentStage());
+        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier, tracer.activeStage());
     }
 
     @Override

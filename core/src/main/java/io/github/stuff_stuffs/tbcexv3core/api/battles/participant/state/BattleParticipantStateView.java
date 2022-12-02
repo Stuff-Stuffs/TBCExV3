@@ -33,4 +33,6 @@ public interface BattleParticipantStateView {
     BattleParticipantHandle getHandle();
 
     <T extends BattleEntityComponent> Optional<T> getEntityComponent(BattleEntityComponentType<T> componentType);
+
+    Iterable<? extends BattleEntityComponent> entityComponents();
 }

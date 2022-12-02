@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityCompo
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -18,6 +19,11 @@ public class BattleEntityComponentMapImpl implements BattleEntityComponentMap {
     @Override
     public <T extends BattleEntityComponent> Optional<T> get(final BattleEntityComponentType<T> type) {
         return Optional.ofNullable((T) components.getOrDefault(type, null));
+    }
+
+    @Override
+    public Iterable<? extends BattleEntityComponent> components() {
+        return Collections.unmodifiableCollection(components.values());
     }
 
     private static final class BuilderImpl implements Builder {

@@ -5,12 +5,13 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 
 public interface PreBattleParticipantSetTeamEvent {
     boolean preSetTeam(BattleParticipantState state, BattleParticipantTeam newTeam, Tracer<ActionTrace> tracer);
 
     interface View {
-        void preSetTeam(BattleParticipantStateView state, BattleParticipantTeam newTeam, Tracer<ActionTrace> tracer);
+        void preSetTeam(BattleParticipantStateView state, BattleParticipantTeam newTeam, TracerView<ActionTrace> tracer);
     }
 
     static PreBattleParticipantSetTeamEvent convert(final View view) {

@@ -1,15 +1,15 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.*;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.internal.common.DelayedEntityComponentEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.world.ServerBattleWorldContainer;
 import net.fabricmc.fabric.api.util.TriState;
-import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.server.world.ServerWorld;
@@ -38,7 +38,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
-public abstract class MixinServerWorld extends World implements BattleWorld, ServerBattleWorld {
+public abstract class MixinServerWorld extends World implements ServerBattleWorld {
     private ServerBattleWorldContainer battleWorldContainer;
 
     protected MixinServerWorld(final MutableWorldProperties properties, final RegistryKey<World> registryRef, final RegistryEntry<DimensionType> dimension, final Supplier<Profiler> profiler, final boolean isClient, final boolean debugWorld, final long seed, final int maxChainedNeighborUpdates) {
@@ -50,9 +50,14 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
         battleWorldContainer = new ServerBattleWorldContainer(worldKey, session.getDirectory(TBCExV3Core.TBCEX_WORLD_SAVE_PATH));
     }
 
+    @Inject(method = "close", at = @At("HEAD"))
+    private void closeHook(final CallbackInfo ci) {
+        battleWorldContainer.close();
+    }
+
     @Override
     public @Nullable BattleView tryGetBattleView(final @NotNull BattleHandle handle) {
-        if (!handle.getWorldKey().equals(this.getRegistryKey())) {
+        if (!handle.getWorldKey().equals(getRegistryKey())) {
             return null;
         }
         return battleWorldContainer.getBattle(handle.getUuid());
@@ -71,29 +76,6 @@ public abstract class MixinServerWorld extends World implements BattleWorld, Ser
     @Override
     public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
         return battleWorldContainer.createBattle(entities, teamSetupAction);
-    }
-
-    @Override
-    public void pushDelayedComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {
-        battleWorldContainer.pushDelayedComponent(playerUuid, handle, component);
-    }
-
-    @Inject(method = "tickEntity", at = @At("HEAD"))
-    private void entityTickHook(final Entity entity, final CallbackInfo ci) {
-        if (!((DelayedEntityComponentEntity) entity).tbcex_getDelayedComponentsCheck()) {
-            if (battleWorldContainer.delayedComponent(entity.getUuid(), (ServerWorld) (Object) this)) {
-                ((DelayedEntityComponentEntity) entity).tbcex_setDelayedComponentsCheck(true);
-            }
-        }
-    }
-
-    @Inject(method = "tickPassenger", at = @At("HEAD"))
-    private void entityPassengerTickHook(final Entity vehicle, final Entity passenger, final CallbackInfo ci) {
-        if (!((DelayedEntityComponentEntity) passenger).tbcex_getDelayedComponentsCheck()) {
-            if (battleWorldContainer.delayedComponent(passenger.getUuid(), (ServerWorld) (Object) this)) {
-                ((DelayedEntityComponentEntity) passenger).tbcex_setDelayedComponentsCheck(true);
-            }
-        }
     }
 
     @Override
