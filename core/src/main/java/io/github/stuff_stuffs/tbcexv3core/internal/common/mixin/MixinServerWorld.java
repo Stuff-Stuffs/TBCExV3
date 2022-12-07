@@ -3,10 +3,11 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.AbstractServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.world.ServerBattleWorldContainer;
 import net.fabricmc.fabric.api.util.TriState;
@@ -38,7 +39,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
-public abstract class MixinServerWorld extends World implements ServerBattleWorld {
+public abstract class MixinServerWorld extends World implements AbstractServerBattleWorld {
     private ServerBattleWorldContainer battleWorldContainer;
 
     protected MixinServerWorld(final MutableWorldProperties properties, final RegistryKey<World> registryRef, final RegistryEntry<DimensionType> dimension, final Supplier<Profiler> profiler, final boolean isClient, final boolean debugWorld, final long seed, final int maxChainedNeighborUpdates) {
@@ -81,5 +82,15 @@ public abstract class MixinServerWorld extends World implements ServerBattleWorl
     @Override
     public List<BattleParticipantHandle> getBattles(final UUID entityUuid, final TriState active) {
         return battleWorldContainer.getBattles(entityUuid, active);
+    }
+
+    @Override
+    public void pushDelayedPlayerComponent(final UUID uuid, final BattleHandle handle, final BattleEntityComponent component) {
+        battleWorldContainer.pushDelayedPlayerComponent(uuid, handle, component);
+    }
+
+    @Override
+    public boolean tryApplyDelayedComponents(final UUID uuid, final ServerWorld world) {
+        return battleWorldContainer.delayedComponent(uuid, world);
     }
 }

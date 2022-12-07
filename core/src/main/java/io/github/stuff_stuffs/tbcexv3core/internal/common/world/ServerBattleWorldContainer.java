@@ -3,22 +3,16 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleListenerEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialParticipantJoinBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.PreBattleParticipantLeaveEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import it.unimi.dsi.fastutil.objects.*;
 import net.fabricmc.fabric.api.util.TriState;
@@ -128,7 +122,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
         return handle;
     }
 
-    public void pushDelayedComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {
+    public void pushDelayedPlayerComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {
         componentsToApply.computeIfAbsent(playerUuid, database::getDelayedComponents).addDelayedComponent(handle.getUuid(), component);
     }
 

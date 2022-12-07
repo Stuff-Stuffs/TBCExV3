@@ -7,13 +7,14 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattlePlayerComponentEvent;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.AbstractServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.PlayerCurrentBattleSender;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -33,10 +34,16 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Shadow
     @Final
     public ServerPlayerInteractionManager interactionManager;
+
+    @Override
+    @Shadow
+    public abstract ServerWorld getWorld();
+
     @Unique
     private @Nullable BattleHandle tbcex$currentBattle;
     @Unique
     private @Nullable GameMode tbcex$preBattleGameMode = null;
+    private boolean setup = false;
 
     private MixinServerPlayer(final EntityType<?> type, final World world) {
         super(type, world);
@@ -70,6 +77,18 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
         if (tbcex$currentBattle == null && tbcex$preBattleGameMode != null) {
             interactionManager.changeGameMode(tbcex$preBattleGameMode);
         }
+    }
+
+    @Inject(at = @At("RETURN"), method = "tick")
+    private void setupHook(final CallbackInfo ci) {
+        if (!setup && ((AbstractServerBattleWorld) getWorld()).tryApplyDelayedComponents(getUuid(), getWorld())) {
+            setup = true;
+        }
+    }
+
+    @Inject(at = @At("RETURN"), method = "setWorld")
+    private void changeWorldHook(final ServerWorld world, final CallbackInfo ci) {
+        setup = false;
     }
 
     @Override

@@ -181,7 +181,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
         if (stack == null) {
             return false;
         }
-        final Optional<TagKey<BattleParticipantEquipmentSlot>> acceptableSlots = stack.getItem().type().getAcceptableSlots();
+        final Optional<TagKey<BattleParticipantEquipmentSlot>> acceptableSlots = stack.getItem().getAcceptableSlots(state);
         if (acceptableSlots.isEmpty() || !slot.getReference().isIn(acceptableSlots.get())) {
             return false;
         }

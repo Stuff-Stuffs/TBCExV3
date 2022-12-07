@@ -64,7 +64,7 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
                 entity = optionalEntity.get();
                 world.spawnEntity(entity);
             } else {
-                ((ServerBattleWorld) world).pushDelayedComponent(uuid, view.getState().getHandle(), this);
+                ((ServerBattleWorld) world).pushDelayedPlayerComponent(uuid, view.getState().getHandle(), this);
             }
         } else {
             final Optional<EntityType<?>> type = EntityType.fromNbt(entityData);

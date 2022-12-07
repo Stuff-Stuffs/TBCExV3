@@ -21,7 +21,7 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
 
     @Override
     public BattleParticipantStatModifierKey addModifier(final BattleParticipantStat stat, final BattleParticipantStatModifier modifier, final Tracer<ActionTrace> tracer) {
-        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier, tracer.activeStage());
+        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier);
     }
 
     @Override
@@ -45,12 +45,12 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
             return val;
         }
 
-        public KeyImpl addModifier(final BattleParticipantStatModifier modifier, final Tracer.Stage<ActionTrace> stage) {
+        public KeyImpl addModifier(final BattleParticipantStatModifier modifier) {
             final int index = modifiers.size();
             final WrappedModifier wrappedModifier = new WrappedModifier(index, modifier);
             modifiers.add(wrappedModifier);
             sort();
-            return new KeyImpl(wrappedModifier, this, stage);
+            return new KeyImpl(wrappedModifier, this);
         }
 
         public void remove(final WrappedModifier modifier, final Tracer<ActionTrace> tracer) {
@@ -92,24 +92,17 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
     private static final class KeyImpl implements BattleParticipantStatModifierKey {
         private final WrappedModifier modifier;
         private final Entry entry;
-        private final Tracer.Stage<ActionTrace> stage;
         private boolean alive;
 
-        public KeyImpl(final WrappedModifier modifier, final Entry entry, final Tracer.Stage<ActionTrace> stage) {
+        public KeyImpl(final WrappedModifier modifier, final Entry entry) {
             this.modifier = modifier;
             this.entry = entry;
-            this.stage = stage;
             alive = true;
         }
 
         @Override
         public boolean isDestroyed() {
             return alive;
-        }
-
-        @Override
-        public Tracer.Stage<ActionTrace> getTracerStage() {
-            return stage;
         }
 
         @Override

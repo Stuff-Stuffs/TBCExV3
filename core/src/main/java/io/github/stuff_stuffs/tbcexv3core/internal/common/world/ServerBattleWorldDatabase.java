@@ -1,10 +1,13 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import jetbrains.exodus.ArrayByteIterable;
 import jetbrains.exodus.ByteIterable;
 import jetbrains.exodus.CompoundByteIterable;
@@ -18,8 +21,10 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,6 +36,7 @@ import java.util.function.BiFunction;
 
 //TODO off thread file loading
 public class ServerBattleWorldDatabase implements AutoCloseable {
+    private static final Codec<List<Pair<UUID, BattleEntityComponent>>> DELAYED_COMPONENT_CODEC = Codec.list(Codec.pair(Codecs.UUID, BattleEntityComponent.CODEC));
     private static final StoreConfig STORE_CONFIG = StoreConfig.getStoreConfig(false, false);
     private static final String BATTLE_STORE = "battles";
     private static final String BATTLE_ACTIVE_ENTITIES_STORE = "battle_entities";
@@ -210,15 +216,57 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
     }
 
     public ServerBattleWorldContainer.DelayedComponents getDelayedComponents(final UUID uuid) {
-        //TODO don't forget about this!
-        return new ServerBattleWorldContainer.DelayedComponents(Map.of());
+        final ArrayByteIterable key = UUID_BINDING.objectToEntry(uuid);
+        while (true) {
+            final Transaction transaction = backing.beginTransaction();
+            if (backing.storeExists(DELAYED_COMPONENT_STORE, transaction)) {
+                final Store store = backing.openStore(DELAYED_COMPONENT_STORE, STORE_CONFIG, transaction);
+                final ByteIterable iterable = store.get(transaction, key);
+                if (iterable != null) {
+                    final DataResult<List<Pair<UUID, BattleEntityComponent>>> result = decodeDelayedComponents(iterable);
+                    store.delete(transaction, key);
+                    final List<Pair<UUID, BattleEntityComponent>> list = result.getOrThrow(false, s -> {
+                        throw new RuntimeException(s);
+                    });
+                    final Map<UUID, List<BattleEntityComponent>> components = new Object2ReferenceOpenHashMap<>();
+                    for (final Pair<UUID, BattleEntityComponent> pair : list) {
+                        components.computeIfAbsent(pair.getFirst(), i -> new ArrayList<>()).add(pair.getSecond());
+                    }
+                    if (transaction.commit()) {
+                        return new ServerBattleWorldContainer.DelayedComponents(components);
+                    } else {
+                        continue;
+                    }
+                }
+            }
+            transaction.abort();
+            return new ServerBattleWorldContainer.DelayedComponents(Map.of());
+        }
     }
 
-    public void saveDelayedComponents(final UUID entityId, final ServerBattleWorldContainer.DelayedComponents components) {
-        //TODO don't forget about this!
-    }
-
-    private record DelayedComponentsPacked(Map<UUID, List<BattleEntityComponent>> map) {
+    public void saveDelayedComponents(final UUID entityId, final @Nullable ServerBattleWorldContainer.DelayedComponents components) {
+        final ArrayByteIterable key = UUID_BINDING.objectToEntry(entityId);
+        Transaction transaction;
+        do {
+            transaction = backing.beginTransaction();
+            final Store store = backing.openStore(DELAYED_COMPONENT_STORE, STORE_CONFIG, transaction);
+            if (components != null) {
+                final ByteIterable iterable = store.get(transaction, key);
+                final List<Pair<UUID, BattleEntityComponent>> componentList = new ArrayList<>(components.components.size() * 4);
+                for (final Map.Entry<UUID, List<BattleEntityComponent>> entry : components.components.entrySet()) {
+                    for (final BattleEntityComponent component : entry.getValue()) {
+                        componentList.add(Pair.of(entry.getKey(), component));
+                    }
+                }
+                if (iterable != null) {
+                    store.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{iterable, encodeDelayedComponents(componentList)}));
+                } else {
+                    store.put(transaction, key, encodeDelayedComponents(componentList));
+                }
+            } else {
+                store.delete(transaction, key);
+            }
+        } while (!transaction.commit());
     }
 
     private static final class UUIDBinding extends ComparableBinding {
@@ -290,6 +338,31 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
             return Battle.decoder().parse(NbtOps.INSTANCE, data);
         } catch (final IOException e) {
             throw new RuntimeException("Error while loading battle", e);
+        }
+    }
+
+    private static DataResult<List<Pair<UUID, BattleEntityComponent>>> decodeDelayedComponents(final ByteIterable iterable) {
+        try {
+            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(iterable.getBytesUnsafe(), 0, iterable.getLength()));
+            final NbtElement data = compound.get("data");
+            return DELAYED_COMPONENT_CODEC.parse(NbtOps.INSTANCE, data);
+        } catch (final IOException e) {
+            throw new RuntimeException("Error while loading delayed component", e);
+        }
+    }
+
+    private static ByteIterable encodeDelayedComponents(final List<Pair<UUID, BattleEntityComponent>> list) {
+        final DataResult<NbtElement> encoded = DELAYED_COMPONENT_CODEC.encodeStart(NbtOps.INSTANCE, list);
+        final NbtCompound wrapper = new NbtCompound();
+        wrapper.put("data", encoded.getOrThrow(false, s -> {
+            throw new RuntimeException(s);
+        }));
+        final ByteArrayOutputStream stream = new ByteArrayOutputStream(65535);
+        try {
+            NbtIo.writeCompressed(wrapper, stream);
+            return new ArrayByteIterable(stream.toByteArray());
+        } catch (final IOException e) {
+            throw new RuntimeException("Error while saving battle", e);
         }
     }
 }

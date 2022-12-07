@@ -23,7 +23,8 @@ import java.util.function.BiFunction;
 public class BattleImpl implements Battle, BattleView {
     public static final Encoder<Battle> CASTED_ENCODER = CodecUtil.castedCodec(Codec.list(BattleAction.CODEC).xmap(null, impl -> impl.actions), BattleImpl.class);
     public static final Decoder<BiFunction<BattleHandle, BattleStateMode, Battle>> CASTED_DECODER = Codec.list(BattleAction.CODEC).xmap(l -> (handle, mode) -> new BattleImpl(l, mode, handle), battle -> null);
-    private static final ActionTrace ROOT_VALUE = ActionTrace.INSTANCE;
+    private static final ActionTrace ROOT_START_TRACER = ActionTrace.INSTANCE;
+    private static final ActionTrace ROOT_END_TRACER = ActionTrace.INSTANCE;
     private final ObjectArrayList<BattleAction> actions;
     private final BattleHandle handle;
     private final BattleStateMode mode;
@@ -40,7 +41,7 @@ public class BattleImpl implements Battle, BattleView {
     }
 
     private Tracer<ActionTrace> createTracer() {
-        return Tracer.create(ROOT_VALUE);
+        return Tracer.create(ROOT_START_TRACER, ROOT_END_TRACER);
     }
 
     private BattleImpl(final List<BattleAction> actions, final BattleStateMode mode, final BattleHandle handle) {
@@ -70,9 +71,6 @@ public class BattleImpl implements Battle, BattleView {
 
     @Override
     public void pushAction(final BattleAction action) {
-        if (tracer.activeStage().value() != ROOT_VALUE) {
-            TBCExV3Core.LOGGER.error("Pushed action while tracer was not at root");
-        }
         if (mode == BattleStateMode.SERVER && action.getActor().isPresent()) {
             if (!state.isCurrentTurn(action.getActor().get())) {
                 TBCExV3Core.LOGGER.error("Tried to push an action out of turn!");

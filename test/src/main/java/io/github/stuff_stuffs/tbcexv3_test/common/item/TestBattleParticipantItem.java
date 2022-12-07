@@ -1,18 +1,22 @@
 package io.github.stuff_stuffs.tbcexv3_test.common.item;
 
 import com.mojang.serialization.Codec;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItem;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemRarity;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tag.TagKey;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.random.Random;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 
 public class TestBattleParticipantItem implements BattleParticipantItem {
     public static final Codec<TestBattleParticipantItem> CODEC = Codec.LONG.xmap(TestBattleParticipantItem::new, item -> item.id);
@@ -41,8 +45,8 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
     }
 
     @Override
-    public OrderedText description(final BattleParticipantStateView stateView) {
-        return Text.empty().asOrderedText();
+    public TooltipText description(final BattleParticipantStateView stateView) {
+        return TooltipText.EMPTY;
     }
 
     @Override
@@ -56,5 +60,10 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
             return id == item.id;
         }
         return false;
+    }
+
+    @Override
+    public Optional<TagKey<BattleParticipantEquipmentSlot>> getAcceptableSlots(final BattleParticipantStateView stateView) {
+        return Optional.empty();
     }
 }
