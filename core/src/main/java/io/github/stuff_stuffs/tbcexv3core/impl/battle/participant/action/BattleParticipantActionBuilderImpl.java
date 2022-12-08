@@ -1,16 +1,19 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.action;
 
+import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTargetType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Iterator;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.*;
 
 public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantActionBuilder {
     private final BattleParticipantStateView stateView;
@@ -19,18 +22,19 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     private final S state;
     private final TargetProviderFactory<S> targetProviderFactory;
     private final BiConsumer<S, BattleParticipantActionTarget> stateUpdater;
+    private final Consumer<BattleAction> consumer;
     private int targetCount = 0;
     private TargetProvider currentProvider;
 
-    public BattleParticipantActionBuilderImpl(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater) {
+    public BattleParticipantActionBuilderImpl(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
         stateView = view;
         buildPredicate = predicate;
         this.builder = builder;
         this.state = state;
         targetProviderFactory = factory;
         stateUpdater = updater;
-        final int t = targetCount;
-        currentProvider = targetProviderFactory.build(stateView, state, this::update, () -> t == targetCount);
+        this.consumer = consumer;
+        setupProvider();
     }
 
     @Override
@@ -39,8 +43,8 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     }
 
     @Override
-    public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end, final double max) {
-        return currentProvider.raycastTargets(type, start, end, max);
+    public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end) {
+        return currentProvider.raycastTargets(type, start, end);
     }
 
     @Override
@@ -51,6 +55,10 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     private void update(final BattleParticipantActionTarget target) {
         targetCount++;
         stateUpdater.accept(state, target);
+        setupProvider();
+    }
+
+    private void setupProvider() {
         final int t = targetCount;
         currentProvider = targetProviderFactory.build(stateView, state, this::update, () -> t == targetCount);
     }
@@ -61,7 +69,10 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     }
 
     @Override
-    public BattleAction build() {
-        return builder.apply(state);
+    public void build() {
+        if (!canBuild()) {
+            throw new IllegalStateException("Tried to build BattleParticipantAction without checking canBuild!");
+        }
+        consumer.accept(builder.apply(state));
     }
 }

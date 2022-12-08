@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class ParticipantContainer {
     private final Map<BattleParticipantHandle, AbstractBattleParticipantState> participantStates;
@@ -160,6 +161,10 @@ public class ParticipantContainer {
             return true;
         }
         return false;
+    }
+
+    public Stream<BattleParticipantHandle> getParticipantStream() {
+        return participantStates.keySet().stream();
     }
 
     private record UnorderedTeamPair(BattleParticipantTeam first, BattleParticipantTeam second) {

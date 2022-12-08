@@ -95,7 +95,7 @@ public class EventMapImpl implements EventMap {
 
         @Override
         public EventMap build() {
-            return new EventMapImpl(map);
+            return new EventMapImpl(new Object2ReferenceOpenHashMap<>(map));
         }
 
         private record Info<ViewType, EventType>(

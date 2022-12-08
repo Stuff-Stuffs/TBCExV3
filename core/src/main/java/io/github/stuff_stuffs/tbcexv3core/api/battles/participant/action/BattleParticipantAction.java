@@ -7,7 +7,7 @@ import net.minecraft.text.OrderedText;
 
 import java.util.function.Consumer;
 
-public interface BattleParticipantActionType {
+public interface BattleParticipantAction {
     OrderedText name(BattleParticipantStateView stateView);
 
     TooltipText description(BattleParticipantStateView stateView);

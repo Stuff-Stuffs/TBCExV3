@@ -12,17 +12,17 @@ import java.util.function.BinaryOperator;
 public class DebugBattleEntityComponent implements BattleEntityComponent {
     public static final Codec<DebugBattleEntityComponent> CODEC = Codec.unit(DebugBattleEntityComponent::new);
     public static final BinaryOperator<DebugBattleEntityComponent> COMBINER = (debugBattleEntityComponent, debugBattleEntityComponent2) -> {
-        throw new UnsupportedOperationException("Cannot combine components!");
+        throw new UnsupportedOperationException("Cannot combine flag like components!");
     };
 
     @Override
-    public void applyToState(BattleParticipantState state, Tracer<ActionTrace> tracer) {
+    public void applyToState(final BattleParticipantState state, final Tracer<ActionTrace> tracer) {
 
     }
 
     @Override
     public void onLeave(final BattleView view, final ServerWorld world) {
-        
+
     }
 
     @Override

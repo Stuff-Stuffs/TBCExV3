@@ -25,6 +25,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 //TODO phase range check
 public class BattleStateImpl implements AbstractBattleStateImpl {
@@ -119,6 +120,12 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
+    public Stream<BattleParticipantHandle> getParticipantStream() {
+        checkPhase(BattleStatePhase.INITIALIZATION, false);
+        return participantContainer.getParticipantStream();
+    }
+
+    @Override
     public <View extends BattleEffect, Effect extends View> Optional<Effect> getEffect(final BattleEffectType<View, Effect> type) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
         final BattleEffect effect = effects.get(type);
@@ -202,7 +209,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (participant.getPhase().getOrder() > BattleParticipantStatePhase.SETUP.getOrder()) {
             throw new TBCExException();
         }
-        if (!team.getOwner().equals(this.handle)) {
+        if (!team.getOwner().equals(handle)) {
             throw new TBCExException("Team owner mismatch!");
         }
         if (!(participant instanceof AbstractBattleParticipantState)) {
@@ -226,7 +233,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (removed) {
             if (participantContainer.canEnd()) {
                 getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_END_EVENT).getInvoker().preBattleEnd(this, tracer);
-                this.phase = BattleStatePhase.FINISHED;
+                phase = BattleStatePhase.FINISHED;
                 getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).getInvoker().postBattleEnd(this, tracer);
             }
         }
@@ -238,7 +245,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (first.equals(second)) {
             throw new IllegalArgumentException("Cannot set the relation of a team to itself!");
         }
-        if (!first.getOwner().equals(this.handle) || !second.getOwner().equals(this.handle)) {
+        if (!first.getOwner().equals(handle) || !second.getOwner().equals(handle)) {
             throw new IllegalArgumentException("Tried to set a team relation from a different battle!");
         }
         return participantContainer.setTeamRelation(first, second, relation, tracer, this);
@@ -246,12 +253,12 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
 
     @Override
     public BattleParticipantTeam addTeam(final Identifier identifier) {
-        return participantContainer.addTeam(identifier, this.handle);
+        return participantContainer.addTeam(identifier, handle);
     }
 
     @Override
     public boolean removeTeam(final BattleParticipantTeam team) {
-        if (!team.getOwner().equals(this.handle)) {
+        if (!team.getOwner().equals(handle)) {
             throw new TBCExException("Team owner mismatch!");
         }
         return participantContainer.removeTeam(team);

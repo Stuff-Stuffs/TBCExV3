@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,7 +42,7 @@ public class BattleParticipantStatModifierPhaseImpl implements BattleParticipant
         if (PHASES.put(id, phase) != null) {
             throw new RuntimeException("Duplicate stat modifier phases!");
         }
-        TopologicalSort.sort(PHASES.values().stream().toList(), (parent, child, items) -> {
+        TopologicalSort.sort(new ArrayList<>(PHASES.values()), (parent, child, items) -> {
             final BattleParticipantStatModifierPhase parentPhase = items.get(parent);
             final BattleParticipantStatModifierPhase childPhase = items.get(child);
             return parentPhase.getHappensBefore().contains(childPhase.getId()) || childPhase.getHappensAfter().contains(parentPhase.getId());

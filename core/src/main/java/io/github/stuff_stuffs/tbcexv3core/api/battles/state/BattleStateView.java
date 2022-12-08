@@ -13,6 +13,7 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @ApiStatus.NonExtendable
 public interface BattleStateView {
@@ -29,6 +30,8 @@ public interface BattleStateView {
     BattleBounds getBattleBounds();
 
     Iterable<BattleParticipantHandle> getParticipants();
+
+    Stream<BattleParticipantHandle> getParticipantStream();
 
     BattleParticipantStateView getParticipantByHandle(BattleParticipantHandle handle);
 
