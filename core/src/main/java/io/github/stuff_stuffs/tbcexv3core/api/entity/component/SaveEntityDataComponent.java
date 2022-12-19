@@ -49,11 +49,16 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
 
     @Override
     public void applyToState(final BattleParticipantState state, final Tracer<ActionTrace> tracer) {
-
+        if(Util.NIL_UUID.equals(uuid)) {
+            return;
+        }
     }
 
     @Override
     public void onLeave(final BattleView view, final ServerWorld world) {
+        if(Util.NIL_UUID.equals(uuid)) {
+            return;
+        }
         Entity entity = world.getEntity(uuid);
         if (entity == null) {
             final Optional<Entity> optionalEntity = EntityType.getEntityFromNbt(entityData, world);
@@ -80,6 +85,9 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
 
     @Override
     public void applyToEntityOnJoin(final BattleParticipantHandle handle, final Entity entity) {
+        if(Util.NIL_UUID.equals(uuid)) {
+            return;
+        }
         if (!(entity instanceof PlayerEntity)) {
             entity.remove(Entity.RemovalReason.DISCARDED);
         }
@@ -87,6 +95,6 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
 
     @Override
     public BattleEntityComponentType<?> getType() {
-        return CoreBattleEntityComponents.AI_CONTROLLED_BATTLE_ENTITY_COMPONENT_TYPE;
+        return CoreBattleEntityComponents.SAVE_ENTITY_DATA_COMPONENT_TYPE;
     }
 }

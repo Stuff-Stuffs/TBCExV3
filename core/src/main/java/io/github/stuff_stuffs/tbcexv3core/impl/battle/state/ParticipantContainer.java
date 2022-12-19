@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
@@ -90,8 +91,9 @@ public class ParticipantContainer {
             throw new IllegalArgumentException("Tried to remove a non-existent battle participant!");
         }
         if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, state, reason, tracer)) {
-            participantStates.remove(handle);
-            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(handle, state, reason, tracer);
+            final AbstractBattleParticipantState removed = participantStates.remove(handle);
+            removed.finish();
+            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(removed, state, reason, tracer);
             return true;
         }
         return false;
@@ -133,11 +135,23 @@ public class ParticipantContainer {
         return participantStates.isEmpty();
     }
 
-    public void setTeam(final BattleParticipantHandle handle, final BattleParticipantTeam team) {
+    public boolean setTeam(final BattleParticipantHandle handle, final BattleParticipantTeam team, final Tracer<ActionTrace> tracer) {
         final BattleParticipantTeam currentTeam = teamByHandle.get(handle);
-        handlesByTeam.get(currentTeam).remove(handle);
-        handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
-        teamByHandle.put(handle, team);
+        if (currentTeam == null) {
+            throw new TBCExException("Tried to set unknown participants team!");
+        }
+        if (currentTeam.equals(team)) {
+            return true;
+        }
+        final AbstractBattleParticipantState state = participantStates.get(handle);
+        if (state.getEventMap().getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().preSetTeam(state, team, tracer)) {
+            handlesByTeam.get(currentTeam).remove(handle);
+            handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
+            teamByHandle.put(handle, team);
+            state.getEventMap().getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().postSetTeam(state, currentTeam, tracer);
+            return true;
+        }
+        return false;
     }
 
     public BattleParticipantTeam getTeam(final BattleParticipantHandle handle) {

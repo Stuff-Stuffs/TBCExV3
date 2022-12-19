@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
@@ -23,8 +24,8 @@ public interface BattleParticipantStateBuilder {
 
     Built build(Identifier team);
 
-    static BattleParticipantStateBuilder create(final UUID uuid) {
-        return new BattleParticipantStateBuilderImpl(uuid);
+    static BattleParticipantStateBuilder create(final UUID uuid, final BattleParticipantBounds bounds) {
+        return new BattleParticipantStateBuilderImpl(uuid, bounds);
     }
 
     @ApiStatus.NonExtendable
@@ -36,6 +37,8 @@ public interface BattleParticipantStateBuilder {
         List<BattleEntityComponent> getComponentList();
 
         BattleEntityComponentMap getComponents();
+
+        BattleParticipantBounds getBounds();
 
         void forEach(BattleParticipantState state, Tracer<ActionTrace> tracer);
 

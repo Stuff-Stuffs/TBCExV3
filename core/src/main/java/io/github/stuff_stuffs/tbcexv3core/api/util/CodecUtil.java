@@ -20,14 +20,14 @@ public final class CodecUtil {
         };
     }
 
-    public static <S, B extends S> Codec<S> castedCodec(final Codec<B> baseCodec, final Class<B> baseClass) {
+    public static <S, B extends S> Codec<S> castedCodec(final Codec<B> baseCodec, final Class<B> baseClass, Class<S> derivedClass) {
         return new Codec<>() {
             @Override
             public <T> DataResult<T> encode(final S input, final DynamicOps<T> ops, final T prefix) {
                 if (baseClass.isInstance(input)) {
                     return baseCodec.encode((B) input, ops, prefix);
                 }
-                return DataResult.error("Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface");
+                return DataResult.error("Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface!");
             }
 
             @Override

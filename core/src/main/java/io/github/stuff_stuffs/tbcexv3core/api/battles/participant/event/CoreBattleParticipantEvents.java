@@ -25,6 +25,9 @@ public final class CoreBattleParticipantEvents {
     public static final EventKey<PreBattleParticipantSetTeamEvent.View, PreBattleParticipantSetTeamEvent> PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT = EventKey.create(TBCExV3Core.createId("pre_participant_set_team"), PreBattleParticipantSetTeamEvent.View.class, PreBattleParticipantSetTeamEvent.class);
     public static final EventKey<PostBattleParticipantSetTeamEvent.View, PostBattleParticipantSetTeamEvent> POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT = EventKey.create(TBCExV3Core.createId("post_participant_set_team"), PostBattleParticipantSetTeamEvent.View.class, PostBattleParticipantSetTeamEvent.class);
 
+    public static final EventKey<PreBattleParticipantSetBoundsEvent.View, PreBattleParticipantSetBoundsEvent> PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT = EventKey.create(TBCExV3Core.createId("pre_participant_set_bounds"), PreBattleParticipantSetBoundsEvent.View.class, PreBattleParticipantSetBoundsEvent.class);
+    public static final EventKey<PostBattleParticipantSetBoundsEvent.View, PostBattleParticipantSetBoundsEvent> POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT = EventKey.create(TBCExV3Core.createId("post_participant_set_bounds"), PostBattleParticipantSetBoundsEvent.View.class, PostBattleParticipantSetBoundsEvent.class);
+
     private CoreBattleParticipantEvents() {
     }
 }

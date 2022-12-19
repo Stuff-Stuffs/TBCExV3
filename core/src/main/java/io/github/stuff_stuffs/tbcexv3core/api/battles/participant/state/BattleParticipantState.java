@@ -1,10 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
@@ -22,11 +24,15 @@ public interface BattleParticipantState extends BattleParticipantStateView {
     @Override
     EventMap getEventMap();
 
+    boolean setBounds(BattleParticipantBounds bounds, Tracer<ActionTrace> tracer);
+
     <View extends BattleParticipantEffect, Effect extends View> Optional<Effect> getEffect(BattleParticipantEffectType<View, Effect> type);
 
     void removeEffect(BattleParticipantEffectType<?, ?> type, Tracer<ActionTrace> tracer);
 
     void addEffect(BattleParticipantEffect effect, Tracer<ActionTrace> tracer);
+
+    boolean setTeam(BattleParticipantTeam team, Tracer<ActionTrace> tracer);
 
     @Override
     BattleParticipantInventory getInventory();
@@ -47,7 +53,7 @@ public interface BattleParticipantState extends BattleParticipantStateView {
         void addEvents(EventMap.Builder builder);
     }
 
-    static BattleParticipantState create(final UUID uuid, final BattleEntityComponentMap componentMap) {
-        return new BattleParticipantStateImpl(uuid, componentMap);
+    static BattleParticipantState create(final UUID uuid, final BattleEntityComponentMap componentMap, final BattleParticipantBounds bounds) {
+        return new BattleParticipantStateImpl(uuid, componentMap, bounds);
     }
 }

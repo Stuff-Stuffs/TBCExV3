@@ -2,12 +2,15 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
@@ -17,8 +20,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.AbstractBattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
-import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,17 +37,19 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     private BattleParticipantHandle handle;
     private AbstractBattleStateImpl battleState;
     private BattleParticipantStatePhase phase;
+    private BattleParticipantBounds bounds;
 
-    public BattleParticipantStateImpl(final UUID uuid, final BattleEntityComponentMap componentMap) {
+    public BattleParticipantStateImpl(final UUID uuid, final BattleEntityComponentMap componentMap, final BattleParticipantBounds bounds) {
         this.componentMap = componentMap;
         final EventMap.Builder builder = EventMap.Builder.create();
         BattleParticipantState.BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT.invoker().addEvents(builder);
         events = builder.build();
         this.uuid = uuid;
-        effects = new Reference2ObjectOpenHashMap<>();
+        effects = new Object2ReferenceOpenHashMap<>();
         inventory = AbstractBattleParticipantInventory.createBlank();
         statMap = BattleParticipantStatMap.create();
         phase = BattleParticipantStatePhase.SETUP;
+        this.bounds = bounds;
     }
 
     @Override
@@ -53,10 +59,28 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     }
 
     @Override
+    public boolean setBounds(final BattleParticipantBounds bounds, final Tracer<ActionTrace> tracer) {
+        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FIGHT);
+        if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, bounds, tracer)) {
+            final BattleParticipantBounds oldBounds = this.bounds;
+            this.bounds = bounds;
+            events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, oldBounds, tracer);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public <View extends BattleParticipantEffect> Optional<View> getEffectView(final BattleParticipantEffectType<View, ?> type) {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         final BattleParticipantEffect effect = effects.get(type);
         return Optional.ofNullable((View) effect);
+    }
+
+    @Override
+    public BattleParticipantBounds getBounds() {
+        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
+        return bounds;
     }
 
     @Override
@@ -83,6 +107,12 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
             throw new TBCExException();
         }
         effect.init(this, tracer);
+    }
+
+    @Override
+    public boolean setTeam(final BattleParticipantTeam team, final Tracer<ActionTrace> tracer) {
+        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
+        return battleState.setTeam(handle, team, tracer);
     }
 
     @Override
@@ -120,12 +150,18 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     }
 
     @Override
+    public BattleParticipantTeam getTeam() {
+        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
+        return battleState.getTeamByParticipant(handle);
+    }
+
+    @Override
     public <T extends BattleEntityComponent> Optional<T> getEntityComponent(final BattleEntityComponentType<T> componentType) {
         return componentMap.get(componentType);
     }
 
     @Override
-    public Iterable<? extends BattleEntityComponent> entityComponents() {
+    public Iterator<? extends BattleEntityComponent> entityComponents() {
         return componentMap.components();
     }
 
@@ -136,6 +172,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
         handle = BattleParticipantHandle.of(uuid, state.getHandle());
         inventory.setup(this, handle);
         phase = BattleParticipantStatePhase.INITIALIZATION;
+    }
+
+    @Override
+    public void finish() {
+        phase = BattleParticipantStatePhase.FINISHED;
     }
 
     private void checkPhaseExact(final BattleParticipantStatePhase phase) {

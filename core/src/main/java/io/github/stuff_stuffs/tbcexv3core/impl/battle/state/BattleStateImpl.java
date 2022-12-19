@@ -58,17 +58,18 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
-    public void setTeam(final BattleParticipantHandle handle, final BattleParticipantTeam team) {
+    public boolean setTeam(final BattleParticipantHandle handle, final BattleParticipantTeam team, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleStatePhase.SETUP, false);
         if (!team.getOwner().equals(this.handle)) {
             throw new TBCExException("Team owner mismatch!");
         }
-        participantContainer.setTeam(handle, team);
+        return participantContainer.setTeam(handle, team, tracer);
     }
 
     @Override
     public void setTurnSelector(final TurnSelector turnSelector) {
         checkPhase(BattleStatePhase.INITIALIZATION, true);
+        this.turnSelector.deinit();
         this.turnSelector = turnSelector;
     }
 
@@ -154,10 +155,10 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     @Override
     public boolean setBattleBounds(final BattleBounds bounds, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
-        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET_EVENT).getInvoker().preBattleBoundsSet(this, bounds, tracer)) {
+        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT).getInvoker().preBattleSetBounds(this, bounds, tracer)) {
             final BattleBounds old = this.bounds;
             this.bounds = bounds;
-            events.getEvent(CoreBattleEvents.POST_BATTLE_BOUNDS_SET_EVENT).getInvoker().postBattleBoundsSet(this, old, tracer);
+            events.getEvent(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT).getInvoker().postBattleBoundsSet(this, old, tracer);
             return true;
         }
         return false;
@@ -206,6 +207,9 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     @Override
     public Optional<BattleParticipantHandle> addParticipant(final BattleParticipantState participant, final BattleParticipantTeam team, final Optional<BattleParticipantHandle> invitation, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
+        if (!bounds.isIn(participant.getBounds())) {
+            return Optional.empty();
+        }
         if (participant.getPhase().getOrder() > BattleParticipantStatePhase.SETUP.getOrder()) {
             throw new TBCExException();
         }
@@ -221,8 +225,10 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
             }
         }
         final Optional<BattleParticipantHandle> handle = participantContainer.addParticipant(participant, team, tracer, this.handle);
-        handle.ifPresent(battleParticipantHandle -> participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this));
-        events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
+        handle.ifPresent(battleParticipantHandle -> {
+            participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this);
+            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
+        });
         return handle;
     }
 

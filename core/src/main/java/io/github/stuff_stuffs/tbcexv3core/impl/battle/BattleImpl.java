@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 public class BattleImpl implements Battle, BattleView {
-    public static final Encoder<Battle> CASTED_ENCODER = CodecUtil.castedCodec(Codec.list(BattleAction.CODEC).xmap(null, impl -> impl.actions), BattleImpl.class);
+    public static final Encoder<Battle> CASTED_ENCODER = CodecUtil.castedCodec(Codec.list(BattleAction.CODEC).xmap(null, impl -> impl.actions), BattleImpl.class, Battle.class);
     public static final Decoder<BiFunction<BattleHandle, BattleStateMode, Battle>> CASTED_DECODER = Codec.list(BattleAction.CODEC).xmap(l -> (handle, mode) -> new BattleImpl(l, mode, handle), battle -> null);
     private static final ActionTrace ROOT_START_TRACER = ActionTrace.INSTANCE;
     private static final ActionTrace ROOT_END_TRACER = ActionTrace.INSTANCE;

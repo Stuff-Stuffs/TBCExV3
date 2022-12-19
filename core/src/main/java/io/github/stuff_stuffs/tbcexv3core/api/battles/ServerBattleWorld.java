@@ -3,7 +3,6 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.SaveEntityDataComponent;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -16,6 +15,8 @@ public interface ServerBattleWorld extends BattleWorld {
     @Nullable Battle tryGetBattle(BattleHandle handle);
 
     BattleHandle createBattle(Map<BattleEntity, Identifier> entities, InitialTeamSetupBattleAction teamSetupAction);
+
+    BattleHandle createBattle(Map<BattleEntity, Identifier> entities, InitialTeamSetupBattleAction teamSetupAction, BattleBounds bounds);
 
     void pushDelayedPlayerComponent(UUID uuid, BattleHandle handle, BattleEntityComponent component);
 }

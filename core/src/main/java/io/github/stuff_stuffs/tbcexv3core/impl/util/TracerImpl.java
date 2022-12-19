@@ -295,13 +295,21 @@ public class TracerImpl<T> implements Tracer<T> {
         @Override
         public TracerView<T> before(final Node<T> node) {
             final int[] path = path(node);
-            return Arrays.compare(before, path) < 0 ? new SubView<>(this.node, path, after) : TracerView.empty();
+            final int compare = Arrays.compare(before, path);
+            if (compare == 0) {
+                return this;
+            }
+            return compare < 0 ? new SubView<>(this.node, path, after) : TracerView.empty();
         }
 
         @Override
         public TracerView<T> after(final Node<T> node) {
             final int[] path = path(node);
-            return Arrays.compare(after, path) > 0 ? new SubView<>(this.node, before, path) : TracerView.empty();
+            final int compare = Arrays.compare(after, path);
+            if (compare == 0) {
+                return this;
+            }
+            return compare > 0 ? new SubView<>(this.node, before, path) : TracerView.empty();
         }
 
         private Stream<Node<T>> stream() {

@@ -48,9 +48,11 @@ public class ClientBattleWorldContainer {
                 }
             }
             BattleUpdateRequestSender.send(updateRequests);
+            battleUpdateRequestsToSend.clear();
         }
         if (!entityBattleRequestsToSend.isEmpty()) {
             EntityBattlesUpdateRequestSender.send(entityBattleRequestsToSend);
+            entityBattleRequestsToSend.clear();
         }
     }
 

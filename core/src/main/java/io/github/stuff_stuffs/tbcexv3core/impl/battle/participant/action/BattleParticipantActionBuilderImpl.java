@@ -1,19 +1,17 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.action;
 
-import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTargetType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantActionBuilder {
     private final BattleParticipantStateView stateView;
@@ -52,7 +50,10 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
         return currentProvider.types();
     }
 
-    private void update(final BattleParticipantActionTarget target) {
+    private void update(final BattleParticipantActionTarget target, final int token) {
+        if (token != targetCount) {
+            throw new IllegalArgumentException("Tried to add target with wrong token!");
+        }
         targetCount++;
         stateUpdater.accept(state, target);
         setupProvider();
@@ -60,7 +61,7 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
 
     private void setupProvider() {
         final int t = targetCount;
-        currentProvider = targetProviderFactory.build(stateView, state, this::update, () -> t == targetCount);
+        currentProvider = targetProviderFactory.build(stateView, state, action -> update(action, t), () -> t == targetCount);
     }
 
     @Override

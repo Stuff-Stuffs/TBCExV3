@@ -7,26 +7,26 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 
-public interface PreBattleBoundsSetEvent {
-    boolean preBattleBoundsSet(BattleState state, BattleBounds newBounds, Tracer<ActionTrace> tracer);
+public interface PreBattleSetBoundsEvent {
+    boolean preBattleSetBounds(BattleState state, BattleBounds newBounds, Tracer<ActionTrace> tracer);
 
     interface View {
-        void preBattleBoundsSet(BattleStateView view, BattleBounds newBounds, TracerView<ActionTrace> tracer);
+        void preBattleSetBounds(BattleStateView view, BattleBounds newBounds, TracerView<ActionTrace> tracer);
     }
 
-    static PreBattleBoundsSetEvent convert(final View view) {
+    static PreBattleSetBoundsEvent convert(final View view) {
         return (state, newBounds, tracer) -> {
-            view.preBattleBoundsSet(state, newBounds, tracer);
+            view.preBattleSetBounds(state, newBounds, tracer);
             return true;
         };
     }
 
-    static PreBattleBoundsSetEvent invoker(final PreBattleBoundsSetEvent[] listeners, final Runnable enter, final Runnable exit) {
+    static PreBattleSetBoundsEvent invoker(final PreBattleSetBoundsEvent[] listeners, final Runnable enter, final Runnable exit) {
         return (state, newBounds, tracer) -> {
             enter.run();
             boolean accepted = true;
-            for (final PreBattleBoundsSetEvent listener : listeners) {
-                accepted &= listener.preBattleBoundsSet(state, newBounds, tracer);
+            for (final PreBattleSetBoundsEvent listener : listeners) {
+                accepted &= listener.preBattleSetBounds(state, newBounds, tracer);
             }
             exit.run();
             return accepted;

@@ -3,6 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.mixin;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
@@ -94,5 +95,10 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Override
     public @Nullable BattleHandle tbcex$getCurrentBattle() {
         return tbcex$currentBattle;
+    }
+
+    @Override
+    public BattleParticipantBounds getDefaultBounds() {
+        return BattleParticipantBounds.basic(this);
     }
 }

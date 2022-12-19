@@ -1,11 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.entity;
 
+import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,8 +23,8 @@ public class BattleEntityComponentMapImpl implements BattleEntityComponentMap {
     }
 
     @Override
-    public Iterable<? extends BattleEntityComponent> components() {
-        return Collections.unmodifiableCollection(components.values());
+    public Iterator<? extends BattleEntityComponent> components() {
+        return Iterators.unmodifiableIterator(components.values().iterator());
     }
 
     private static final class BuilderImpl implements Builder {

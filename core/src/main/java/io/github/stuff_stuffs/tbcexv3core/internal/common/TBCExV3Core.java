@@ -1,12 +1,13 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleListenerEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.*;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PostChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PreChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.CoreBattleParticipantEffects;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.*;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostEquipBattleParticipantEquipmentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostUnequipBattleParticipantEquipmentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreEquipBattleParticipantEquipmentEvent;
@@ -17,6 +18,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.Pre
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattlePlayerComponentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityComponents;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.PlayerControlledBattleEntityComponent;
@@ -28,6 +30,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Iterator;
 
 public class TBCExV3Core implements ModInitializer {
     public static final String MOD_ID = "tbcexv3_core";
@@ -45,9 +49,15 @@ public class TBCExV3Core implements ModInitializer {
         BattleUpdateRequestReceiver.init();
         EntityBattlesUpdateRequestReceiver.init();
         CoreBattleEntityComponents.init();
+        BattleListenerEvent.EVENT.register((view, world) -> view.getState().getEventMap().getEventView(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((state, battleStateView, reason, tracer) -> {
+            final Iterator<? extends BattleEntityComponent> iterator = state.entityComponents();
+            while (iterator.hasNext()) {
+                iterator.next().onLeave(view, world);
+            }
+        }));
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.register(builder -> {
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET_EVENT, PreBattleBoundsSetEvent::convert, PreBattleBoundsSetEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_BOUNDS_SET_EVENT, PostBattleBoundsSetEvent::convert, PostBattleBoundsSetEvent::invoker);
+            builder.unsorted(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT, PreBattleSetBoundsEvent::convert, PreBattleSetBoundsEvent::invoker);
+            builder.unsorted(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT, PostBattleBoundsSetEvent::convert, PostBattleBoundsSetEvent::invoker);
 
             builder.unsorted(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT, PreBattleParticipantJoinEvent::convert, PreBattleParticipantJoinEvent::invoker);
             builder.unsorted(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT, PostBattleParticipantJoinEvent::convert, PostBattleParticipantJoinEvent::invoker);
@@ -71,6 +81,12 @@ public class TBCExV3Core implements ModInitializer {
             builder.unsorted(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PostEquipBattleParticipantEquipmentEvent::convert, PostEquipBattleParticipantEquipmentEvent::invoker);
             builder.unsorted(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PreUnequipBattleParticipantEquipmentEvent::convert, PreUnequipBattleParticipantEquipmentEvent::invoker);
             builder.unsorted(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PostUnequipBattleParticipantEquipmentEvent::convert, PostUnequipBattleParticipantEquipmentEvent::invoker);
+
+            builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT, PreBattleParticipantSetTeamEvent::convert, PreBattleParticipantSetTeamEvent::invoker);
+            builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT, PostBattleParticipantSetTeamEvent::convert, PostBattleParticipantSetTeamEvent::invoker);
+
+            builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT, PreBattleParticipantSetBoundsEvent::convert, PreBattleParticipantSetBoundsEvent::invoker);
+            builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT, PostBattleParticipantSetBoundsEvent::convert, PostBattleParticipantSetBoundsEvent::invoker);
         });
     }
 

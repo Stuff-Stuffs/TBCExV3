@@ -7,7 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 
 public interface AbstractBattleParticipantInventory extends BattleParticipantInventory {
-    Codec<AbstractBattleParticipantInventory> CODEC = CodecUtil.castedCodec(BattleParticipantInventoryImpl.CODEC, BattleParticipantInventoryImpl.class);
+    Codec<AbstractBattleParticipantInventory> CODEC = CodecUtil.castedCodec(BattleParticipantInventoryImpl.CODEC, BattleParticipantInventoryImpl.class, AbstractBattleParticipantInventory.class);
 
     void setup(BattleParticipantState state, BattleParticipantHandle handle);
 

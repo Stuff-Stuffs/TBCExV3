@@ -13,7 +13,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 
 import java.util.Optional;
 
-public class InitialParticipantJoinBattleAction implements AbstractParticipantJoinBattleAction {
+public class InitialParticipantJoinBattleAction implements BattleAction {
     public static final Codec<InitialParticipantJoinBattleAction> CODEC = BattleParticipantStateBuilder.Built.codec(false).xmap(InitialParticipantJoinBattleAction::new, action -> action.built);
     public static final Codec<InitialParticipantJoinBattleAction> NETWORK_CODEC = BattleParticipantStateBuilder.Built.codec(true).xmap(InitialParticipantJoinBattleAction::new, action -> action.built);
     private final BattleParticipantStateBuilder.Built built;
@@ -37,7 +37,7 @@ public class InitialParticipantJoinBattleAction implements AbstractParticipantJo
         if (state.getPhase() != BattleStatePhase.INITIALIZATION) {
             throw new TBCExException("Wrong phase!");
         }
-        final BattleParticipantState participantState = BattleParticipantState.create(built.getUuid(), built.getComponents());
+        final BattleParticipantState participantState = BattleParticipantState.create(built.getUuid(), built.getComponents(), built.getBounds());
         final BattleParticipantTeam team = state.getTeamById(built.getTeam()).orElseThrow(() -> new TBCExException("Tried to join non-existent team!"));
         if (state.addParticipant(participantState, team, Optional.empty(), trace).isEmpty()) {
             throw new TBCExException("Problem adding participant during initialization!");
@@ -46,10 +46,5 @@ public class InitialParticipantJoinBattleAction implements AbstractParticipantJo
             throw new TBCExException("Error, participant initialized before it should have been!");
         }
         built.forEach(participantState, trace);
-    }
-
-    @Override
-    public BattleParticipantStateBuilder.Built built() {
-        return built;
     }
 }

@@ -86,7 +86,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
 
     @Override
     public void onPreLaunch() {
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && System.getProperties().containsKey("renderdoc")) {
             try {
                 System.loadLibrary("renderdoc");
             } catch (final Exception e) {

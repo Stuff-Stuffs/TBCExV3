@@ -2,6 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action;
 
 import com.google.common.collect.Iterators;
 import com.mojang.datafixers.util.Function3;
+import com.mojang.datafixers.util.Pair;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTargetType;
@@ -37,9 +38,9 @@ public interface BattleParticipantActionBuilder {
 
         void accept();
 
-        OptionalDouble raycast();
+        Optional<? extends Pair<? extends T, Double>> raycast();
 
-        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> of(final List<T> collection, final Function<T, Box> boxExtractor, final Consumer<? super T> consumer, final BooleanSupplier valid, final Vec3d start, final Vec3d end) {
+        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> of(final List<T> list, final Function<T, Iterator<Box>> boxExtractor, final Consumer<? super T> consumer, final BooleanSupplier valid, final Vec3d start, final Vec3d end) {
             return new TargetRaycaster<>() {
                 private int lastIndex = -1;
 
@@ -50,34 +51,37 @@ public interface BattleParticipantActionBuilder {
 
                 @Override
                 public void accept() {
-                    if (lastIndex == -1 || lastIndex >= collection.size()) {
+                    if (lastIndex == -1 || lastIndex >= list.size()) {
                         throw new IllegalStateException("Tried to accept empty raycast!");
                     }
-                    consumer.accept(collection.get(lastIndex));
+                    consumer.accept(list.get(lastIndex));
                 }
 
                 @Override
-                public OptionalDouble raycast() {
+                public Optional<? extends Pair<? extends T, Double>> raycast() {
                     int best = -1;
                     double bestDist = Double.POSITIVE_INFINITY;
-                    for (int i = lastIndex + 1; i < collection.size(); i++) {
-                        final T t = collection.get(i);
-                        final Box box = boxExtractor.apply(t);
-                        final Optional<Vec3d> raycast = box.raycast(start, end);
-                        if (raycast.isPresent()) {
-                            final double dist = raycast.get().squaredDistanceTo(start);
-                            if (dist < bestDist) {
-                                best = i;
-                                bestDist = dist;
+                    for (int i = lastIndex + 1; i < list.size(); i++) {
+                        final T t = list.get(i);
+                        final Iterator<Box> boxes = boxExtractor.apply(t);
+                        while (boxes.hasNext()) {
+                            final Box box = boxes.next();
+                            final Optional<Vec3d> raycast = box.raycast(start, end);
+                            if (raycast.isPresent()) {
+                                final double dist = raycast.get().squaredDistanceTo(start);
+                                if (dist < bestDist) {
+                                    best = i;
+                                    bestDist = dist;
+                                }
                             }
                         }
                     }
                     if (best != -1) {
                         lastIndex = best;
-                        return OptionalDouble.of(bestDist);
+                        return Optional.of(Pair.of(list.get(best), bestDist));
                     } else {
                         lastIndex = -1;
-                        return OptionalDouble.empty();
+                        return Optional.empty();
                     }
                 }
             };
@@ -96,8 +100,8 @@ public interface BattleParticipantActionBuilder {
                 }
 
                 @Override
-                public OptionalDouble raycast() {
-                    return OptionalDouble.empty();
+                public Optional<? extends Pair<? extends T, Double>> raycast() {
+                    return Optional.empty();
                 }
             };
         }
@@ -118,13 +122,13 @@ public interface BattleParticipantActionBuilder {
                 }
 
                 @Override
-                public OptionalDouble raycast() {
-                    OptionalDouble opt = OptionalDouble.empty();
+                public Optional<? extends Pair<? extends T, Double>> raycast() {
+                    Optional<? extends Pair<? extends T, Double>> opt = Optional.empty();
                     while (index < raycasters.length && (opt = raycasters[index].raycast()).isEmpty()) {
                         index++;
                     }
                     if (index == raycasters.length) {
-                        return OptionalDouble.empty();
+                        return Optional.empty();
                     }
                     return opt;
                 }

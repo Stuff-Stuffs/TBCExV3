@@ -14,5 +14,5 @@ public interface AbstractBattleParticipantInventoryHandle extends BattleParticip
     }
 
     Codec<AbstractBattleParticipantInventoryHandle> CODEC = RecordCodecBuilder.create(instance -> instance.group(BattleParticipantHandle.codec().fieldOf("parent").forGetter(BattleParticipantInventoryHandle::getParentHandle), Codec.LONG.fieldOf("key").forGetter(AbstractBattleParticipantInventoryHandle::getKey)).apply(instance, AbstractBattleParticipantInventoryHandle::of));
-    Codec<BattleParticipantInventoryHandle> CASTED_CODEC = CodecUtil.castedCodec(CODEC, AbstractBattleParticipantInventoryHandle.class);
+    Codec<BattleParticipantInventoryHandle> CASTED_CODEC = CodecUtil.castedCodec(CODEC, AbstractBattleParticipantInventoryHandle.class, BattleParticipantInventoryHandle.class);
 }

@@ -1,12 +1,15 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleListenerEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialBoundsBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialParticipantJoinBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
@@ -19,15 +22,18 @@ import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 public class ServerBattleWorldContainer implements AutoCloseable {
     private static final long TIMEOUT_TICK_DIFF = 6000;
+    private final ServerWorld world;
     private final Map<UUID, Battle> battles;
     private final Object2LongMap<UUID> lastAccessTime;
     private final Map<UUID, DelayedComponents> componentsToApply;
@@ -37,7 +43,8 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     private long tickCount;
     private boolean closed = false;
 
-    public ServerBattleWorldContainer(final RegistryKey<World> worldKey, final Path directory) {
+    public ServerBattleWorldContainer(final ServerWorld world, final RegistryKey<World> worldKey, final Path directory) {
+        this.world = world;
         this.worldKey = worldKey;
         battles = new Object2ReferenceOpenHashMap<>();
         lastAccessTime = new Object2LongOpenHashMap<>();
@@ -68,9 +75,9 @@ public class ServerBattleWorldContainer implements AutoCloseable {
                 database.onBattleJoin(state.getUuid(), state.getBattleState().getHandle().getUuid(), true);
             }
         });
-        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((handle, battleStateView, reason, tracer) -> {
+        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((stateView, battleStateView, reason, tracer) -> {
             if (!closed) {
-                database.onBattleJoin(handle.getUuid(), handle.getParent().getUuid(), false);
+                database.onBattleJoin(stateView.getUuid(), stateView.getHandle().getParent().getUuid(), false);
             }
         });
         eventMap.getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).registerListener((state, tracer) -> {
@@ -80,7 +87,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
                 }
             }
         });
-        BattleListenerEvent.EVENT.invoker().attachListener(battle);
+        BattleListenerEvent.EVENT.invoker().attachListeners(battle, world);
     }
 
     public void tick() {
@@ -98,6 +105,16 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
+        final Optional<Box> reduced = entities.keySet().stream().map(entity -> entity.getDefaultBounds()).flatMap(bounds -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(bounds.parts(), 0), false)).map(BattleParticipantBounds.Part::box).reduce(Box::union);
+        if (reduced.isEmpty()) {
+            throw new TBCExException("Tried to create auto-sizing battle with no bounded entities!");
+        }
+        final Box expanded = reduced.get().expand(10);
+        final BattleBounds bounds = new BattleBounds(expanded);
+        return createBattle(entities, teamSetupAction, bounds);
+    }
+
+    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds) {
         for (final BattleEntity entity : entities.keySet()) {
             if (entity instanceof Entity regularEntity && regularEntity.isRemoved()) {
                 throw new TBCExException("Tried to add a removed entity to a battle");
@@ -108,9 +125,10 @@ public class ServerBattleWorldContainer implements AutoCloseable {
         battles.put(handle.getUuid(), battle);
         attachListeners(battle);
         battle.pushAction(teamSetupAction);
+        battle.pushAction(new InitialBoundsBattleAction(bounds));
         for (final Map.Entry<BattleEntity, Identifier> entry : entities.entrySet()) {
             final BattleEntity entity = entry.getKey();
-            final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid());
+            final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid(), entity.getDefaultBounds());
             entity.buildParticipantState(builder);
             final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
             if (entry.getKey() instanceof Entity regularEntity) {
