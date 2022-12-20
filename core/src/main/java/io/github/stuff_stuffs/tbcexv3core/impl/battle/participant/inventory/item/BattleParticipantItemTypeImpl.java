@@ -12,13 +12,11 @@ public class BattleParticipantItemTypeImpl<T extends BattleParticipantItem> impl
     private final Encoder<T> encoder;
     private final Decoder<T> decoder;
     private final Class<T> itemClass;
-    private final RegistryEntry.Reference<BattleParticipantItemType<?>> reference;
 
     public BattleParticipantItemTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final Class<T> itemClass) {
         this.encoder = encoder;
         this.decoder = decoder;
         this.itemClass = itemClass;
-        reference = BattleParticipantItemType.REGISTRY.createEntry(this);
     }
 
     @Override
@@ -34,10 +32,6 @@ public class BattleParticipantItemTypeImpl<T extends BattleParticipantItem> impl
         return encoder.encode((T) item, ops, ops.empty());
     }
 
-    @Override
-    public RegistryEntry.Reference<BattleParticipantItemType<?>> getReference() {
-        return reference;
-    }
 
     @Override
     public Class<T> getItemClass() {

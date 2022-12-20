@@ -51,7 +51,7 @@ public final class BattleBounds {
 
     public boolean isIn(final Box box) {
         return minX <= box.minX && minY <= box.minY && minZ <= box.minZ
-                && box.maxX <= maxX && box.maxY <= maxY && box.minZ <= minZ;
+                && box.maxX <= maxX && box.maxY <= maxY && box.maxZ <= maxZ;
     }
 
     public boolean isIn(final Vec3i vec) {

@@ -7,7 +7,6 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Encoder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleActionType;
-import net.minecraft.registry.entry.RegistryEntry;
 
 public class BattleActionTypeImpl<T extends BattleAction> implements BattleActionType<T> {
     private final Encoder<T> encoder;
@@ -15,7 +14,6 @@ public class BattleActionTypeImpl<T extends BattleAction> implements BattleActio
     private final Encoder<T> netEncoder;
     private final Decoder<T> netDecoder;
     private final Class<T> actionClass;
-    private final RegistryEntry.Reference<BattleActionType<?>> reference;
 
     public BattleActionTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final Encoder<T> netEncoder, final Decoder<T> netDecoder, final Class<T> actionClass) {
         this.encoder = encoder;
@@ -23,7 +21,6 @@ public class BattleActionTypeImpl<T extends BattleAction> implements BattleActio
         this.netEncoder = netEncoder;
         this.netDecoder = netDecoder;
         this.actionClass = actionClass;
-        reference = BattleActionType.REGISTRY.createEntry(this);
     }
 
     @Override
@@ -39,11 +36,6 @@ public class BattleActionTypeImpl<T extends BattleAction> implements BattleActio
             return DataResult.error("Type mismatch");
         }
         return encoder.encode((T) action, ops, ops.empty());
-    }
-
-    @Override
-    public RegistryEntry.Reference<BattleActionType<?>> getReference() {
-        return reference;
     }
 
     @Override

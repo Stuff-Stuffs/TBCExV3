@@ -23,8 +23,6 @@ public interface BattleEffectType<View extends BattleEffect, Effect extends View
 
     <K> DataResult<K> encode(DynamicOps<K> ops, BattleEffect action);
 
-    RegistryEntry.Reference<BattleEffectType<?, ?>> getReference();
-
     Class<View> getViewClass();
 
     Class<Effect> getEffectClass();

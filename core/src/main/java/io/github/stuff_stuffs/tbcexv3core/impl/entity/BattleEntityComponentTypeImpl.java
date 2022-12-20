@@ -21,7 +21,6 @@ public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> impl
     private final BinaryOperator<T> combiner;
     private final Set<Identifier> happenBefore;
     private final Set<Identifier> happensAfter;
-    private final RegistryEntry.Reference<BattleEntityComponentType<?>> reference;
 
     public BattleEntityComponentTypeImpl(final Encoder<T> encoder, final Decoder<T> decoder, final Encoder<T> networkEncoder, final Decoder<T> networkDecoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
         this.encoder = encoder;
@@ -31,7 +30,6 @@ public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> impl
         this.combiner = combiner;
         this.happenBefore = Set.copyOf(happenBefore);
         this.happensAfter = Set.copyOf(happensAfter);
-        reference = BattleEntityComponentType.REGISTRY.createEntry(this);
     }
 
     @Override
@@ -73,10 +71,5 @@ public class BattleEntityComponentTypeImpl<T extends BattleEntityComponent> impl
     @Override
     public T combine(final T first, final T second) {
         return combiner.apply(first, second);
-    }
-
-    @Override
-    public RegistryEntry.Reference<BattleEntityComponentType<?>> getReference() {
-        return reference;
     }
 }

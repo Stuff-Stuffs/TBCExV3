@@ -79,7 +79,6 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
 
     @Override
     public BattleParticipantBounds getBounds() {
-        checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         return bounds;
     }
 

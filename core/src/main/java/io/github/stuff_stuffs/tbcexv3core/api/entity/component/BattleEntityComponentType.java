@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -34,8 +33,6 @@ public interface BattleEntityComponentType<T extends BattleEntityComponent> {
     Set<Identifier> happensAfter();
 
     T combine(T first, T second);
-
-    RegistryEntry.Reference<BattleEntityComponentType<?>> getReference();
 
     default @Nullable T checkedCast(final BattleEntityComponent component) {
         if (component.getType() == this) {

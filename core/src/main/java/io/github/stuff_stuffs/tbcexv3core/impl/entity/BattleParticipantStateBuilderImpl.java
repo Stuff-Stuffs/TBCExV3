@@ -102,7 +102,7 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
 
         @Override
         public BattleParticipantBounds getBounds() {
-            return null;
+            return bounds;
         }
 
         @Override

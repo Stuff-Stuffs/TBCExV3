@@ -7,20 +7,17 @@ import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
-import net.minecraft.registry.entry.RegistryEntry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.NonExtendable
 public interface BattleParticipantItemType<T extends BattleParticipantItem> {
-    Registry<BattleParticipantItemType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleParticipantItemType<?>>ofRegistry(TBCExV3Core.createId("battle_item_types")), Lifecycle.stable(), true)).buildAndRegister();
+    Registry<BattleParticipantItemType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleParticipantItemType<?>>ofRegistry(TBCExV3Core.createId("battle_item_types")), Lifecycle.stable(), false)).buildAndRegister();
     Codec<BattleParticipantItemType<?>> CODEC = REGISTRY.getCodec();
 
     <K> DataResult<T> decode(DynamicOps<K> ops, K encoded);
 
     <K> DataResult<K> encode(DynamicOps<K> ops, BattleParticipantItem item);
-
-    RegistryEntry.Reference<BattleParticipantItemType<?>> getReference();
 
     Class<T> getItemClass();
 

@@ -105,7 +105,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
-        final Optional<Box> reduced = entities.keySet().stream().map(entity -> entity.getDefaultBounds()).flatMap(bounds -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(bounds.parts(), 0), false)).map(BattleParticipantBounds.Part::box).reduce(Box::union);
+        final Optional<Box> reduced = entities.keySet().stream().map(BattleEntity::getDefaultBounds).flatMap(bounds -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(bounds.parts(), 0), false)).map(BattleParticipantBounds.Part::box).reduce(Box::union);
         if (reduced.isEmpty()) {
             throw new TBCExException("Tried to create auto-sizing battle with no bounded entities!");
         }
@@ -131,11 +131,11 @@ public class ServerBattleWorldContainer implements AutoCloseable {
             final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid(), entity.getDefaultBounds());
             entity.buildParticipantState(builder);
             final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
+            final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);
+            battle.pushAction(joinBattleAction);
             if (entry.getKey() instanceof Entity regularEntity) {
                 built.onJoin(handle, regularEntity);
             }
-            final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);
-            battle.pushAction(joinBattleAction);
         }
         return handle;
     }

@@ -8,7 +8,6 @@ import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.ApiStatus;
@@ -23,8 +22,6 @@ public interface BattleParticipantEquipmentSlot {
     TagKey<BattleParticipantEquipmentSlot> getBlockedBy();
 
     TagKey<BattleParticipantEquipmentSlot> getBlocks();
-
-    RegistryEntry.Reference<BattleParticipantEquipmentSlot> getReference();
 
     static BattleParticipantEquipmentSlot create(final Text name, final TagKey<BattleParticipantEquipmentSlot> blockedBy, final TagKey<BattleParticipantEquipmentSlot> blocks) {
         return new BattleParticipantEquipmentSlotImpl(name, blockedBy, blocks);

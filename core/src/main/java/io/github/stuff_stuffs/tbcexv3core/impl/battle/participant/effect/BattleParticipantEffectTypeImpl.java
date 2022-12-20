@@ -17,7 +17,6 @@ public class BattleParticipantEffectTypeImpl<View extends BattleParticipantEffec
     private final BinaryOperator<Effect> combiner;
     private final Encoder<Effect> encoder;
     private final Decoder<Effect> decoder;
-    private final RegistryEntry.Reference<BattleParticipantEffectType<?, ?>> reference;
 
     public BattleParticipantEffectTypeImpl(final Class<View> viewClass, final Class<Effect> effectClass, final BinaryOperator<Effect> combiner, final Encoder<Effect> encoder, final Decoder<Effect> decoder) {
         this.viewClass = viewClass;
@@ -25,7 +24,6 @@ public class BattleParticipantEffectTypeImpl<View extends BattleParticipantEffec
         this.combiner = combiner;
         this.encoder = encoder;
         this.decoder = decoder;
-        reference = BattleParticipantEffectType.REGISTRY.createEntry(this);
     }
 
     @Override
@@ -39,11 +37,6 @@ public class BattleParticipantEffectTypeImpl<View extends BattleParticipantEffec
             return DataResult.error("Type mismatch");
         }
         return encoder.encode((Effect) action, ops, ops.empty());
-    }
-
-    @Override
-    public RegistryEntry.Reference<BattleParticipantEffectType<?, ?>> getReference() {
-        return reference;
     }
 
     @Override

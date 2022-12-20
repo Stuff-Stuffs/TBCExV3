@@ -7,7 +7,6 @@ import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.SimpleRegistry;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -23,8 +22,6 @@ public interface BattleParticipantEffectType<View extends BattleParticipantEffec
     <K> DataResult<Effect> decode(DynamicOps<K> ops, K encoded);
 
     <K> DataResult<K> encode(DynamicOps<K> ops, BattleParticipantEffect action);
-
-    RegistryEntry.Reference<BattleParticipantEffectType<?, ?>> getReference();
 
     Class<View> getViewClass();
 

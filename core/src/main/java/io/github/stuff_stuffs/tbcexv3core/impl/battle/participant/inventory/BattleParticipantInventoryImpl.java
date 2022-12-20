@@ -182,7 +182,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
             return false;
         }
         final Optional<TagKey<BattleParticipantEquipmentSlot>> acceptableSlots = stack.getItem().getAcceptableSlots(state);
-        if (acceptableSlots.isEmpty() || !slot.getReference().isIn(acceptableSlots.get())) {
+        if (acceptableSlots.isEmpty() || !BattleParticipantEquipmentSlot.REGISTRY.getEntry(slot).isIn(acceptableSlots.get())) {
             return false;
         }
         if (equipped.inverse().getOrDefault(handle, null) != null) {
@@ -212,7 +212,7 @@ public class BattleParticipantInventoryImpl implements AbstractBattleParticipant
         final RegistryEntryList<BattleParticipantEquipmentSlot> blockedByList = BattleParticipantEquipmentSlot.REGISTRY.getOrCreateEntryList(slot.getBlockedBy());
         final RegistryEntryList<BattleParticipantEquipmentSlot> blocksList = BattleParticipantEquipmentSlot.REGISTRY.getOrCreateEntryList(slot.getBlocks());
         for (final BattleParticipantEquipmentSlot equippedSlot : equipped.keySet()) {
-            final RegistryEntry.Reference<BattleParticipantEquipmentSlot> reference = equippedSlot.getReference();
+            final RegistryEntry<BattleParticipantEquipmentSlot> reference = BattleParticipantEquipmentSlot.REGISTRY.getEntry(equippedSlot);
             if (blockedByList.contains(reference) || blocksList.contains(reference)) {
                 return false;
             }

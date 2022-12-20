@@ -7,21 +7,18 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Encoder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
-import net.minecraft.registry.entry.RegistryEntry;
 
 public class BattleEffectTypeImpl<View extends BattleEffect, Effect extends View> implements BattleEffectType<View, Effect> {
     private final Class<View> viewClass;
     private final Class<Effect> effectClass;
     private final Encoder<Effect> encoder;
     private final Decoder<Effect> decoder;
-    private final RegistryEntry.Reference<BattleEffectType<?, ?>> reference;
 
     public BattleEffectTypeImpl(final Class<View> viewClass, final Class<Effect> effectClass, final Encoder<Effect> encoder, final Decoder<Effect> decoder) {
         this.viewClass = viewClass;
         this.effectClass = effectClass;
         this.encoder = encoder;
         this.decoder = decoder;
-        reference = BattleEffectType.REGISTRY.createEntry(this);
     }
 
     @Override
@@ -35,11 +32,6 @@ public class BattleEffectTypeImpl<View extends BattleEffect, Effect extends View
             return DataResult.error("Type mismatch");
         }
         return encoder.encode((Effect) action, ops, ops.empty());
-    }
-
-    @Override
-    public RegistryEntry.Reference<BattleEffectType<?, ?>> getReference() {
-        return reference;
     }
 
     @Override

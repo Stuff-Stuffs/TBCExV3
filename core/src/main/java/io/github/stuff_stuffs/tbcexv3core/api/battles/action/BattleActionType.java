@@ -23,8 +23,6 @@ public interface BattleActionType<T extends BattleAction> {
 
     <K> DataResult<K> encode(DynamicOps<K> ops, BattleAction action, boolean network);
 
-    RegistryEntry.Reference<BattleActionType<?>> getReference();
-
     Class<T> getActionClass();
 
     default <T1 extends BattleAction> BattleActionType<T1> checkedCast(final Class<T1> actionClass) {
