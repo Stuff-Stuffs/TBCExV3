@@ -4,11 +4,11 @@ import com.mojang.serialization.*;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.effect.BattleParticipantEffectTypeImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.util.registry.SimpleRegistry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,7 @@ import java.util.function.BinaryOperator;
 
 @ApiStatus.NonExtendable
 public interface BattleParticipantEffectType<View extends BattleParticipantEffect, Effect extends View> {
-    Registry<BattleParticipantEffectType<?, ?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleParticipantEffectType<?, ?>>ofRegistry(TBCExV3Core.createId("battle_participant_effects")), Lifecycle.stable(), BattleParticipantEffectType::getReference)).buildAndRegister();
+    Registry<BattleParticipantEffectType<?, ?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleParticipantEffectType<?, ?>>ofRegistry(TBCExV3Core.createId("battle_participant_effects")), Lifecycle.stable(), false)).buildAndRegister();
     Codec<BattleParticipantEffectType<?, ?>> CODEC = REGISTRY.getCodec();
 
     <K> DataResult<Effect> decode(DynamicOps<K> ops, K encoded);

@@ -4,16 +4,16 @@ import com.mojang.serialization.*;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.item.BattleParticipantItemTypeImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.util.registry.SimpleRegistry;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.registry.entry.RegistryEntry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.NonExtendable
 public interface BattleParticipantItemType<T extends BattleParticipantItem> {
-    Registry<BattleParticipantItemType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleParticipantItemType<?>>ofRegistry(TBCExV3Core.createId("battle_item_types")), Lifecycle.stable(), BattleParticipantItemType::getReference)).buildAndRegister();
+    Registry<BattleParticipantItemType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleParticipantItemType<?>>ofRegistry(TBCExV3Core.createId("battle_item_types")), Lifecycle.stable(), true)).buildAndRegister();
     Codec<BattleParticipantItemType<?>> CODEC = REGISTRY.getCodec();
 
     <K> DataResult<T> decode(DynamicOps<K> ops, K encoded);

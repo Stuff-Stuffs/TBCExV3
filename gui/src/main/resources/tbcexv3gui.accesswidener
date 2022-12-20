@@ -1,7 +1,7 @@
 accessWidener v1 named
 accessible class net/minecraft/client/render/RenderPhase$TextureBase
 accessible class net/minecraft/client/render/RenderPhase$Texture
-accessible class net/minecraft/client/render/RenderPhase$Shader
+accessible class net/minecraft/client/render/RenderPhase$ShaderProgram
 accessible class net/minecraft/client/render/RenderPhase$Transparency
 accessible class net/minecraft/client/render/RenderPhase$DepthTest
 accessible class net/minecraft/client/render/RenderPhase$Cull

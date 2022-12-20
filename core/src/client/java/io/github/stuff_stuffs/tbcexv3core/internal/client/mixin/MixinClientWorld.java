@@ -11,9 +11,9 @@ import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
@@ -43,7 +43,7 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
 
     @Override
     public @Nullable BattleView tryGetBattleView(final BattleHandle handle) {
-        if (!handle.getWorldKey().equals(this.getRegistryKey())) {
+        if (!handle.getWorldKey().equals(getRegistryKey())) {
             return null;
         }
         return battleWorldContainer.getBattle(handle.getUuid());

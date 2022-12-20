@@ -4,8 +4,13 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+
+import java.util.UUID;
 
 public final class CodecUtil {
+    public static final Codec<UUID> UUID_CODEC = RecordCodecBuilder.create(instance -> instance.group(Codec.LONG.fieldOf("hi").forGetter(UUID::getMostSignificantBits), Codec.LONG.fieldOf("lo").forGetter(UUID::getLeastSignificantBits)).apply(instance, UUID::new));
+
     public static <K> Codec<K> conversionCodec(final DynamicOps<K> conversionOps) {
         return new Codec<>() {
             @Override
@@ -20,7 +25,7 @@ public final class CodecUtil {
         };
     }
 
-    public static <S, B extends S> Codec<S> castedCodec(final Codec<B> baseCodec, final Class<B> baseClass, Class<S> derivedClass) {
+    public static <S, B extends S> Codec<S> castedCodec(final Codec<B> baseCodec, final Class<B> baseClass, final Class<S> derivedClass) {
         return new Codec<>() {
             @Override
             public <T> DataResult<T> encode(final S input, final DynamicOps<T> ops, final T prefix) {

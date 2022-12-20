@@ -1,9 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.equipment;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
-import net.minecraft.tag.TagKey;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
-import net.minecraft.util.registry.RegistryEntry;
 
 public class BattleParticipantEquipmentSlotImpl implements BattleParticipantEquipmentSlot {
     private final Text name;

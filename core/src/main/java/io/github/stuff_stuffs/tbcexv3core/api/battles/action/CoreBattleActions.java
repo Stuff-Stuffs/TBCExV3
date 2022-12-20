@@ -2,7 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.action;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.registry.Registry;
 
 public final class CoreBattleActions {
     public static final BattleActionType<NoopBattleAction> NOOP_BATTLE_ACTION_TYPE = BattleActionType.create(NoopBattleAction.class, Codec.unit(NoopBattleAction.INSTANCE));

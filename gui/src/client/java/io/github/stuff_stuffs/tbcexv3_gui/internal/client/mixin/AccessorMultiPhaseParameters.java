@@ -11,7 +11,7 @@ public interface AccessorMultiPhaseParameters {
     RenderPhase.TextureBase getTexture();
 
     @Accessor
-    RenderPhase.Shader getShader();
+    RenderPhase.ShaderProgram getProgram();
 
     @Accessor
     RenderPhase.Transparency getTransparency();

@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.fabricmc.fabric.impl.client.texture.SpriteRegistryCallbackHolder;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.Window;
@@ -50,7 +49,7 @@ public class TBCExV3GuiClient implements ClientModInitializer {
                 DATA_VERSION.getAndIncrement();
             }
         });
-        SpriteRegistryCallbackHolder.eventLocal(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).register((atlasTexture, registry) -> registry.register(FLAT_SPRITE));
+        //SpriteRegistryCallbackHolder.eventLocal(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).register((atlasTexture, registry) -> registry.register(FLAT_SPRITE));
     }
 
     public static long dataVersion() {

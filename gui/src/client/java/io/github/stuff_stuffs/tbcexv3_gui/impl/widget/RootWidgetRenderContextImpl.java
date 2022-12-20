@@ -15,10 +15,11 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.render.*;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Matrix4f;
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
@@ -172,7 +173,7 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
     }
 
     private void draw(final BufferBuilder buffer, final Optional<Identifier> texture, final int stencil, final boolean last) {
-        RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapShader);
+        RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapProgram);
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE_MINUS_DST_ALPHA, GlStateManager.DstFactor.ONE);
         GlStateManager._depthMask(false);
@@ -190,13 +191,13 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
 
     private void copy(final BufferBuilder builder) {
         final Matrix4f blitMat = posMat;
-        final Shader shader = MinecraftClient.getInstance().gameRenderer.blitScreenShader;
+        final ShaderProgram shader = MinecraftClient.getInstance().gameRenderer.blitScreenProgram;
         TBCExV3GuiClient.getGuiFrameBuffer().beginRead();
         shader.addSampler("DiffuseSampler", TBCExV3GuiClient.getGuiFrameBuffer());
         final Framebuffer framebuffer = MinecraftClient.getInstance().getFramebuffer();
         framebuffer.beginWrite(false);
         shader.bind();
-        RenderSystem.setShader(() -> MinecraftClient.getInstance().gameRenderer.blitScreenShader);
+        RenderSystem.setShader(() -> MinecraftClient.getInstance().gameRenderer.blitScreenProgram);
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableBlend();
         builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.BLIT_SCREEN);
@@ -204,7 +205,7 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
         builder.vertex(blitMat, (float) screenBounds.lower().x(), (float) screenBounds.upper().y(), 0).texture(0, 0).color(-1).next();
         builder.vertex(blitMat, (float) screenBounds.upper().x(), (float) screenBounds.upper().y(), 0).texture(1, 0).color(-1).next();
         builder.vertex(blitMat, (float) screenBounds.upper().x(), (float) screenBounds.lower().y(), 0).texture(1, 1).color(-1).next();
-        BufferRenderer.drawWithShader(builder.end());
+        BufferRenderer.drawWithGlobalProgram(builder.end());
         TBCExV3GuiClient.getGuiFrameBuffer().endRead();
         framebuffer.endWrite();
         TBCExV3GuiClient.getGuiFrameBuffer().clear(MinecraftClient.IS_SYSTEM_MAC);
@@ -221,7 +222,7 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
             return;
         }
         buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION);
-        RenderSystem.setShader(GameRenderer::getPositionShader);
+        RenderSystem.setShader(GameRenderer::getPositionProgram);
         for (final WidgetRenderContext.ScissorTransform transform : transforms) {
             buffer.vertex(posMat, (float) transform.rectangle.getVertexX(0), (float) transform.rectangle.getVertexY(0), 0).next();
             buffer.vertex(posMat, (float) transform.rectangle.getVertexX(1), (float) transform.rectangle.getVertexY(1), 0).next();
@@ -236,7 +237,7 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
         GlStateManager._clear(GL11.GL_STENCIL_BUFFER_BIT, MinecraftClient.IS_SYSTEM_MAC);
         GL11.glStencilOp(GL11.GL_INCR, GL11.GL_INCR, GL11.GL_INCR);
         GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 255);
-        BufferRenderer.drawWithShader(buffer.end());
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
         GlStateManager._colorMask(true, true, true, true);
         GlStateManager._depthMask(true);
         GL11.glStencilFunc(GL11.GL_EQUAL, transforms.length, 255);

@@ -15,8 +15,8 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.Matrix4f;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Optional;
@@ -86,7 +86,7 @@ public class GuiScreen<RootWidget extends Widget<Data>, Data> extends Screen {
         setupBounds(matrices);
         final Window window = MinecraftClient.getInstance().getWindow();
         final Matrix4f prevProjection = RenderSystem.getProjectionMatrix();
-        final Matrix4f matrix4f = Matrix4f.projectionMatrix(0.0F, window.getFramebufferWidth(), 0.0F, window.getFramebufferHeight(), 1000.0F, 3000.0F);
+        final Matrix4f matrix4f = new Matrix4f().setOrtho(0.0F, window.getFramebufferWidth(), 0.0F, window.getFramebufferHeight(), 1000.0F, 3000.0F);
         RenderSystem.setProjectionMatrix(matrix4f);
 
         final RootWidgetRenderContextImpl renderContext = new RootWidgetRenderContextImpl(matrices.peek().getPositionMatrix(), screenBounds, time(delta));

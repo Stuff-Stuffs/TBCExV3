@@ -7,6 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import jetbrains.exodus.ArrayByteIterable;
 import jetbrains.exodus.ByteIterable;
@@ -21,7 +22,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,7 +36,7 @@ import java.util.function.BiFunction;
 
 //TODO off thread file loading
 public class ServerBattleWorldDatabase implements AutoCloseable {
-    private static final Codec<List<Pair<UUID, BattleEntityComponent>>> DELAYED_COMPONENT_CODEC = Codec.list(Codec.pair(Codecs.UUID, BattleEntityComponent.CODEC));
+    private static final Codec<List<Pair<UUID, BattleEntityComponent>>> DELAYED_COMPONENT_CODEC = Codec.list(Codec.pair(CodecUtil.UUID_CODEC, BattleEntityComponent.CODEC));
     private static final StoreConfig STORE_CONFIG = StoreConfig.getStoreConfig(false, false);
     private static final String BATTLE_STORE = "battles";
     private static final String BATTLE_ACTIVE_ENTITIES_STORE = "battle_entities";

@@ -12,6 +12,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuild
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
+import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
@@ -19,7 +20,6 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.dynamic.Codecs;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,8 +65,8 @@ public class BattleParticipantStateBuilderImpl implements BattleParticipantState
             BattleParticipantBounds bounds,
             Identifier team
     ) implements Built {
-        public static final Codec<Built> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.CODEC).fieldOf("components").forGetter(Built::getComponentList), BattleParticipantBounds.CODEC.fieldOf("bounds").forGetter(Built::getBounds), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
-        public static final Codec<Built> NETWORK_CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.NETWORK_CODEC).fieldOf("components").forGetter(Built::getComponentList), BattleParticipantBounds.CODEC.fieldOf("bounds").forGetter(Built::getBounds), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
+        public static final Codec<Built> CODEC = RecordCodecBuilder.create(instance -> instance.group(CodecUtil.UUID_CODEC.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.CODEC).fieldOf("components").forGetter(Built::getComponentList), BattleParticipantBounds.CODEC.fieldOf("bounds").forGetter(Built::getBounds), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
+        public static final Codec<Built> NETWORK_CODEC = RecordCodecBuilder.create(instance -> instance.group(CodecUtil.UUID_CODEC.fieldOf("uuid").forGetter(Built::getUuid), Codec.list(BattleEntityComponent.NETWORK_CODEC).fieldOf("components").forGetter(Built::getComponentList), BattleParticipantBounds.CODEC.fieldOf("bounds").forGetter(Built::getBounds), Identifier.CODEC.fieldOf("team").forGetter(Built::getTeam)).apply(instance, BuiltImpl::new));
 
         public BuiltImpl(final UUID uuid, final List<BattleEntityComponent> components, final BattleParticipantBounds bounds, final Identifier team) {
             this.uuid = uuid;

@@ -13,7 +13,7 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRe
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.api.util.TriState;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +38,7 @@ public class ClientBattleWorldContainer {
     }
 
     public void tick() {
-        if(!battleUpdateRequestsToSend.isEmpty()) {
+        if (!battleUpdateRequestsToSend.isEmpty()) {
             final List<BattleUpdateRequest> updateRequests = new ArrayList<>(battleUpdateRequestsToSend.size());
             for (final UUID uuid : battleUpdateRequestsToSend) {
                 if (battles.containsKey(uuid)) {

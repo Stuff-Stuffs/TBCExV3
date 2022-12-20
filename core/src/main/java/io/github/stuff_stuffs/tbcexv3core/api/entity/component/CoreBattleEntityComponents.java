@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.api.entity.component;
 
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.registry.Registry;
 
 import java.util.Set;
 

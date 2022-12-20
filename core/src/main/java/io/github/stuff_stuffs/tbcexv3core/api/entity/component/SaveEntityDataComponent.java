@@ -18,14 +18,13 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Util;
-import net.minecraft.util.dynamic.Codecs;
 
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BinaryOperator;
 
 public class SaveEntityDataComponent implements BattleEntityComponent {
-    public static final Codec<SaveEntityDataComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codecs.UUID.fieldOf("id").forGetter(component -> component.uuid), CodecUtil.conversionCodec(NbtOps.INSTANCE).fieldOf("entityData").forGetter(component -> component.entityData)).apply(instance, SaveEntityDataComponent::new));
+    public static final Codec<SaveEntityDataComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(CodecUtil.UUID_CODEC.fieldOf("id").forGetter(component -> component.uuid), CodecUtil.conversionCodec(NbtOps.INSTANCE).fieldOf("entityData").forGetter(component -> component.entityData)).apply(instance, SaveEntityDataComponent::new));
     public static final BinaryOperator<SaveEntityDataComponent> COMBINER = (first, second) -> {
         throw new UnsupportedOperationException("Cannot combine entity data components!");
     };
@@ -49,14 +48,14 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
 
     @Override
     public void applyToState(final BattleParticipantState state, final Tracer<ActionTrace> tracer) {
-        if(Util.NIL_UUID.equals(uuid)) {
+        if (Util.NIL_UUID.equals(uuid)) {
             return;
         }
     }
 
     @Override
     public void onLeave(final BattleView view, final ServerWorld world) {
-        if(Util.NIL_UUID.equals(uuid)) {
+        if (Util.NIL_UUID.equals(uuid)) {
             return;
         }
         Entity entity = world.getEntity(uuid);
@@ -85,7 +84,7 @@ public class SaveEntityDataComponent implements BattleEntityComponent {
 
     @Override
     public void applyToEntityOnJoin(final BattleParticipantHandle handle, final Entity entity) {
-        if(Util.NIL_UUID.equals(uuid)) {
+        if (Util.NIL_UUID.equals(uuid)) {
             return;
         }
         if (!(entity instanceof PlayerEntity)) {

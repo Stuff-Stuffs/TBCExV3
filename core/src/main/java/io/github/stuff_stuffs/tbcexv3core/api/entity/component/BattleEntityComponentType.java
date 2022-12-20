@@ -4,11 +4,11 @@ import com.mojang.serialization.*;
 import io.github.stuff_stuffs.tbcexv3core.impl.entity.BattleEntityComponentTypeImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.SimpleRegistry;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.util.registry.SimpleRegistry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 @ApiStatus.NonExtendable
 public interface BattleEntityComponentType<T extends BattleEntityComponent> {
-    Registry<BattleEntityComponentType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleEntityComponentType<?>>ofRegistry(TBCExV3Core.createId("battle_entity_components")), Lifecycle.stable(), BattleEntityComponentType::getReference)).buildAndRegister();
+    Registry<BattleEntityComponentType<?>> REGISTRY = FabricRegistryBuilder.from(new SimpleRegistry<>(RegistryKey.<BattleEntityComponentType<?>>ofRegistry(TBCExV3Core.createId("battle_entity_components")), Lifecycle.stable(), false)).buildAndRegister();
     Codec<BattleEntityComponentType<?>> CODEC = REGISTRY.getCodec();
 
     <K> DataResult<T> decode(DynamicOps<K> ops, K encoded);

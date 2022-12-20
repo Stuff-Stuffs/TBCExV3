@@ -20,11 +20,11 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import it.unimi.dsi.fastutil.objects.*;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.entity.Entity;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.random.Random;
-import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 
 import java.nio.file.Path;

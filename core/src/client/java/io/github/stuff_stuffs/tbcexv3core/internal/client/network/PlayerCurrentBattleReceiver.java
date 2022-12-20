@@ -8,8 +8,8 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import org.jetbrains.annotations.Nullable;
 
 public final class PlayerCurrentBattleReceiver {
@@ -21,7 +21,7 @@ public final class PlayerCurrentBattleReceiver {
         final boolean present = buf.readBoolean();
         @Nullable final BattleHandle handle;
         if (present) {
-            handle = BattleHandle.of(RegistryKey.of(Registry.WORLD_KEY, buf.readIdentifier()), buf.readUuid());
+            handle = BattleHandle.of(RegistryKey.of(RegistryKeys.WORLD, buf.readIdentifier()), buf.readUuid());
         } else {
             handle = null;
         }

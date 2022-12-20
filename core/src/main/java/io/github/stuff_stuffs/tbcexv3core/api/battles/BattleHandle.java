@@ -2,7 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleHandleImpl;
-import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.ApiStatus;
 

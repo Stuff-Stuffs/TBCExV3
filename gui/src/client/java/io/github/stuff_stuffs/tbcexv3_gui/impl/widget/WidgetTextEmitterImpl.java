@@ -7,7 +7,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
 import net.minecraft.text.OrderedText;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Matrix4f;
+import org.joml.Matrix4f;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -16,8 +16,8 @@ public class WidgetTextEmitterImpl implements WidgetTextEmitter {
     private static final Matrix4f IDENTITY = new Matrix4f();
 
     static {
-        IDENTITY.loadIdentity();
-        IDENTITY.multiply(Matrix4f.translate(0, 0, 0.00001F));
+        IDENTITY.identity();
+        IDENTITY.mul(new Matrix4f().translate(0, 0, 0.00001F));
     }
 
     private final Consumer<EmittedQuad> consumer;

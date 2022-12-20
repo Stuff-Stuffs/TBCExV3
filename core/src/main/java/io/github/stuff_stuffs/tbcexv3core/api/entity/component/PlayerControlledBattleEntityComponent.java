@@ -5,19 +5,19 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.dynamic.Codecs;
 
 import java.util.UUID;
 import java.util.function.BinaryOperator;
 
 public class PlayerControlledBattleEntityComponent implements BattleEntityComponent {
-    public static final Codec<PlayerControlledBattleEntityComponent> CODEC = Codecs.UUID.xmap(PlayerControlledBattleEntityComponent::new, component -> component.controllerUUID);
+    public static final Codec<PlayerControlledBattleEntityComponent> CODEC = CodecUtil.UUID_CODEC.xmap(PlayerControlledBattleEntityComponent::new, component -> component.controllerUUID);
     public static final BinaryOperator<PlayerControlledBattleEntityComponent> COMBINER = (playerControlledBattleEntityComponent, playerControlledBattleEntityComponent2) -> {
         throw new UnsupportedOperationException("Cannot combine flag like component");
     };
