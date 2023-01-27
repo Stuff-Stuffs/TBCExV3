@@ -6,6 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -25,7 +26,7 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
     }
 
     @Override
-    public double compute(final BattleParticipantStat stat, final Tracer<StatTrace> tracer) {
+    public double compute(final BattleParticipantStat stat, final @Nullable Tracer<StatTrace> tracer) {
         return entries.computeIfAbsent(stat, i -> new Entry()).compute(tracer);
     }
 
@@ -37,7 +38,7 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
             modifiers = new ArrayList<>();
         }
 
-        public double compute(final Tracer<StatTrace> tracer) {
+        public double compute(final @Nullable Tracer<StatTrace> tracer) {
             double val = 0;
             for (final WrappedModifier modifier : sorted) {
                 val = modifier.modify(val, tracer);
@@ -84,7 +85,7 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
         }
 
         @Override
-        public double modify(final double value, final Tracer<StatTrace> tracer) {
+        public double modify(final double value, final @Nullable Tracer<StatTrace> tracer) {
             return wrapped.modify(value, tracer);
         }
     }

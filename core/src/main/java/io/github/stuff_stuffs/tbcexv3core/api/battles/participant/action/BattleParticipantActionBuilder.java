@@ -29,25 +29,18 @@ public interface BattleParticipantActionBuilder {
 
     void build();
 
-    static <S> BattleParticipantActionBuilder create(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
+    static <S> BattleParticipantActionBuilder create(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
         return new BattleParticipantActionBuilderImpl<>(view, predicate, builder, state, factory, updater, consumer);
     }
 
     interface TargetRaycaster<T extends BattleParticipantActionTarget> {
-        boolean valid();
-
         void accept();
 
         Optional<? extends Pair<? extends T, Double>> raycast();
 
-        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> of(final List<T> list, final Function<T, Iterator<Box>> boxExtractor, final Consumer<? super T> consumer, final BooleanSupplier valid, final Vec3d start, final Vec3d end) {
+        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> of(final List<T> list, final Function<T, Iterator<Box>> boxExtractor, final Consumer<? super T> consumer, final Vec3d start, final Vec3d end) {
             return new TargetRaycaster<>() {
                 private int lastIndex = -1;
-
-                @Override
-                public boolean valid() {
-                    return valid.getAsBoolean();
-                }
 
                 @Override
                 public void accept() {
@@ -87,12 +80,8 @@ public interface BattleParticipantActionBuilder {
             };
         }
 
-        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> empty(final BooleanSupplier valid) {
+        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> empty() {
             return new TargetRaycaster<>() {
-                @Override
-                public boolean valid() {
-                    return valid.getAsBoolean();
-                }
 
                 @Override
                 public void accept() {
@@ -107,14 +96,9 @@ public interface BattleParticipantActionBuilder {
         }
 
         @SafeVarargs
-        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> union(final BooleanSupplier valid, final TargetRaycaster<? extends T>... raycasters) {
+        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> union(final TargetRaycaster<? extends T>... raycasters) {
             return new TargetRaycaster<>() {
                 private int index = 0;
-
-                @Override
-                public boolean valid() {
-                    return valid.getAsBoolean();
-                }
 
                 @Override
                 public void accept() {
@@ -143,9 +127,7 @@ public interface BattleParticipantActionBuilder {
 
         void accept();
 
-        boolean valid();
-
-        static <T extends BattleParticipantActionTarget> TargetIterator<T> empty(final BooleanSupplier valid) {
+        static <T extends BattleParticipantActionTarget> TargetIterator<T> empty() {
             return new TargetIterator<>() {
                 @Override
                 public boolean hasNext() {
@@ -161,15 +143,10 @@ public interface BattleParticipantActionBuilder {
                 public void accept() {
                     throw new IllegalStateException();
                 }
-
-                @Override
-                public boolean valid() {
-                    return valid.getAsBoolean();
-                }
             };
         }
 
-        static <T extends BattleParticipantActionTarget> TargetIterator<T> of(final Iterator<T> iterator, final Consumer<? super T> consumer, final BooleanSupplier valid) {
+        static <T extends BattleParticipantActionTarget> TargetIterator<T> of(final Iterator<T> iterator, final Consumer<? super T> consumer) {
             return new TargetIterator<>() {
                 private T last;
                 private boolean finished = false;
@@ -195,16 +172,11 @@ public interface BattleParticipantActionBuilder {
                     finished = true;
                     consumer.accept(last);
                 }
-
-                @Override
-                public boolean valid() {
-                    return valid.getAsBoolean();
-                }
             };
         }
 
         @SafeVarargs
-        static <T extends BattleParticipantActionTarget> TargetIterator<T> union(final BooleanSupplier valid, final TargetIterator<? extends T>... iterators) {
+        static <T extends BattleParticipantActionTarget> TargetIterator<T> union(final TargetIterator<? extends T>... iterators) {
             return new TargetIterator<>() {
                 private int index = 0;
                 private TargetIterator<? extends T> iterator = iterators[0];
@@ -230,11 +202,6 @@ public interface BattleParticipantActionBuilder {
                 public void accept() {
                     iterator.accept();
                 }
-
-                @Override
-                public boolean valid() {
-                    return valid.getAsBoolean();
-                }
             };
         }
     }
@@ -246,16 +213,16 @@ public interface BattleParticipantActionBuilder {
 
         Iterator<? extends BattleParticipantActionTargetType<?>> types();
 
-        static TargetProvider empty(final BooleanSupplier valid) {
+        static TargetProvider empty() {
             return new TargetProvider() {
                 @Override
                 public <T extends BattleParticipantActionTarget> TargetIterator<? extends T> targets(final BattleParticipantActionTargetType<T> type) {
-                    return TargetIterator.empty(valid);
+                    return TargetIterator.empty();
                 }
 
                 @Override
                 public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end) {
-                    return TargetRaycaster.empty(valid);
+                    return TargetRaycaster.empty();
                 }
 
                 @Override
@@ -265,22 +232,22 @@ public interface BattleParticipantActionBuilder {
             };
         }
 
-        static <T extends BattleParticipantActionTarget> TargetProvider single(final BattleParticipantStateView stateView, final Consumer<BattleParticipantActionTarget> targetConsumer, final BooleanSupplier valid, final BattleParticipantActionTargetType<T> type, final Function3<BattleParticipantStateView, Consumer<BattleParticipantActionTarget>, BooleanSupplier, TargetIterator<T>> iteratorFactory, final TargetRaycasterFactory<T> raycastFactory) {
+        static <T extends BattleParticipantActionTarget> TargetProvider single(final BattleParticipantStateView stateView, final Consumer<BattleParticipantActionTarget> targetConsumer, final BattleParticipantActionTargetType<T> type, final BiFunction<BattleParticipantStateView, Consumer<BattleParticipantActionTarget>,  TargetIterator<T>> iteratorFactory, final TargetRaycasterFactory<T> raycastFactory) {
             return new TargetProvider() {
                 @Override
                 public <T0 extends BattleParticipantActionTarget> TargetIterator<? extends T0> targets(final BattleParticipantActionTargetType<T0> t) {
                     if (t == type) {
-                        return (TargetIterator<? extends T0>) iteratorFactory.apply(stateView, targetConsumer, valid);
+                        return (TargetIterator<? extends T0>) iteratorFactory.apply(stateView, targetConsumer);
                     }
-                    return TargetIterator.empty(valid);
+                    return TargetIterator.empty();
                 }
 
                 @Override
                 public <T0 extends BattleParticipantActionTarget> TargetRaycaster<? extends T0> raycastTargets(final BattleParticipantActionTargetType<T0> t, final Vec3d start, final Vec3d end) {
                     if (t == type) {
-                        return (TargetRaycaster<? extends T0>) raycastFactory.build(stateView, targetConsumer, valid, start, end);
+                        return (TargetRaycaster<? extends T0>) raycastFactory.build(stateView, targetConsumer, start, end);
                     }
-                    return TargetRaycaster.empty(valid);
+                    return TargetRaycaster.empty();
                 }
 
                 @Override
@@ -291,21 +258,21 @@ public interface BattleParticipantActionBuilder {
         }
 
         interface TargetRaycasterFactory<T extends BattleParticipantActionTarget> {
-            TargetRaycaster<T> build(BattleParticipantStateView stateView, Consumer<BattleParticipantActionTarget> consumer, BooleanSupplier valid, Vec3d start, Vec3d end);
+            TargetRaycaster<T> build(BattleParticipantStateView stateView, Consumer<BattleParticipantActionTarget> consumer, Vec3d start, Vec3d end);
         }
 
-        static TargetProvider typeCheck(final BooleanSupplier valid, final TargetProvider delegate, final BattleParticipantActionTargetType<?> type) {
-            return typeCheck(valid, delegate, i -> i == type, () -> Iterators.singletonIterator(type));
+        static TargetProvider typeCheck(final TargetProvider delegate, final BattleParticipantActionTargetType<?> type) {
+            return typeCheck(delegate, i -> i == type, () -> Iterators.singletonIterator(type));
         }
 
-        static TargetProvider typeCheck(final BooleanSupplier valid, final TargetProvider delegate, final Predicate<BattleParticipantActionTargetType<?>> typeChecker, final Supplier<Iterator<? extends BattleParticipantActionTargetType<?>>> typeIterator) {
+        static TargetProvider typeCheck(final TargetProvider delegate, final Predicate<BattleParticipantActionTargetType<?>> typeChecker, final Supplier<Iterator<? extends BattleParticipantActionTargetType<?>>> typeIterator) {
             return new TargetProvider() {
                 @Override
                 public <T extends BattleParticipantActionTarget> TargetIterator<? extends T> targets(final BattleParticipantActionTargetType<T> type) {
                     if (typeChecker.test(type)) {
                         return delegate.targets(type);
                     }
-                    return TargetIterator.empty(valid);
+                    return TargetIterator.empty();
                 }
 
                 @Override
@@ -313,7 +280,7 @@ public interface BattleParticipantActionBuilder {
                     if (typeChecker.test(type)) {
                         return delegate.raycastTargets(type, start, end);
                     }
-                    return TargetRaycaster.empty(valid);
+                    return TargetRaycaster.empty();
                 }
 
                 @Override
@@ -323,9 +290,9 @@ public interface BattleParticipantActionBuilder {
             };
         }
 
-        static TargetProvider union(final BooleanSupplier valid, final TargetProvider... providers) {
+        static TargetProvider union(final TargetProvider... providers) {
             if (providers.length == 0) {
-                return empty(valid);
+                return empty();
             }
             if (providers.length == 1) {
                 return providers[0];
@@ -338,7 +305,7 @@ public interface BattleParticipantActionBuilder {
                     for (int i = 0; i < providers.length; i++) {
                         iterators[i] = providers[i].targets(type);
                     }
-                    return TargetIterator.union(valid, iterators);
+                    return TargetIterator.union(iterators);
                 }
 
                 @Override
@@ -347,7 +314,7 @@ public interface BattleParticipantActionBuilder {
                     for (int i = 0; i < providers.length; i++) {
                         raycasters[i] = providers[i].raycastTargets(type, start, end);
                     }
-                    return TargetRaycaster.union(valid, raycasters);
+                    return TargetRaycaster.union(raycasters);
                 }
 
                 @Override
@@ -359,25 +326,25 @@ public interface BattleParticipantActionBuilder {
     }
 
     interface TargetProviderFactory<T> {
-        TargetProvider build(BattleParticipantStateView stateView, T state, Consumer<BattleParticipantActionTarget> targetConsumer, BooleanSupplier valid);
+        TargetProvider build(BattleParticipantStateView stateView, T state, Consumer<BattleParticipantActionTarget> targetConsumer);
 
         @SafeVarargs
         static <S> TargetProviderFactory<S> union(final TargetProviderFactory<S>... factories) {
-            return (stateView, state, targetConsumer, valid) -> {
+            return (stateView, state, targetConsumer) -> {
                 final TargetProvider[] providers = new TargetProvider[factories.length];
                 for (int i = 0; i < factories.length; i++) {
-                    providers[i] = factories[i].build(stateView, state, targetConsumer, valid);
+                    providers[i] = factories[i].build(stateView, state, targetConsumer);
                 }
-                return TargetProvider.union(valid, providers);
+                return TargetProvider.union(providers);
             };
         }
 
         static <T> TargetProviderFactory<T> orEmpty(final TargetProviderFactory<T> delegate, final Predicate<T> predicate) {
-            return (stateView, state, targetConsumer, valid) -> predicate.test(state) ? delegate.build(stateView, state, targetConsumer, valid) : TargetProvider.empty(valid);
+            return (stateView, state, targetConsumer) -> predicate.test(state) ? delegate.build(stateView, state, targetConsumer) : TargetProvider.empty();
         }
 
         static <T> TargetProviderFactory<T> orElse(final TargetProviderFactory<T> delegate, final Predicate<T> predicate, final TargetProviderFactory<T> fallback) {
-            return (stateView, state, targetConsumer, valid) -> predicate.test(state) ? delegate.build(stateView, state, targetConsumer, valid) : fallback.build(stateView, state, targetConsumer, valid);
+            return (stateView, state, targetConsumer) -> predicate.test(state) ? delegate.build(stateView, state, targetConsumer) : fallback.build(stateView, state, targetConsumer);
         }
     }
 }

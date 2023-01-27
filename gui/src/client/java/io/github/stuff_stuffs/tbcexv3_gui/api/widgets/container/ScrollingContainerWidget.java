@@ -157,7 +157,7 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
         static <T> ScrollbarRenderer<T> basicScrollbarRenderer(final boolean scrollBarUpper, final ScrollbarInfo<? super T> scrollbarInfo, final ToIntFunction<? super T> colorFunction) {
             return (data, renderContext, bounds, innerBounds, axis) -> {
                 final double scrollbarSize = scrollbarInfo.calculateScrollbarSize(data, bounds);
-                final double progress = -scrollbarInfo.getScrollAmount(data, bounds, innerBounds);
+                final double progress = scrollbarInfo.getScrollAmount(data, bounds, innerBounds);
                 final double a2Size = axis.choose(bounds.width(), bounds.height());
                 final double a2InnerSize = axis.choose(innerBounds.width(), innerBounds.height());
                 final double scrollBarLength = scrollbarInfo.getScrollbarLength(data, bounds, innerBounds);
@@ -165,11 +165,11 @@ public class ScrollingContainerWidget<T> extends AbstractSingleChildWidget<T> {
                 final Rectangle rectangle;
                 if (scrollBarUpper) {
                     final Point2d start = new Point2d(startAxis, axis.choose(bounds.upper().y(), bounds.upper().x()) - scrollbarSize).convert(axis);
-                    final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
+                    final Point2d end = new Point2d(scrollbarSize, scrollBarLength).convert(axis.other()).combine(start, Double::sum);
                     rectangle = new Rectangle(start, end);
                 } else {
                     final Point2d start = new Point2d(startAxis, axis.choose(bounds.lower().y(), bounds.lower().x())).convert(axis);
-                    final Point2d end = new Point2d(scrollbarSize, scrollBarLength).combine(start, Double::sum);
+                    final Point2d end = new Point2d(scrollbarSize, scrollBarLength).convert(axis.other()).combine(start, Double::sum);
                     rectangle = new Rectangle(start, end);
                 }
                 WidgetRenderUtils.drawRectangle(renderContext.emitter(), rectangle, colorFunction.applyAsInt(data));

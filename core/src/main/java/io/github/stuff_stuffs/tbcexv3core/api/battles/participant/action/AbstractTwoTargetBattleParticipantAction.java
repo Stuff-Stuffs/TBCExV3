@@ -11,7 +11,7 @@ import java.util.function.Function;
 public abstract class AbstractTwoTargetBattleParticipantAction<T0 extends BattleParticipantActionTarget, T1 extends BattleParticipantActionTarget> implements BattleParticipantAction {
     protected final BattleParticipantActionTargetType<T0> firstType;
     protected final BattleParticipantActionTargetType<T1> secondType;
-    protected final Function<State<T0, T1>, BattleAction> actionFactory;
+    protected final Function<State<T0, T1>, ? extends BattleAction> actionFactory;
     private final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> targetProviderFactory;
 
     protected AbstractTwoTargetBattleParticipantAction(final BattleParticipantActionTargetType<T0> firstType, final BattleParticipantActionTargetType<T1> secondType, final Function<State<T0, T1>, BattleAction> factory, final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> providerFactory) {
@@ -41,14 +41,14 @@ public abstract class AbstractTwoTargetBattleParticipantAction<T0 extends Battle
     }
 
     private static <T0 extends BattleParticipantActionTarget, T1 extends BattleParticipantActionTarget> BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> wrapProviderFactory(final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> factory, final BattleParticipantActionTargetType<T0> firstType, final BattleParticipantActionTargetType<T1> secondType) {
-        return (stateView, state, targetConsumer, valid) -> {
+        return (stateView, state, targetConsumer) -> {
             if (state.firstValue == null) {
-                return BattleParticipantActionBuilder.TargetProvider.typeCheck(valid, factory.build(stateView, state, targetConsumer, valid), firstType);
+                return BattleParticipantActionBuilder.TargetProvider.typeCheck(factory.build(stateView, state, targetConsumer), firstType);
             }
             if (state.secondValue == null) {
-                return BattleParticipantActionBuilder.TargetProvider.typeCheck(valid, factory.build(stateView, state, targetConsumer, valid), secondType);
+                return BattleParticipantActionBuilder.TargetProvider.typeCheck(factory.build(stateView, state, targetConsumer), secondType);
             }
-            return BattleParticipantActionBuilder.TargetProvider.empty(valid);
+            return BattleParticipantActionBuilder.TargetProvider.empty();
         };
     }
 

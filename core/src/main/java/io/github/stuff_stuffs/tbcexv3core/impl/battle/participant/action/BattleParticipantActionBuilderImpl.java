@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantActionBuilder {
     private final BattleParticipantStateView stateView;
     private final Predicate<S> buildPredicate;
-    private final Function<S, BattleAction> builder;
+    private final Function<S, ? extends BattleAction> builder;
     private final S state;
     private final TargetProviderFactory<S> targetProviderFactory;
     private final BiConsumer<S, BattleParticipantActionTarget> stateUpdater;
@@ -24,7 +24,7 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     private int targetCount = 0;
     private TargetProvider currentProvider;
 
-    public BattleParticipantActionBuilderImpl(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
+    public BattleParticipantActionBuilderImpl(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
         stateView = view;
         buildPredicate = predicate;
         this.builder = builder;
@@ -61,7 +61,7 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
 
     private void setupProvider() {
         final int t = targetCount;
-        currentProvider = targetProviderFactory.build(stateView, state, action -> update(action, t), () -> t == targetCount);
+        currentProvider = targetProviderFactory.build(stateView, state, action -> update(action, t));
     }
 
     @Override

@@ -26,7 +26,10 @@ import net.minecraft.text.Text;
 import net.minecraft.world.World;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
@@ -182,11 +185,11 @@ public final class InventoryWidget {
         return scroller;
     }
 
-    private static Widget<InventoryItemEntryState> createItemEntry(boolean even) {
+    private static Widget<InventoryItemEntryState> createItemEntry(final boolean even) {
         final GridContainerWidget<InventoryItemEntryState> container = new GridContainerWidget<>(new GridContainerWidget.GridContainerSizer<>() {
             @Override
             public double xSize(final InventoryItemEntryState data, final int index, final double max, final double total) {
-                return max / 2.0;
+                return index == 0 ? max / 2.0 : max;
             }
 
             @Override
@@ -204,15 +207,15 @@ public final class InventoryWidget {
                 return 1;
             }
         });
-        int normColor = even?0x7F9F9F9F:0x7F3F3F3F;
-        ToIntFunction<InventoryItemEntryState> colorGetter = state -> {
-            if(state.state.state.selectedIndex.isPresent() && state.state.state.selectedIndex.get().equals(state.handle)) {
+        final int normColor = even ? 0x7F9F9F9F : 0x7F3F3F3F;
+        final ToIntFunction<InventoryItemEntryState> colorGetter = state -> {
+            if (state.state.state.selectedIndex.isPresent() && state.state.state.selectedIndex.get().equals(state.handle)) {
                 return 0xFFF9F9F9;
             }
-            return state.hovered?0xFFF3F3F3 : normColor;
+            return state.hovered ? 0xFFF3F3F3 : normColor;
         };
-        Predicate<InventoryItemEntryState> shadow = state -> state.state.state.selectedIndex.isPresent() && state.state.state.selectedIndex.get().equals(state.handle);
-        container.add(new TerminalWidget<>(StateUpdater.none(), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(colorGetter), WidgetRenderUtils.centeredText(state -> -1, shadow,  state -> {
+        final Predicate<InventoryItemEntryState> shadow = state -> state.state.state.selectedIndex.isPresent() && state.state.state.selectedIndex.get().equals(state.handle);
+        container.add(new TerminalWidget<>(StateUpdater.none(), WidgetRenderUtils.Renderer.compound(WidgetRenderUtils.basicPanelTerminal(colorGetter), WidgetRenderUtils.centeredText(state -> -1, shadow, state -> {
             final BattleParticipantHandle handle = state.state.state.parent.handle;
             final BattleView view = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(handle.getParent());
             if (view != null) {

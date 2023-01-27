@@ -173,7 +173,9 @@ public class RootWidgetRenderContextImpl implements AbstractWidgetRenderContext 
     }
 
     private void draw(final BufferBuilder buffer, final Optional<Identifier> texture, final int stencil, final boolean last) {
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShader(GameRenderer::getPositionColorTexLightmapProgram);
+        RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE_MINUS_DST_ALPHA, GlStateManager.DstFactor.ONE);
         GlStateManager._depthMask(false);

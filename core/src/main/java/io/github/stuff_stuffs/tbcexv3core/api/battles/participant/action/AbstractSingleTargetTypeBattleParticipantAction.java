@@ -8,7 +8,6 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -28,7 +27,7 @@ public abstract class AbstractSingleTargetTypeBattleParticipantAction<T extends 
 
     @Override
     public BattleParticipantActionBuilder builder(final BattleParticipantStateView stateView, final Consumer<BattleAction> consumer) {
-        return BattleParticipantActionBuilder.create(stateView, readyForBuild, actionFactory, new State<>(stateView), (stateView1, state, targetConsumer, valid) -> BattleParticipantActionBuilder.TargetProvider.typeCheck(valid, providerFactory.build(stateView1, state, targetConsumer, valid), type), (state, target) -> {
+        return BattleParticipantActionBuilder.create(stateView, readyForBuild, actionFactory, new State<>(stateView), (stateView1, state, targetConsumer) -> BattleParticipantActionBuilder.TargetProvider.typeCheck(providerFactory.build(stateView1, state, targetConsumer), type), (state, target) -> {
             if (target.type() != type) {
                 throw new IllegalArgumentException("Type mismatch!");
             }

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
@@ -86,7 +87,8 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
 
     @Override
     public void onPreLaunch() {
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && System.getProperties().containsKey("renderdoc")) {
+        final Properties properties = System.getProperties();
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && String.CASE_INSENSITIVE_ORDER.compare("true", (String) properties.getOrDefault("renderdoc", "false")) == 0) {
             try {
                 System.loadLibrary("renderdoc");
             } catch (final Exception e) {
