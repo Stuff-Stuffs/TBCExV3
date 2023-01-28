@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
@@ -14,6 +14,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.BattleParticipantStateImpl;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Optional;
@@ -23,6 +24,9 @@ import java.util.UUID;
 public interface BattleParticipantState extends BattleParticipantStateView {
     @Override
     EventMap getEventMap();
+
+    //Call start and end move on the action trace before this
+    boolean setPosition(BlockPos pos, Tracer<ActionTrace> tracer);
 
     boolean setBounds(BattleParticipantBounds bounds, Tracer<ActionTrace> tracer);
 

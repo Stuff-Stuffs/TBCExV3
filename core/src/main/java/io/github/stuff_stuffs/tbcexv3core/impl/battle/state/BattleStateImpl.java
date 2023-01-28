@@ -2,7 +2,8 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.state;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
@@ -140,7 +141,9 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (removed == null) {
             throw new TBCExException();
         }
-        removed.deinit();
+        tracer.pushInstant(true).value(new BattleActionTraces.BattleRemoveEffect(removed)).buildAndApply();
+        removed.deinit(tracer);
+        tracer.pop();
     }
 
     @Override
@@ -149,7 +152,9 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (effects.put(effect.getType(), effect) != null) {
             throw new TBCExException();
         }
+        tracer.pushInstant(true).value(new BattleActionTraces.BattleAddEffect(effect)).buildAndApply();
         effect.init(this, tracer);
+        tracer.pop();
     }
 
     @Override
@@ -158,7 +163,9 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         if (events.getEvent(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT).getInvoker().preBattleSetBounds(this, bounds, tracer)) {
             final BattleBounds old = this.bounds;
             this.bounds = bounds;
+            tracer.pushInstant(true).value(new BattleActionTraces.BattleSetBounds(Optional.ofNullable(old), bounds)).buildAndApply();
             events.getEvent(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT).getInvoker().postBattleBoundsSet(this, old, tracer);
+            tracer.pop();
             return true;
         }
         return false;
@@ -228,6 +235,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         handle.ifPresent(battleParticipantHandle -> {
             participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this);
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
+            tracer.pop();
         });
         return handle;
     }

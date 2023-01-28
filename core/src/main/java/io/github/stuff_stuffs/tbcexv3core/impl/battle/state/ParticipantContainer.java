@@ -1,7 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.state;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
@@ -81,6 +83,7 @@ public class ParticipantContainer {
             participantStates.put(handle, (AbstractBattleParticipantState) participant);
             teamByHandle.put(handle, team);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
+            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantJoined(handle)).buildAndApply();
             return Optional.of(handle);
         }
         return Optional.empty();
@@ -93,7 +96,9 @@ public class ParticipantContainer {
         if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, state, reason, tracer)) {
             final AbstractBattleParticipantState removed = participantStates.remove(handle);
             removed.finish();
+            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(removed, state, reason, tracer);
+            tracer.pop();
             return true;
         }
         return false;
@@ -111,7 +116,9 @@ public class ParticipantContainer {
             } else {
                 relations.put(pair, relation);
             }
+            tracer.pushInstant(true).value(new BattleActionTraces.BattleTeamSetRelation(first, second, old, relation)).buildAndApply();
             events.getEvent(CoreBattleEvents.POST_TEAM_RELATION_CHANGE_EVENT).getInvoker().postChangeTeamRelation(state, first, second, old, relation, tracer);
+            tracer.pop();
             return true;
         }
         return false;
@@ -148,7 +155,9 @@ public class ParticipantContainer {
             handlesByTeam.get(currentTeam).remove(handle);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
             teamByHandle.put(handle, team);
+            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantSetTeam(handle, team, currentTeam)).buildAndApply();
             state.getEventMap().getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().postSetTeam(state, currentTeam, tracer);
+            tracer.pop();
             return true;
         }
         return false;

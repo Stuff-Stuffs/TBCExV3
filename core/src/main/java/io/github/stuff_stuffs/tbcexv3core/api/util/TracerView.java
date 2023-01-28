@@ -1,67 +1,102 @@
 package io.github.stuff_stuffs.tbcexv3core.api.util;
 
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 @ApiStatus.NonExtendable
 public interface TracerView<T> {
+    Relation CAUSED_BY = createRelation(TBCExV3Core.createId("caused_by"));
+
+    IntervalStart<T> root();
+
     Stream<Node<T>> all();
 
-    Stream<StartNode<T>> starts();
+    Stream<IntervalStart<T>> starts();
 
-    Stream<EndNode<T>> ends();
+    Stream<IntervalEnd<T>> ends();
 
-    TracerView<T> before(Node<T> node);
+    Stream<Instant<T>> instants();
 
-    TracerView<T> after(Node<T> node);
-
-    static <T> TracerView<T> empty() {
+    static <T> TracerView<T> empty(final IntervalStart<T> root) {
         return new TracerView<>() {
+            @Override
+            public IntervalStart<T> root() {
+                return root;
+            }
+
             @Override
             public Stream<Node<T>> all() {
                 return Stream.empty();
             }
 
             @Override
-            public Stream<StartNode<T>> starts() {
+            public Stream<IntervalStart<T>> starts() {
                 return Stream.empty();
             }
 
             @Override
-            public Stream<EndNode<T>> ends() {
+            public Stream<IntervalEnd<T>> ends() {
                 return Stream.empty();
             }
 
             @Override
-            public TracerView<T> before(final Node<T> node) {
-                return this;
-            }
-
-            @Override
-            public TracerView<T> after(final Node<T> node) {
-                return this;
+            public Stream<Instant<T>> instants() {
+                return Stream.empty();
             }
         };
+    }
+
+    static Relation createRelation(final Identifier id) {
+        return new Relation() {
+            @Override
+            public Identifier id() {
+                return id;
+            }
+
+            @Override
+            public int hashCode() {
+                return id.hashCode();
+            }
+
+            @Override
+            public boolean equals(final Object obj) {
+                if (obj instanceof Relation relation) {
+                    return id.equals(relation.id());
+                } else {
+                    return false;
+                }
+            }
+        };
+    }
+
+    interface Relation {
+        Identifier id();
     }
 
     sealed interface Node<T> {
         TracerView<T> parent();
 
-        Optional<Node<T>> causedBy();
+        Map<Relation, Collection<Node<T>>> relations();
 
-        List<Node<T>> caused();
+        Map<Relation, Collection<Node<T>>> reversedRelations();
 
         T value();
     }
 
-    non-sealed interface StartNode<T> extends Node<T> {
-        Optional<EndNode<T>> end();
+    non-sealed interface Instant<T> extends Node<T> {
     }
 
-    non-sealed interface EndNode<T> extends Node<T> {
-        Node<T> start();
+    non-sealed interface IntervalStart<T> extends Node<T> {
+        Optional<IntervalEnd<T>> end();
+    }
+
+    non-sealed interface IntervalEnd<T> extends Node<T> {
+        IntervalStart<T> start();
     }
 }

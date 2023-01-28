@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
@@ -22,19 +23,21 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
 
     @Override
     public BattleParticipantStatModifierKey addModifier(final BattleParticipantStat stat, final BattleParticipantStatModifier modifier, final Tracer<ActionTrace> tracer) {
-        return entries.computeIfAbsent(stat, i -> new Entry()).addModifier(modifier);
+        return entries.computeIfAbsent(stat, Entry::new).addModifier(modifier, tracer);
     }
 
     @Override
     public double compute(final BattleParticipantStat stat, final @Nullable Tracer<StatTrace> tracer) {
-        return entries.computeIfAbsent(stat, i -> new Entry()).compute(tracer);
+        return entries.computeIfAbsent(stat, Entry::new).compute(tracer);
     }
 
     private static final class Entry {
         private final List<WrappedModifier> modifiers;
+        private final BattleParticipantStat stat;
         private List<WrappedModifier> sorted = List.of();
 
-        private Entry() {
+        private Entry(final BattleParticipantStat stat) {
+            this.stat = stat;
             modifiers = new ArrayList<>();
         }
 
@@ -46,16 +49,20 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
             return val;
         }
 
-        public KeyImpl addModifier(final BattleParticipantStatModifier modifier) {
+        public KeyImpl addModifier(final BattleParticipantStatModifier modifier, final Tracer<ActionTrace> tracer) {
             final int index = modifiers.size();
             final WrappedModifier wrappedModifier = new WrappedModifier(index, modifier);
             modifiers.add(wrappedModifier);
             sort();
+            tracer.pushInstant(true).value(new ParticipantActionTraces.Stat.AddStatModifier(stat)).buildAndApply();
+            tracer.pop();
             return new KeyImpl(wrappedModifier, this);
         }
 
         public void remove(final WrappedModifier modifier, final Tracer<ActionTrace> tracer) {
             modifiers.remove(modifier);
+            tracer.pushInstant(true).value(new ParticipantActionTraces.Stat.RemoveStatModifier(stat)).buildAndApply();
+            tracer.pop();
             sort();
         }
 

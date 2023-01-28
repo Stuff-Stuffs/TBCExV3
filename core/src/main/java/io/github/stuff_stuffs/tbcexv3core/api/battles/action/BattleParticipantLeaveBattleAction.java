@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.action;
 
 import com.mojang.serialization.Codec;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
@@ -9,11 +10,11 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 
 import java.util.Optional;
 
-public class BattleParticipantLeaveAction implements BattleAction {
-    public static final Codec<BattleParticipantLeaveAction> CODEC = BattleParticipantHandle.codec().xmap(BattleParticipantLeaveAction::new, action -> action.handle);
+public class BattleParticipantLeaveBattleAction implements BattleAction {
+    public static final Codec<BattleParticipantLeaveBattleAction> CODEC = BattleParticipantHandle.codec().xmap(BattleParticipantLeaveBattleAction::new, action -> action.handle);
     private final BattleParticipantHandle handle;
 
-    public BattleParticipantLeaveAction(final BattleParticipantHandle handle) {
+    public BattleParticipantLeaveBattleAction(final BattleParticipantHandle handle) {
         this.handle = handle;
     }
 

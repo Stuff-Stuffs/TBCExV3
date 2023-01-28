@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
@@ -21,6 +22,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.AbstractBattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -59,12 +61,28 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     }
 
     @Override
+    public boolean setPosition(final BlockPos pos, final Tracer<ActionTrace> tracer) {
+        checkPhase(BattleParticipantStatePhase.FIGHT, BattleParticipantStatePhase.FIGHT);
+        if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, bounds, tracer)) {
+            final BattleParticipantBounds oldBounds = bounds;
+            bounds = BattleParticipantBounds.move(pos, bounds);
+            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantMove(handle, oldBounds.center(), pos)).buildAndApply();
+            events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, oldBounds, tracer);
+            tracer.pop();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean setBounds(final BattleParticipantBounds bounds, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FIGHT);
         if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, bounds, tracer)) {
             final BattleParticipantBounds oldBounds = this.bounds;
             this.bounds = bounds;
+            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantChangeBounds(handle, oldBounds, bounds)).buildAndApply();
             events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, oldBounds, tracer);
+            tracer.pop();
             return true;
         }
         return false;
@@ -96,16 +114,31 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
         if (removed == null) {
             throw new TBCExException();
         }
-        removed.deinit();
+        tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantRemoveEffect(handle, removed)).buildAndApply();
+        removed.deinit(tracer);
+        tracer.pop();
     }
 
     @Override
-    public void addEffect(final BattleParticipantEffect effect, final Tracer<ActionTrace> tracer) {
+    public void addEffect(BattleParticipantEffect effect, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FIGHT);
-        if (effects.put(effect.getType(), effect) != null) {
-            throw new TBCExException();
+        final BattleParticipantEffect current = effects.put(effect.getType(), effect);
+        if (current != null) {
+            effect = combine(current, effect, effect.getType());
+            effects.put(effect.getType(), effect);
         }
+        tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantAddEffect(handle, current != null, effect)).buildAndApply();
         effect.init(this, tracer);
+        tracer.pop();
+    }
+
+    private static <K extends BattleParticipantEffect, T extends K> BattleParticipantEffect combine(final BattleParticipantEffect currentEffect, final BattleParticipantEffect newEffect, final BattleParticipantEffectType<K, T> type) {
+        final T currentCasted = type.checkedCast(currentEffect);
+        final T newCasted = type.checkedCast(newEffect);
+        if (currentCasted == null || newCasted == null) {
+            throw new RuntimeException();
+        }
+        return type.combine(currentCasted, newCasted);
     }
 
     @Override

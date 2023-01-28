@@ -2,167 +2,198 @@ package io.github.stuff_stuffs.tbcexv3core.impl.util;
 
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
-import it.unimi.dsi.fastutil.Stack;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class TracerImpl<T> implements Tracer<T> {
-    private final Long2ObjectMap<StartNodeImpl<T>> open = new Long2ObjectOpenHashMap<>();
-    private final StartNodeImpl<T> start;
-    private final T endValue;
-    private boolean finished = false;
     private final ObjectArrayList<Node<T>> stack = new ObjectArrayList<>();
-    private long nextId = 0;
+    private final ObjectSet<IntervalStart<T>> open;
+    private final List<IntervalStart<T>> starts;
+    private final List<IntervalEnd<T>> ends;
+    private final List<Instant<T>> instants;
+    private final IntervalStartImpl<T> start;
+    private final T endValue;
 
     public TracerImpl(final T startValue, final T endValue) {
-        start = new StartNodeImpl<>(nextId++, new int[0], this, null, startValue);
-        open.put(start.id, start);
+        open = new ObjectOpenHashSet<>();
+        start = new IntervalStartImpl<>(this, startValue, Map.of());
+        open.add(start);
         this.endValue = endValue;
+        starts = new ArrayList<>();
+        ends = new ArrayList<>();
+        instants = new ArrayList<>();
     }
 
     @Override
-    public StartNode<T> pushStart(final T value) {
-        final Node<T> cursor = cursor();
-        final int[] prevPath = path(cursor);
-        final int index = cursor.caused().size();
-        final int[] newPath = Arrays.copyOf(prevPath, prevPath.length + 1);
-        newPath[newPath.length - 1] = index;
-        final StartNodeImpl<T> node = new StartNodeImpl<>(nextId++, newPath, this, cursor, value);
-        switch (cursor) {
-            case StartNode<T> startNode -> ((StartNodeImpl<T>) startNode).addChild(node);
-            case EndNode<T> endNode -> ((EndNodeImpl<T>) endNode).addChild(node);
+    public NodeBuilder<T, IntervalStart<T>> pushStart(final boolean defaultRelations) {
+        return new NodeBuilderImpl<>(this, defaultRelations, (value, relations) -> {
+            final IntervalStart<T> start = new IntervalStartImpl<>(TracerImpl.this, value, relations);
+            starts.add(start);
+            open.add(start);
+            applyRelations(relations, start);
+            stack.push(start);
+            return start;
+        });
+    }
+
+    private void applyRelations(final Map<Relation, Collection<Node<T>>> relations, final Node<T> owner) {
+        final Function<Node<T>, Map<Relation, Collection<Node<T>>>> extractor = node -> {
+            if (node instanceof IntervalStartImpl<T> start) {
+                return start.reversedRelations;
+            }
+            if (node instanceof IntervalEndImpl<T> end) {
+                return end.reversedRelations;
+            }
+            if (node instanceof InstantImpl<T> instant) {
+                return instant.reversedRelations;
+            }
+            throw new RuntimeException();
+        };
+        for (final Map.Entry<Relation, Collection<Node<T>>> entry : relations.entrySet()) {
+            final Relation key = entry.getKey();
+            for (final Node<T> node : entry.getValue()) {
+                extractor.apply(node).computeIfAbsent(key, i -> new ObjectOpenHashSet<>()).add(owner);
+            }
         }
-        open.put(node.id, node);
-        stack.push(node);
-        return node;
     }
 
     @Override
-    public EndNode<T> pushEnd(final T value, final StartNode<T> start) {
-        final StartNodeImpl<T> impl = (StartNodeImpl<T>) start;
-        if (impl.parent != this || impl.end != null) {
+    public NodeBuilder<T, IntervalEnd<T>> pushEnd(final IntervalStart<T> start, final boolean defaultRelation) {
+        if (start.parent() != this) {
             throw new RuntimeException();
         }
-        final Node<T> cursor = cursor();
-        final int[] prevPath = path(cursor);
-        final int index = cursor.caused().size();
-        final int[] newPath = Arrays.copyOf(prevPath, prevPath.length + 1);
-        newPath[newPath.length - 1] = index;
-        final EndNodeImpl<T> node = new EndNodeImpl<>(this, newPath, cursor, value, start);
-        switch (cursor) {
-            case StartNode<T> startNode -> ((StartNodeImpl<T>) startNode).addChild(node);
-            case EndNode<T> endNode -> ((EndNodeImpl<T>) endNode).addChild(node);
-        }
-        open.remove(impl.id);
-        impl.end = node;
-        stack.push(node);
-        return node;
+        return new NodeBuilderImpl<>(this, defaultRelation, (value, relations) -> {
+            final IntervalEndImpl<T> end = new IntervalEndImpl<>(TracerImpl.this, start, value, relations);
+            ends.add(end);
+            if (!open.remove(start)) {
+                throw new RuntimeException();
+            }
+            ((IntervalStartImpl<T>) start).end = end;
+            applyRelations(relations, end);
+            stack.push(end);
+            return end;
+        });
+    }
+
+    @Override
+    public NodeBuilder<T, Instant<T>> pushInstant(final boolean defaultRelations) {
+        return new NodeBuilderImpl<>(this, defaultRelations, (value, relations) -> {
+            final Instant<T> instant = new InstantImpl<>(TracerImpl.this, value, relations);
+            instants.add(instant);
+            applyRelations(relations, instant);
+            stack.push(instant);
+            return instant;
+        });
     }
 
     @Override
     public void pop() {
-        if (!stack.isEmpty()) {
+        if (stack.isEmpty()) {
+            pushEnd(start).value(endValue).buildAndApply();
             stack.pop();
         } else {
-            if (finished) {
-                throw new RuntimeException();
-            }
-            pushEnd(endValue, start);
-            finished = true;
+            stack.pop();
         }
     }
 
     @Override
     public boolean checkForOpen() {
-        return !open.isEmpty();
+        return open.size() > 0;
     }
 
-    private record StackEntry<T>(Node<T> node, int index) {
+    @Override
+    public IntervalStart<T> root() {
+        return start;
     }
 
     @Override
     public Stream<Node<T>> all() {
-        final Stream.Builder<Node<T>> builder = Stream.builder();
-        final Stack<StackEntry<T>> stack = new ObjectArrayList<>();
-        stack.push(new StackEntry<>(start, 0));
-        builder.add(start);
-        while (!stack.isEmpty()) {
-            final StackEntry<T> entry = stack.pop();
-            final List<Node<T>> caused = entry.node().caused();
-            if (entry.index() < caused.size()) {
-                final Node<T> node = caused.get(entry.index());
-                builder.add(node);
-                stack.push(new StackEntry<>(entry.node(), entry.index() + 1));
-                stack.push(new StackEntry<>(node, 0));
-            }
-        }
-        return builder.build();
+        return Stream.concat(Stream.concat(starts(), ends()), instants());
     }
 
     @Override
-    public Stream<StartNode<T>> starts() {
-        return all().map(node -> {
-            if (node instanceof StartNode<T> startNode) {
-                return startNode;
-            } else {
-                return null;
-            }
-        }).filter(Objects::nonNull);
+    public Stream<IntervalStart<T>> starts() {
+        return starts.stream();
     }
 
     @Override
-    public Stream<EndNode<T>> ends() {
-        return all().map(node -> {
-            if (node instanceof EndNode<T> endNode) {
-                return endNode;
-            } else {
-                return null;
-            }
-        }).filter(Objects::nonNull);
+    public Stream<IntervalEnd<T>> ends() {
+        return ends.stream();
     }
 
     @Override
-    public TracerView<T> before(final Node<T> node) {
-        return new SubView<>(start, path(node), new int[0]);
+    public Stream<Instant<T>> instants() {
+        return instants.stream();
     }
 
-    @Override
-    public TracerView<T> after(final Node<T> node) {
-        return new SubView<>(start, new int[0], path(node));
-    }
-
-    private static int[] path(final Node<?> node) {
-        return switch (node) {
-            case StartNode<?> startNode -> ((StartNodeImpl<?>) startNode).path;
-            case EndNode<?> endNode -> ((EndNodeImpl<?>) endNode).path;
-        };
-    }
-
-    private Node<T> cursor() {
-        return stack.isEmpty() ? start : stack.top();
-    }
-
-    private static final class StartNodeImpl<T> implements StartNode<T> {
-        private final long id;
-        private final int[] path;
+    private static final class NodeBuilderImpl<T, K extends Node<T>> implements NodeBuilder<T, K> {
+        private T value;
+        private final Map<Relation, Collection<Node<T>>> relations;
         private final TracerImpl<T> parent;
-        private final @Nullable Node<T> causedBy;
-        private final T value;
-        private @Nullable EndNode<T> end;
-        private List<Node<T>> children;
+        private final boolean defaultRelation;
+        private final BiFunction<T, Map<Relation, Collection<Node<T>>>, K> factory;
+        private boolean built = false;
 
-        private StartNodeImpl(final long id, final int[] path, final TracerImpl<T> parent, @Nullable final Node<T> by, final T value) {
-            this.id = id;
-            this.path = path;
+        private NodeBuilderImpl(final TracerImpl<T> parent, final boolean defaultRelation, final BiFunction<T, Map<Relation, Collection<Node<T>>>, K> factory) {
+            this.defaultRelation = defaultRelation;
+            this.factory = factory;
+            relations = new Object2ReferenceOpenHashMap<>();
             this.parent = parent;
-            causedBy = by;
+        }
+
+        @Override
+        public NodeBuilder<T, K> value(final T value) {
+            if (built) {
+                throw new RuntimeException();
+            }
             this.value = value;
-            children = Collections.emptyList();
+            return this;
+        }
+
+        @Override
+        public NodeBuilder<T, K> relation(final Relation relation, final Node<T> node) {
+            if (built) {
+                throw new RuntimeException();
+            }
+            if (node.parent() != parent) {
+                throw new RuntimeException();
+            }
+            relations.computeIfAbsent(relation, i -> new ObjectOpenHashSet<>()).add(node);
+            return this;
+        }
+
+        @Override
+        public K buildAndApply() {
+            if (built || value == null) {
+                throw new RuntimeException();
+            }
+            built = true;
+            if (defaultRelation && parent.start != null) {
+                relations.computeIfAbsent(TracerView.CAUSED_BY, i -> new ObjectOpenHashSet<>()).add(parent.stack.isEmpty() ? parent.start : parent.stack.top());
+            }
+            return factory.apply(value, relations);
+        }
+    }
+
+    private static final class InstantImpl<T> implements Instant<T> {
+        private final TracerImpl<T> parent;
+        private final T value;
+        private final Map<Relation, Collection<Node<T>>> relations;
+        private final Map<Relation, Collection<Node<T>>> reversedRelations;
+
+        private InstantImpl(final TracerImpl<T> parent, final T value, final Map<Relation, Collection<Node<T>>> relations) {
+            this.parent = parent;
+            this.value = value;
+            this.relations = relations;
+            reversedRelations = new Object2ReferenceOpenHashMap<>();
         }
 
         @Override
@@ -171,51 +202,34 @@ public class TracerImpl<T> implements Tracer<T> {
         }
 
         @Override
-        public Optional<Node<T>> causedBy() {
-            return Optional.ofNullable(causedBy);
+        public Map<Relation, Collection<Node<T>>> relations() {
+            return Collections.unmodifiableMap(relations);
         }
 
         @Override
-        public List<Node<T>> caused() {
-            return Collections.unmodifiableList(children);
-        }
-
-        private void addChild(final Node<T> node) {
-            if (node.parent() != parent) {
-                throw new RuntimeException();
-            }
-            final List<Node<T>> copy = new ArrayList<>(children.size() + 1);
-            copy.addAll(children);
-            copy.add(node);
-            children = copy;
+        public Map<Relation, Collection<Node<T>>> reversedRelations() {
+            return Collections.unmodifiableMap(reversedRelations);
         }
 
         @Override
         public T value() {
             return value;
         }
-
-        @Override
-        public Optional<EndNode<T>> end() {
-            return Optional.ofNullable(end);
-        }
     }
 
-    private static final class EndNodeImpl<T> implements EndNode<T> {
+    private static final class IntervalEndImpl<T> implements IntervalEnd<T> {
         private final TracerImpl<T> parent;
-        private final int[] path;
-        private final @Nullable Node<T> causedBy;
+        private final IntervalStart<T> start;
         private final T value;
-        private final StartNode<T> start;
-        private List<Node<T>> children;
+        private final Map<Relation, Collection<Node<T>>> relations;
+        private final Map<Relation, Collection<Node<T>>> reversedRelations;
 
-        private EndNodeImpl(final TracerImpl<T> parent, final int[] path, @Nullable final Node<T> by, final T value, final StartNode<T> start) {
+        private IntervalEndImpl(final TracerImpl<T> parent, final IntervalStart<T> start, final T value, final Map<Relation, Collection<Node<T>>> relations) {
             this.parent = parent;
-            this.path = path;
-            causedBy = by;
-            this.value = value;
             this.start = start;
-            children = Collections.emptyList();
+            this.value = value;
+            this.relations = relations;
+            reversedRelations = new Object2ReferenceOpenHashMap<>();
         }
 
         @Override
@@ -224,23 +238,13 @@ public class TracerImpl<T> implements Tracer<T> {
         }
 
         @Override
-        public Optional<Node<T>> causedBy() {
-            return Optional.ofNullable(causedBy);
+        public Map<Relation, Collection<Node<T>>> relations() {
+            return Collections.unmodifiableMap(relations);
         }
 
         @Override
-        public List<Node<T>> caused() {
-            return Collections.unmodifiableList(children);
-        }
-
-        private void addChild(final Node<T> node) {
-            if (node.parent() != parent) {
-                throw new RuntimeException();
-            }
-            final List<Node<T>> copy = new ArrayList<>(children.size() + 1);
-            copy.addAll(children);
-            copy.add(node);
-            children = copy;
+        public Map<Relation, Collection<Node<T>>> reversedRelations() {
+            return Collections.unmodifiableMap(reversedRelations);
         }
 
         @Override
@@ -249,88 +253,49 @@ public class TracerImpl<T> implements Tracer<T> {
         }
 
         @Override
-        public Node<T> start() {
+        public IntervalStart<T> start() {
             return start;
         }
     }
 
-    private static final class SubView<T> implements TracerView<T> {
-        private final Node<T> node;
-        private final int[] before;
-        private final int[] after;
+    private static final class IntervalStartImpl<T> implements IntervalStart<T> {
+        private final TracerImpl<T> parent;
+        private final T value;
+        private final Map<Relation, Collection<Node<T>>> relations;
+        private final Map<Relation, Collection<Node<T>>> reversedRelations;
+        private @Nullable IntervalEnd<T> end;
 
-        private SubView(final Node<T> node, final int[] before, final int[] after) {
-            this.node = node;
-            this.before = before;
-            this.after = after;
+        private IntervalStartImpl(final TracerImpl<T> parent, final T value, final Map<Relation, Collection<Node<T>>> relations) {
+            this.parent = parent;
+            this.value = value;
+            this.relations = relations;
+            reversedRelations = new Object2ReferenceOpenHashMap<>();
+            end = null;
         }
 
         @Override
-        public Stream<Node<T>> all() {
-            return stream();
+        public TracerView<T> parent() {
+            return parent;
         }
 
         @Override
-        public Stream<StartNode<T>> starts() {
-            return all().map(node -> {
-                if (node instanceof StartNode<T> startNode) {
-                    return startNode;
-                } else {
-                    return null;
-                }
-            }).filter(Objects::nonNull);
+        public Map<Relation, Collection<Node<T>>> relations() {
+            return Collections.unmodifiableMap(relations);
         }
 
         @Override
-        public Stream<EndNode<T>> ends() {
-            return all().map(node -> {
-                if (node instanceof EndNode<T> endNode) {
-                    return endNode;
-                } else {
-                    return null;
-                }
-            }).filter(Objects::nonNull);
+        public Map<Relation, Collection<Node<T>>> reversedRelations() {
+            return Collections.unmodifiableMap(reversedRelations);
         }
 
         @Override
-        public TracerView<T> before(final Node<T> node) {
-            final int[] path = path(node);
-            final int compare = Arrays.compare(before, path);
-            if (compare == 0) {
-                return this;
-            }
-            return compare < 0 ? new SubView<>(this.node, path, after) : TracerView.empty();
+        public T value() {
+            return value;
         }
 
         @Override
-        public TracerView<T> after(final Node<T> node) {
-            final int[] path = path(node);
-            final int compare = Arrays.compare(after, path);
-            if (compare == 0) {
-                return this;
-            }
-            return compare > 0 ? new SubView<>(this.node, before, path) : TracerView.empty();
-        }
-
-        private Stream<Node<T>> stream() {
-            final Stream.Builder<Node<T>> builder = Stream.builder();
-            final Stack<StackEntry<T>> stack = new ObjectArrayList<>();
-            stack.push(new StackEntry<>(node, 0));
-            builder.add(node);
-            while (!stack.isEmpty()) {
-                final StackEntry<T> entry = stack.pop();
-                final List<Node<T>> caused = entry.node().caused();
-                if (entry.index() < caused.size()) {
-                    final Node<T> node = caused.get(entry.index());
-                    final int[] path = path(node);
-                    if (Arrays.compare(before, path) > 0 && Arrays.compare(after, path) < 0) {
-                        builder.add(node);
-                    }
-                    stack.push(new StackEntry<>(entry.node(), entry.index() + 1));
-                    stack.push(new StackEntry<>(node, 0));
-                }
-            }
-            return builder.build();
+        public Optional<IntervalEnd<T>> end() {
+            return Optional.ofNullable(end);
         }
     }
 }

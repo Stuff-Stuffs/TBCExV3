@@ -1,23 +1,37 @@
 package io.github.stuff_stuffs.tbcexv3core.api.util;
 
-import com.mojang.datafixers.util.Pair;
 import io.github.stuff_stuffs.tbcexv3core.impl.util.TracerImpl;
 
 public interface Tracer<T> extends TracerView<T> {
-    StartNode<T> pushStart(T value);
-
-    EndNode<T> pushEnd(T value, StartNode<T> start);
-
-    default Pair<StartNode<T>, EndNode<T>> pushInstant(final T start, final T end) {
-        final StartNode<T> startNode = pushStart(start);
-        pop();
-        final EndNode<T> endNode = pushEnd(end, startNode);
-        return Pair.of(startNode, endNode);
+    default NodeBuilder<T, IntervalStart<T>> pushStart() {
+        return pushStart(true);
     }
+
+    NodeBuilder<T, IntervalStart<T>> pushStart(boolean defaultRelation);
+
+    default NodeBuilder<T, IntervalEnd<T>> pushEnd(final IntervalStart<T> start) {
+        return pushEnd(start, true);
+    }
+
+    NodeBuilder<T, IntervalEnd<T>> pushEnd(IntervalStart<T> start, boolean defaultRelation);
+
+    default NodeBuilder<T, Instant<T>> pushInstant() {
+        return pushInstant(true);
+    }
+
+    NodeBuilder<T, Instant<T>> pushInstant(boolean defaultRelation);
 
     void pop();
 
     boolean checkForOpen();
+
+    interface NodeBuilder<T, K extends Node<T>> {
+        NodeBuilder<T, K> value(T value);
+
+        NodeBuilder<T, K> relation(Relation relation, Node<T> node);
+
+        K buildAndApply();
+    }
 
     static <T> Tracer<T> create(final T startValue, final T endValue) {
         return new TracerImpl<>(startValue, endValue);

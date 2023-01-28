@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.event;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
