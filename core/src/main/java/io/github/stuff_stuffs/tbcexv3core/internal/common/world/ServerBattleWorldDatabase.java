@@ -9,315 +9,316 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-import jetbrains.exodus.ArrayByteIterable;
-import jetbrains.exodus.ByteIterable;
-import jetbrains.exodus.CompoundByteIterable;
-import jetbrains.exodus.FixedLengthByteIterable;
-import jetbrains.exodus.bindings.ComparableBinding;
-import jetbrains.exodus.env.*;
-import jetbrains.exodus.util.ByteArraySizedInputStream;
-import jetbrains.exodus.util.LightOutputStream;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.util.math.random.Random;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 //TODO off thread file loading
-public class ServerBattleWorldDatabase implements AutoCloseable {
+public class ServerBattleWorldDatabase {
     private static final Codec<List<Pair<UUID, BattleEntityComponent>>> DELAYED_COMPONENT_CODEC = Codec.list(Codec.pair(CodecUtil.UUID_CODEC, BattleEntityComponent.CODEC));
-    private static final StoreConfig STORE_CONFIG = StoreConfig.getStoreConfig(false, false);
-    private static final String BATTLE_STORE = "battles";
-    private static final String BATTLE_ACTIVE_ENTITIES_STORE = "battle_entities";
-    private static final String BATTLE_INACTIVE_ENTITIES_STORE = "battle_entities";
-    private static final String DELAYED_COMPONENT_STORE = "delayed_components";
-    private static final UUIDBinding UUID_BINDING = new UUIDBinding();
-    private final Environment backing;
+    private static final String BATTLE_DIRECTORY = "./battles";
+    private static final String BATTLE_ACTIVE_ENTITIES_DIRECTORY = "./battle_entities";
+    private static final String BATTLE_INACTIVE_ENTITIES_DIRECTORY = "./battle_entities";
+    private static final String DELAYED_COMPONENT_DIRECTORY = "./delayed_components";
+    private final Path rootFolder;
+    private final Path battles;
+    private final Path activeParticipants;
+    private final Path inactiveParticipants;
+    private final Path delayedComponents;
 
-    public ServerBattleWorldDatabase(final Path file) {
-        backing = Environments.newInstance(file.toFile(), new EnvironmentConfig().setEnvCompactOnOpen(true));
+
+    public ServerBattleWorldDatabase(final Path path) {
+        rootFolder = path;
+        battles = rootFolder.resolve(BATTLE_DIRECTORY);
+        activeParticipants = rootFolder.resolve(BATTLE_ACTIVE_ENTITIES_DIRECTORY);
+        inactiveParticipants = rootFolder.resolve(BATTLE_INACTIVE_ENTITIES_DIRECTORY);
+        delayedComponents = rootFolder.resolve(DELAYED_COMPONENT_DIRECTORY);
+        createDirectory(rootFolder);
+        createDirectory(battles);
+        createDirectory(activeParticipants);
+        createDirectory(inactiveParticipants);
+        createDirectory(delayedComponents);
+    }
+
+    private static void createDirectory(final Path path) {
+        if (Files.exists(path)) {
+            if (Files.isRegularFile(path)) {
+                throw new RuntimeException();
+            }
+        } else {
+            try {
+                Files.createDirectories(path);
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static void overwriteFile(final Path path, final byte[] data) {
+        try {
+            Files.write(path, data, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void saveBattle(final UUID uuid, final Battle battle) {
-        final ByteIterable encoded = encodeBattle(battle);
-        final ByteIterable key = UUID_BINDING.objectToEntry(uuid);
-        final Transaction transaction = backing.beginTransaction();
-        do {
-            final Store store = backing.openStore(BATTLE_STORE, STORE_CONFIG, transaction);
-            store.put(transaction, key, encoded);
-        } while (!transaction.commit());
+        final byte[] encoded = encodeBattle(battle);
+        overwriteFile(file(battles, uuid), encoded);
     }
 
     public UUID[] getParticipatedBattles(final UUID uuid, final TriState active) {
-        final Transaction transaction = backing.beginReadonlyTransaction();
         final List<UUID> uuids = new ArrayList<>();
         if (active == TriState.TRUE || active == TriState.DEFAULT) {
-            if (backing.storeExists(BATTLE_ACTIVE_ENTITIES_STORE, transaction)) {
-                final Store store = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
-                final ByteIterable iterable = store.get(transaction, UUID_BINDING.objectToEntry(uuid));
-                if (iterable != null) {
-                    final Iterator<UUID> iterator = asPastBattles(iterable);
-                    while (iterator.hasNext()) {
-                        final UUID next = iterator.next();
-                        uuids.add(next);
-                    }
+            try {
+                final byte[] bytes = Files.readAllBytes(file(activeParticipants, uuid));
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+                while (buffer.remaining() > 15) {
+                    uuids.add(new UUID(buffer.getLong(), buffer.getLong()));
                 }
+            } catch (final IOException ignored) {
             }
         }
+
         if (active == TriState.FALSE || active == TriState.DEFAULT) {
-            if (backing.storeExists(BATTLE_INACTIVE_ENTITIES_STORE, transaction)) {
-                final Store store = backing.openStore(BATTLE_INACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
-                final ByteIterable iterable = store.get(transaction, UUID_BINDING.objectToEntry(uuid));
-                if (iterable != null) {
-                    final Iterator<UUID> iterator = asPastBattles(iterable);
-                    while (iterator.hasNext()) {
-                        final UUID next = iterator.next();
-                        uuids.add(next);
-                    }
+            try {
+                final byte[] bytes = Files.readAllBytes(file(inactiveParticipants, uuid));
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+                while (buffer.remaining() > 15) {
+                    uuids.add(new UUID(buffer.getLong(), buffer.getLong()));
                 }
+            } catch (final IOException ignored) {
             }
         }
-        transaction.abort();
         return uuids.toArray(new UUID[0]);
     }
 
     public DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> loadBattle(final UUID uuid) {
-        final Transaction transaction = backing.beginReadonlyTransaction();
-        if (!backing.storeExists(BATTLE_STORE, transaction)) {
-            transaction.abort();
+        try {
+            final byte[] bytes = Files.readAllBytes(file(battles, uuid));
+            return decodeBattle(bytes);
+        } catch (final FileNotFoundException e) {
             return DataResult.error("Battle does not exist");
+        } catch (final IOException e) {
+            return DataResult.error("Error: " + e);
         }
-        final Store store = backing.openStore(BATTLE_STORE, STORE_CONFIG, transaction);
-        final ByteIterable iterable = store.get(transaction, UUID_BINDING.objectToEntry(uuid));
-        if (iterable == null) {
-            transaction.abort();
-            return DataResult.error("Battle does not exist");
-        }
-        transaction.abort();
-        return decodeBattle(iterable);
     }
 
-    public void onBattleJoin(final UUID entityId, final UUID battleId, final boolean active) {
-        final ByteIterable key = UUID_BINDING.objectToEntry(entityId);
-        final ByteIterable data = UUID_BINDING.objectToEntry(battleId);
+    public void onBattleJoinLeave(final UUID entityId, final UUID battleId, final boolean active) {
         if (active) {
-            final Transaction transaction = backing.beginTransaction();
-            do {
-                final Store store = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
-                final ByteIterable existing = store.get(transaction, key);
-                if (existing == null) {
-                    store.put(transaction, key, UUID_BINDING.objectToEntry(battleId));
-                } else {
-                    final ByteBuffer buffer = ByteBuffer.wrap(existing.getBytesUnsafe());
-                    final int UUID_SIZE = Long.BYTES * 2;
-                    final int i = binarySearch(buffer, battleId);
-                    final FixedLengthByteIterable prefix = new FixedLengthByteIterable(existing, 0, Math.abs(i) * UUID_SIZE) {
-                    };
-                    final int offset;
-                    if (i < 0) {
-                        offset = Math.abs(i) * UUID_SIZE;
-                    } else {
-                        offset = i * UUID_SIZE + UUID_SIZE;
+            final Path inactivePath = file(inactiveParticipants, entityId);
+            if (Files.isRegularFile(inactivePath)) {
+                try (final FileChannel channel = FileChannel.open(inactivePath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                    final long position = findUUID(channel, battleId);
+                    if (position > -1) {
+                        final long size = channel.size() - position + Long.BYTES * 2;
+                        final ByteBuffer buffer = ByteBuffer.allocate((int) size).order(ByteOrder.LITTLE_ENDIAN);
+                        final int read = channel.read(buffer, position + Long.BYTES * 2);
+                        channel.truncate(position);
+                        if (read > 0) {
+                            buffer.flip();
+                            channel.write(buffer);
+                        }
                     }
-                    final FixedLengthByteIterable suffix = new FixedLengthByteIterable(existing, offset, existing.getLength() - offset) {
-                    };
-                    store.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{prefix, data, suffix}));
+                } catch (final FileNotFoundException ignored) {
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } while (!transaction.commit());
+            }
+            final Path activePath = file(activeParticipants, entityId);
+            try (final FileChannel channel = FileChannel.open(activePath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+                final long position = findUUID(channel, battleId);
+                if (position < 0) {
+                    final long realPos = -(position + 1);
+                    final long size = channel.size() - realPos;
+                    final ByteBuffer buffer = ByteBuffer.allocate((int) size).order(ByteOrder.LITTLE_ENDIAN);
+                    final int read = channel.read(buffer, realPos);
+                    channel.truncate(position);
+                    final ByteBuffer inserted = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
+                    channel.write(inserted);
+                    if (read > 0) {
+                        buffer.flip();
+                        channel.write(buffer);
+                    }
+                }
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
-            final Transaction transaction = backing.beginTransaction();
-            do {
-                final Store activeStore = backing.openStore(BATTLE_ACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
-                final ByteIterable activeExisting = activeStore.get(transaction, key);
-                if (activeExisting != null) {
-                    final ByteBuffer buffer = ByteBuffer.wrap(activeExisting.getBytesUnsafe(), 0, activeExisting.getLength());
-                    final int UUID_SIZE = Long.BYTES * 2;
-                    final int i = binarySearch(buffer, battleId);
-                    if (i >= 0) {
-                        final FixedLengthByteIterable prefix = new FixedLengthByteIterable(activeExisting, 0, Math.abs(i) * UUID_SIZE) {
-                        };
-                        final int offset = i * UUID_SIZE + UUID_SIZE;
-                        final FixedLengthByteIterable suffix = new FixedLengthByteIterable(activeExisting, offset, activeExisting.getLength() - offset) {
-                        };
-                        activeStore.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{prefix, suffix}));
+            final Path activePath = file(inactiveParticipants, entityId);
+            if (Files.isRegularFile(activePath)) {
+                try (final FileChannel channel = FileChannel.open(activePath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                    final long position = findUUID(channel, battleId);
+                    if (position > -1) {
+                        final long size = channel.size() - position + Long.BYTES * 2;
+                        final ByteBuffer buffer = ByteBuffer.allocate((int) size).order(ByteOrder.LITTLE_ENDIAN);
+                        final int read = channel.read(buffer, position + Long.BYTES * 2);
+                        channel.truncate(position);
+                        if (read > 0) {
+                            buffer.flip();
+                            channel.write(buffer);
+                        }
+                    }
+                } catch (final FileNotFoundException ignored) {
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            final Path inactivePath = file(activeParticipants, entityId);
+            try (final FileChannel channel = FileChannel.open(inactivePath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
+                final long position = findUUID(channel, battleId);
+                if (position < 0) {
+                    final long realPos = -(position + 1);
+                    final long size = channel.size() - realPos;
+                    final ByteBuffer buffer = ByteBuffer.allocate((int) size).order(ByteOrder.LITTLE_ENDIAN);
+                    final int read = channel.read(buffer, realPos);
+                    channel.truncate(position);
+                    final ByteBuffer inserted = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
+                    channel.write(inserted);
+                    if (read > 0) {
+                        buffer.flip();
+                        channel.write(buffer);
                     }
                 }
-                final Store inactiveStore = backing.openStore(BATTLE_INACTIVE_ENTITIES_STORE, STORE_CONFIG, transaction);
-                final ByteIterable inactiveExisting = inactiveStore.get(transaction, key);
-                if (inactiveExisting == null) {
-                    inactiveStore.put(transaction, key, data);
-                } else {
-                    final ByteBuffer buffer = ByteBuffer.wrap(inactiveExisting.getBytesUnsafe(), 0, inactiveExisting.getLength());
-                    final int i = binarySearch(buffer, battleId);
-                    final int UUID_SIZE = Long.BYTES * 2;
-                    if (i < 0) {
-                        final FixedLengthByteIterable prefix = new FixedLengthByteIterable(inactiveExisting, 0, Math.abs(i) * UUID_SIZE) {
-                        };
-                        final FixedLengthByteIterable suffix = new FixedLengthByteIterable(inactiveExisting, Math.abs(i) * UUID_SIZE, inactiveExisting.getLength() - Math.abs(i) * UUID_SIZE) {
-                        };
-                        activeStore.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{prefix, data, suffix}));
-                    }
-                }
-            } while (!transaction.commit());
-        }
-    }
-
-    private static int binarySearch(final ByteBuffer buffer, final UUID key) {
-        final int UUID_SIZE = Long.BYTES * 2;
-        int low = 0;
-        int high = buffer.remaining() / UUID_SIZE - 1;
-
-        while (low <= high) {
-            final int mid = (low + high) >>> 1;
-            final UUID midVal = new UUID(buffer.getLong(mid * UUID_SIZE), buffer.getLong(mid * UUID_SIZE + UUID_SIZE / 2));
-
-            final int comp = midVal.compareTo(key);
-            if (comp < 0) {
-                low = mid + 1;
-            } else if (comp > 0) {
-                high = mid - 1;
-            } else {
-                return mid; // key found
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
         }
-        return -(low + 1);  // key not found.
     }
 
-    @Override
-    public void close() {
-        backing.close();
+    private static long findUUID(final SeekableByteChannel channel, final UUID uuid) throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
+        long start = 0;
+        long end = channel.size() / (Long.BYTES * 2);
+        while (start <= end) {
+            buffer.clear();
+            final long mid = (start + end) >>> 1;
+            channel.position(mid * Long.BYTES * 2);
+            final int read = channel.read(buffer);
+            if (read != Long.BYTES * 2) {
+                throw new RuntimeException();
+            } else {
+                final UUID single = new UUID(buffer.getLong(), buffer.getLong());
+                final int i = uuid.compareTo(single);
+                if (i == 0) {
+                    return mid * Long.BYTES * 2;
+                }
+                if (i < 0) {
+                    end = mid - 1;
+                } else {
+                    start = mid + 1;
+                }
+            }
+        }
+        return -(start * Long.BYTES * 2 + 1);
     }
 
     public UUID findUnusedBattleUuid(final Random random) {
-        final Transaction transaction = backing.beginReadonlyTransaction();
-        if (backing.storeExists(BATTLE_STORE, transaction)) {
-            final Store store = backing.openStore(BATTLE_STORE, STORE_CONFIG, transaction);
-            UUID uuid;
-            do {
-                uuid = new UUID(random.nextLong(), random.nextLong());
-            } while (store.get(transaction, UUID_BINDING.objectToEntry(uuid)) != null);
-            transaction.abort();
-            return uuid;
-        } else {
-            transaction.abort();
-            return new UUID(random.nextLong(), random.nextLong());
-        }
+        UUID uuid;
+        do {
+            uuid = new UUID(random.nextLong(), random.nextLong());
+        } while (Files.isRegularFile(file(battles, uuid)));
+        return uuid;
     }
 
     public ServerBattleWorldContainer.DelayedComponents getDelayedComponents(final UUID uuid) {
-        final ArrayByteIterable key = UUID_BINDING.objectToEntry(uuid);
-        while (true) {
-            final Transaction transaction = backing.beginTransaction();
-            if (backing.storeExists(DELAYED_COMPONENT_STORE, transaction)) {
-                final Store store = backing.openStore(DELAYED_COMPONENT_STORE, STORE_CONFIG, transaction);
-                final ByteIterable iterable = store.get(transaction, key);
-                if (iterable != null) {
-                    final DataResult<List<Pair<UUID, BattleEntityComponent>>> result = decodeDelayedComponents(iterable);
-                    store.delete(transaction, key);
-                    final List<Pair<UUID, BattleEntityComponent>> list = result.getOrThrow(false, s -> {
-                        throw new RuntimeException(s);
-                    });
-                    final Map<UUID, List<BattleEntityComponent>> components = new Object2ReferenceOpenHashMap<>();
-                    for (final Pair<UUID, BattleEntityComponent> pair : list) {
-                        components.computeIfAbsent(pair.getFirst(), i -> new ArrayList<>()).add(pair.getSecond());
-                    }
-                    if (transaction.commit()) {
-                        return new ServerBattleWorldContainer.DelayedComponents(components);
-                    } else {
-                        continue;
-                    }
+        final Path path = file(delayedComponents, uuid);
+        try (final FileChannel channel = FileChannel.open(path, StandardOpenOption.READ)) {
+            final ByteBuffer intBuffer = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+            channel.read(intBuffer);
+            intBuffer.flip();
+            final int count = intBuffer.getInt();
+            final Map<UUID, List<BattleEntityComponent>> components = new Object2ReferenceOpenHashMap<>();
+            for (int i = 0; i < count; i++) {
+                intBuffer.clear();
+                channel.read(intBuffer);
+                intBuffer.flip();
+                final byte[] data = new byte[intBuffer.getInt()];
+                final ByteBuffer sized = ByteBuffer.wrap(data);
+                channel.read(sized);
+                final List<Pair<UUID, BattleEntityComponent>> list = decodeDelayedComponents(data).getOrThrow(false, s -> {
+                    throw new RuntimeException(s);
+                });
+                for (final Pair<UUID, BattleEntityComponent> pair : list) {
+                    components.computeIfAbsent(pair.getFirst(), l -> new ArrayList<>()).add(pair.getSecond());
                 }
             }
-            transaction.abort();
+            return new ServerBattleWorldContainer.DelayedComponents(components);
+        } catch (final FileNotFoundException e) {
             return new ServerBattleWorldContainer.DelayedComponents(Map.of());
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     public void saveDelayedComponents(final UUID entityId, final @Nullable ServerBattleWorldContainer.DelayedComponents components) {
-        final ArrayByteIterable key = UUID_BINDING.objectToEntry(entityId);
-        Transaction transaction;
-        do {
-            transaction = backing.beginTransaction();
-            final Store store = backing.openStore(DELAYED_COMPONENT_STORE, STORE_CONFIG, transaction);
-            if (components != null) {
-                final ByteIterable iterable = store.get(transaction, key);
-                final List<Pair<UUID, BattleEntityComponent>> componentList = new ArrayList<>(components.components.size() * 4);
-                for (final Map.Entry<UUID, List<BattleEntityComponent>> entry : components.components.entrySet()) {
-                    for (final BattleEntityComponent component : entry.getValue()) {
-                        componentList.add(Pair.of(entry.getKey(), component));
-                    }
+        final Path path = file(delayedComponents, entityId);
+        if (components == null) {
+            if (Files.isRegularFile(path)) {
+                try {
+                    Files.delete(path);
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
                 }
-                if (iterable != null) {
-                    store.put(transaction, key, new CompoundByteIterable(new ByteIterable[]{iterable, encodeDelayedComponents(componentList)}));
+            }
+        } else {
+            final List<Pair<UUID, BattleEntityComponent>> componentList = new ArrayList<>(components.components.size() * 4);
+            for (final Map.Entry<UUID, List<BattleEntityComponent>> entry : components.components.entrySet()) {
+                for (final BattleEntityComponent component : entry.getValue()) {
+                    componentList.add(Pair.of(entry.getKey(), component));
+                }
+            }
+            final byte[] bytes = encodeDelayedComponents(componentList);
+            try (final FileChannel channel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                if (channel.size() == 0) {
+                    final ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+                    buffer.putInt(1);
+                    buffer.flip();
+                    channel.write(buffer);
                 } else {
-                    store.put(transaction, key, encodeDelayedComponents(componentList));
+                    final ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+                    channel.read(buffer);
+                    final int i = buffer.flip().getInt();
+                    buffer.putInt(i, 0);
+                    buffer.flip();
+                    channel.position(0);
+                    channel.write(buffer);
                 }
-            } else {
-                store.delete(transaction, key);
-            }
-        } while (!transaction.commit());
-    }
-
-    private static final class UUIDBinding extends ComparableBinding {
-        private final byte[] bytes = new byte[16];
-        private final ByteBuffer buffer = ByteBuffer.wrap(bytes);
-
-        @Override
-        public UUID readObject(@NotNull final ByteArrayInputStream stream) {
-            final int i = stream.read(bytes, 0, 16);
-            if (i != 16) {
-                throw new RuntimeException();
-            }
-            buffer.position(0);
-            return new UUID(buffer.getLong(), buffer.getLong());
-        }
-
-        @Override
-        public void writeObject(@NotNull final LightOutputStream output, @NotNull final Comparable object) {
-            if (object instanceof UUID uuid) {
-                buffer.position(0);
-                buffer.putLong(uuid.getMostSignificantBits());
-                buffer.putLong(uuid.getLeastSignificantBits());
-                output.write(bytes);
-            } else {
-                throw new RuntimeException();
+                final ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                final ByteBuffer size = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN);
+                size.putInt(bytes.length);
+                size.flip();
+                channel.position(channel.size());
+                channel.write(size);
+                channel.write(buffer);
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }
 
-    private Iterator<UUID> asPastBattles(final ByteIterable iterable) {
-        final int objectLength = Long.BYTES * 2;
-        final byte[] unsafe = iterable.getBytesUnsafe();
-        final int length = iterable.getLength();
-        return new Iterator<>() {
-            private int index = 0;
-
-            @Override
-            public boolean hasNext() {
-                return index < length;
-            }
-
-            @Override
-            public UUID next() {
-                final UUID uuid = UUID_BINDING.readObject(new ByteArraySizedInputStream(unsafe, index, 16));
-                index = index + objectLength;
-                return uuid;
-            }
-        };
-    }
-
-    private static ByteIterable encodeBattle(final Battle battle) {
+    private static byte[] encodeBattle(final Battle battle) {
         final NbtCompound wrapper = new NbtCompound();
         wrapper.put("data", Battle.encoder().encodeStart(NbtOps.INSTANCE, battle).getOrThrow(false, s -> {
             throw new RuntimeException(s);
@@ -325,15 +326,15 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
         final ByteArrayOutputStream stream = new ByteArrayOutputStream(65535);
         try {
             NbtIo.writeCompressed(wrapper, stream);
-            return new ArrayByteIterable(stream.toByteArray());
+            return stream.toByteArray();
         } catch (final IOException e) {
             throw new RuntimeException("Error while saving battle", e);
         }
     }
 
-    private static DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> decodeBattle(final ByteIterable iterable) {
+    private static DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> decodeBattle(final byte[] bytes) {
         try {
-            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(iterable.getBytesUnsafe(), 0, iterable.getLength()));
+            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(bytes));
             final NbtElement data = compound.get("data");
             return Battle.decoder().parse(NbtOps.INSTANCE, data);
         } catch (final IOException e) {
@@ -341,9 +342,9 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
         }
     }
 
-    private static DataResult<List<Pair<UUID, BattleEntityComponent>>> decodeDelayedComponents(final ByteIterable iterable) {
+    private static DataResult<List<Pair<UUID, BattleEntityComponent>>> decodeDelayedComponents(final byte[] bytes) {
         try {
-            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(iterable.getBytesUnsafe(), 0, iterable.getLength()));
+            final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(bytes));
             final NbtElement data = compound.get("data");
             return DELAYED_COMPONENT_CODEC.parse(NbtOps.INSTANCE, data);
         } catch (final IOException e) {
@@ -351,7 +352,7 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
         }
     }
 
-    private static ByteIterable encodeDelayedComponents(final List<Pair<UUID, BattleEntityComponent>> list) {
+    private static byte[] encodeDelayedComponents(final List<Pair<UUID, BattleEntityComponent>> list) {
         final DataResult<NbtElement> encoded = DELAYED_COMPONENT_CODEC.encodeStart(NbtOps.INSTANCE, list);
         final NbtCompound wrapper = new NbtCompound();
         wrapper.put("data", encoded.getOrThrow(false, s -> {
@@ -360,9 +361,13 @@ public class ServerBattleWorldDatabase implements AutoCloseable {
         final ByteArrayOutputStream stream = new ByteArrayOutputStream(65535);
         try {
             NbtIo.writeCompressed(wrapper, stream);
-            return new ArrayByteIterable(stream.toByteArray());
+            return stream.toByteArray();
         } catch (final IOException e) {
             throw new RuntimeException("Error while saving battle", e);
         }
+    }
+
+    private static Path file(final Path parent, final UUID uuid) {
+        return parent.resolve(uuid.toString() + ".tbcex");
     }
 }

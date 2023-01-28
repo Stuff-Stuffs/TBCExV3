@@ -14,6 +14,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityComponents;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
@@ -41,7 +42,6 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     private final RegistryKey<World> worldKey;
     private final ServerBattleWorldDatabase database;
     private long tickCount;
-    private boolean closed = false;
 
     public ServerBattleWorldContainer(final ServerWorld world, final RegistryKey<World> worldKey, final Path directory) {
         this.world = world;
@@ -71,19 +71,19 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     private void attachListeners(final Battle battle) {
         final EventMap eventMap = battle.getState().getEventMap();
         eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).registerListener((state, tracer) -> {
-            if (!closed) {
-                database.onBattleJoin(state.getUuid(), state.getBattleState().getHandle().getUuid(), true);
+            if (state.getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
+                database.onBattleJoinLeave(state.getUuid(), state.getBattleState().getHandle().getUuid(), true);
             }
         });
         eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((stateView, battleStateView, reason, tracer) -> {
-            if (!closed) {
-                database.onBattleJoin(stateView.getUuid(), stateView.getHandle().getParent().getUuid(), false);
+            if (stateView.getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
+                database.onBattleJoinLeave(stateView.getUuid(), stateView.getHandle().getParent().getUuid(), false);
             }
         });
         eventMap.getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).registerListener((state, tracer) -> {
-            if (!closed) {
-                for (final BattleParticipantHandle participant : state.getParticipants()) {
-                    database.onBattleJoin(participant.getUuid(), state.getHandle().getUuid(), false);
+            for (final BattleParticipantHandle participant : state.getParticipants()) {
+                if (state.getParticipantByHandle(participant).getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
+                    database.onBattleJoinLeave(participant.getUuid(), state.getHandle().getUuid(), false);
                 }
             }
         });
@@ -158,7 +158,6 @@ public class ServerBattleWorldContainer implements AutoCloseable {
 
     @Override
     public void close() {
-        closed = true;
         for (final Map.Entry<UUID, Battle> entry : battles.entrySet()) {
             final UUID uuid = entry.getKey();
             final Battle battle = entry.getValue();
@@ -169,7 +168,6 @@ public class ServerBattleWorldContainer implements AutoCloseable {
                 database.saveDelayedComponents(entry.getKey(), entry.getValue().components.size() == 0 ? null : entry.getValue());
             }
         }
-        database.close();
     }
 
     public List<BattleParticipantHandle> getBattles(final UUID entityUuid, final TriState active) {

@@ -18,10 +18,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.Pre
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattlePlayerComponentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityComponents;
-import io.github.stuff_stuffs.tbcexv3core.api.entity.component.PlayerControlledBattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.entity.component.*;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.EntityBattlesUpdateRequestReceiver;
@@ -41,6 +38,7 @@ public class TBCExV3Core implements ModInitializer {
     @Override
     public void onInitialize() {
         BattlePlayerComponentEvent.EVENT.register((entity, builder) -> {
+            builder.addComponent(TrackedEntityDataComponent.INSTANCE);
             builder.addComponent(new PlayerControlledBattleEntityComponent(entity.getUuid()));
         });
         CoreBattleActions.init();
