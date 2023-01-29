@@ -3,6 +3,4 @@ archivesBaseName = "tbcexv3core"
 dependencies {
     api project(path: ':gui', configuration: "namedElements")
     clientImplementation findProject(":gui").sourceSets.client.output
-    implementation 'org.jetbrains.xodus:xodus-environment:2.0.1'
-    include 'org.jetbrains.xodus:xodus-environment:2.0.1'
 }
