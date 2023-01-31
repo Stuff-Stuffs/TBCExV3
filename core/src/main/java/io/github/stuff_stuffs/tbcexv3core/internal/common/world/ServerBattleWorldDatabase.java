@@ -19,13 +19,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -118,7 +118,7 @@ public class ServerBattleWorldDatabase {
         try {
             final byte[] bytes = Files.readAllBytes(file(battles, uuid));
             return decodeBattle(bytes);
-        } catch (final FileNotFoundException e) {
+        } catch (final NoSuchFileException e) {
             return DataResult.error("Battle does not exist");
         } catch (final IOException e) {
             return DataResult.error("Error: " + e);
@@ -141,7 +141,7 @@ public class ServerBattleWorldDatabase {
                             channel.write(buffer);
                         }
                     }
-                } catch (final FileNotFoundException ignored) {
+                } catch (final NoSuchFileException ignored) {
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -154,7 +154,7 @@ public class ServerBattleWorldDatabase {
                     final long size = channel.size() - realPos;
                     final ByteBuffer buffer = ByteBuffer.allocate((int) size).order(ByteOrder.LITTLE_ENDIAN);
                     final int read = channel.read(buffer, realPos);
-                    channel.truncate(position);
+                    channel.truncate(realPos);
                     final ByteBuffer inserted = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
                     channel.write(inserted);
                     if (read > 0) {
@@ -180,7 +180,7 @@ public class ServerBattleWorldDatabase {
                             channel.write(buffer);
                         }
                     }
-                } catch (final FileNotFoundException ignored) {
+                } catch (final NoSuchFileException ignored) {
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -211,6 +211,9 @@ public class ServerBattleWorldDatabase {
         final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
         long start = 0;
         long end = channel.size() / (Long.BYTES * 2);
+        if (end == 0) {
+            return -1;
+        }
         while (start <= end) {
             buffer.clear();
             final long mid = (start + end) >>> 1;
@@ -265,7 +268,7 @@ public class ServerBattleWorldDatabase {
                 }
             }
             return new ServerBattleWorldContainer.DelayedComponents(components);
-        } catch (final FileNotFoundException e) {
+        } catch (final NoSuchFileException e) {
             return new ServerBattleWorldContainer.DelayedComponents(Map.of());
         } catch (final IOException e) {
             throw new RuntimeException(e);

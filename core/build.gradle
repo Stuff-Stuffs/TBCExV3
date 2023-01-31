@@ -1,6 +1,6 @@
 archivesBaseName = "tbcexv3core"
 
 dependencies {
-    api project(path: ':gui', configuration: "namedElements")
-    clientImplementation findProject(":gui").sourceSets.client.output
+    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    modClientImplementation "io.wispforest:owo-lib:${project.owo_version}"
 }

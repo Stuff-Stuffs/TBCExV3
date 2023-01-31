@@ -28,6 +28,7 @@ allprojects {
     }
 
     loom {
+        runtimeOnlyLog4j = true
         splitEnvironmentSourceSets()
     }
 
@@ -38,7 +39,7 @@ allprojects {
         }
     }
 
-    allprojects.each { p ->
+    subprojects.each { p ->
         loom.mods.register("tbcexv3_" + p.name) {
             sourceSet p.sourceSets.main
             sourceSet p.sourceSets.client
@@ -46,8 +47,8 @@ allprojects {
     }
 
     repositories {
-
-    mavenCentral()
+        maven { url 'https://maven.wispforest.io' }
+        mavenCentral()
     }
 
     dependencies {
@@ -57,6 +58,10 @@ allprojects {
 
         // Fabric API. This is technically optional, but you probably want it anyway.
         modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+        modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+        modClientImplementation "io.wispforest:owo-lib:${project.owo_version}"
+        annotationProcessor "io.wispforest:owo-lib:${project.owo_version}"
     }
 
     java {
@@ -70,10 +75,6 @@ allprojects {
     }
 }
 
-subprojects {
-    version = project.rootProject.version
-}
-
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -82,6 +83,11 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    modClientImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    annotationProcessor "io.wispforest:owo-lib:${project.owo_version}"
+    include "io.wispforest:owo-sentinel:${project.owo_version}"
 
     afterEvaluate {
         subprojects.each {

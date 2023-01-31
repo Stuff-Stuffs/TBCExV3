@@ -7,10 +7,12 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemSorts
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemRarity;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import io.github.stuff_stuffs.tbcexv3core.api.gui.OneHotComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import io.wispforest.owo.ui.parsing.UIParsing;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -18,12 +20,13 @@ import net.minecraft.text.Text;
 public class TBCExV3CoreClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
+        UIParsing.registerFactory(componentName("onehot"), OneHotComponent.StringIndexed::parse);
         BattleUpdateReceiver.init();
         EntityBattlesUpdateReceiver.init();
         PlayerCurrentBattleReceiver.init();
         BattleParticipantItemFilters.instance().register(TBCExV3Core.createId("all"), new BattleParticipantItemFilter() {
             @Override
-            public boolean accepted(BattleParticipantItemStack stack, BattleParticipantStateView view) {
+            public boolean accepted(final BattleParticipantItemStack stack, final BattleParticipantStateView view) {
                 return true;
             }
 
@@ -34,7 +37,7 @@ public class TBCExV3CoreClient implements ClientModInitializer {
         }, view -> true);
         BattleParticipantItemSorts.instance().register(TBCExV3Core.createId("count"), new BattleParticipantItemSort() {
             @Override
-            public int compare(BattleParticipantItemStack first, BattleParticipantItemStack second, BattleParticipantStateView view) {
+            public int compare(final BattleParticipantItemStack first, final BattleParticipantItemStack second, final BattleParticipantStateView view) {
                 return Integer.compare(first.getCount(), second.getCount());
             }
 
@@ -45,7 +48,7 @@ public class TBCExV3CoreClient implements ClientModInitializer {
         }, view -> true);
         BattleParticipantItemSorts.instance().register(TBCExV3Core.createId("rarity"), new BattleParticipantItemSort() {
             @Override
-            public int compare(BattleParticipantItemStack first, BattleParticipantItemStack second, BattleParticipantStateView view) {
+            public int compare(final BattleParticipantItemStack first, final BattleParticipantItemStack second, final BattleParticipantStateView view) {
                 return BattleParticipantItemRarity.COMPARATOR.compare(first.getItem().rarity(), second.getItem().rarity());
             }
 
@@ -54,5 +57,9 @@ public class TBCExV3CoreClient implements ClientModInitializer {
                 return Text.of("RARITY").asOrderedText();
             }
         }, view -> true);
+    }
+
+    private static String componentName(final String name) {
+        return "tbcex-" + name;
     }
 }

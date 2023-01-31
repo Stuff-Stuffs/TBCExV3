@@ -2,6 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
+import io.wispforest.owo.ui.core.Component;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;

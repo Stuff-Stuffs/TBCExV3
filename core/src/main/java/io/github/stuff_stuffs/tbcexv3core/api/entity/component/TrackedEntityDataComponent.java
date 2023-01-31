@@ -31,6 +31,6 @@ public class TrackedEntityDataComponent implements BattleEntityComponent {
 
     @Override
     public BattleEntityComponentType<?> getType() {
-        return null;
+        return CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE;
     }
 }

@@ -1,8 +1,0 @@
-{
-  "required": true,
-  "package": "io.github.stuff_stuffs.tbcexv3_gui.internal.common.mixin",
-  "compatibilityLevel": "JAVA_17",
-  "injectors": {
-    "defaultRequire": 1
-  }
-}

@@ -2,7 +2,5 @@ archivesBaseName="tbcexv3test"
 
 dependencies {
    api project(path: ':core', configuration: "namedElements")
-   api project(path: ':gui', configuration: "namedElements")
    clientImplementation project(path: ':core', configuration: "namedElements")
-   clientImplementation project(path: ':gui', configuration: "namedElements")
 }
