@@ -28,8 +28,8 @@ public class SelectionWheelComponent extends BaseComponent {
     private final double startRadPercent;
     private final double hoverRadSize;
 
-    public SelectionWheelComponent(final double percent, final double hoverRadSize) {
-        sizing(Sizing.fill(125), Sizing.fill(125));
+    public SelectionWheelComponent(final double percent, final double hoverRadSize, final Sizing horizontalSizing, final Sizing verticalSizing) {
+        sizing(horizontalSizing, verticalSizing);
         sections = new ObjectArrayList<>();
         startRadPercent = percent;
         this.hoverRadSize = hoverRadSize;
@@ -56,6 +56,14 @@ public class SelectionWheelComponent extends BaseComponent {
             sections.get(i).update(anglePer * i, anglePer * (i + 1));
         }
         return newSection;
+    }
+
+    public int getChildCount() {
+        return sections.size();
+    }
+
+    public Section getChild(final int i) {
+        return sections.get(i);
     }
 
     @Override
@@ -105,29 +113,31 @@ public class SelectionWheelComponent extends BaseComponent {
         private double xOff = 0;
         private double yOff = 0;
 
-        public void setClickAction(final Runnable clickAction) {
+        public Section setClickAction(final Runnable clickAction) {
             this.clickAction = clickAction;
+            return this;
         }
 
-        public void setInnerColor(final Color innerColor) {
+        public Section setInnerColor(final Color innerColor) {
             this.innerColor = innerColor;
+            return this;
         }
 
-        public void setOuterColor(final Color outerColor) {
+        public Section setOuterColor(final Color outerColor) {
             this.outerColor = outerColor;
+            return this;
         }
 
-        public void setWrappedText(final Text text) {
+        public Section setWrappedText(final Text text) {
             this.text = text;
             updateText();
+            return this;
         }
 
         public void draw(final MatrixStack matrices, final int mouseX, final int mouseY, final float partialTicks, final float delta) {
-            final double angle = (startAngle + endAngle) * 0.5;
-            final boolean b = Math.cos(angle) >= 0 / 2.0;
             updateMouse(mouseX, mouseY);
             final Trapezoid area = hovered ? hoverBounds : bounds;
-            TBCExDrawer.drawTrapezoid(matrices, area, b?innerColor:Color.WHITE, outerColor, x() + xOff, y() + yOff);
+            TBCExDrawer.drawTrapezoid(matrices, area, innerColor, outerColor, x() + xOff, y() + yOff);
             final List<OrderedText> texts = hovered ? wrappedHoverText : wrappedText;
             final int lineCount = texts.size();
             if (lineCount == 0) {
@@ -156,14 +166,14 @@ public class SelectionWheelComponent extends BaseComponent {
             final double width = horizontalSizing().get().value / 2.0;
             final double height = verticalSizing().get().value / 2.0;
             final double maxRad = Math.min(width, height);
-            double trapHeight = maxRad / hoverRadSize - maxRad * startRadPercent;
+            final double trapHeight = maxRad / hoverRadSize - maxRad * startRadPercent;
             final double dH = trapHeight / (lineCount * 2);
             for (int i = 0; i < lineCount; i++) {
                 matrices.push();
                 matrices.translate(cX, cY, 0);
                 matrices.multiply(rotation);
                 final OrderedText text = texts.get(i);
-                matrices.translate(-textRenderer.getWidth(text) / 2.0, (b ? 1 : 1) * dH * (i - lineCount / 2.0), 0);
+                matrices.translate(-textRenderer.getWidth(text) / 2.0, dH * (i - lineCount / 2.0), 0);
                 textRenderer.draw(matrices, text, 0, 0, -1);
                 matrices.pop();
             }

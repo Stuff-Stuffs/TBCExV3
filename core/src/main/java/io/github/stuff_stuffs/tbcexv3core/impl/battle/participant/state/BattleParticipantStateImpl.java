@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state;
 
+import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
@@ -58,6 +59,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     public EventMap getEventMap() {
         checkPhase(BattleParticipantStatePhase.SETUP, BattleParticipantStatePhase.FIGHT);
         return events;
+    }
+
+    @Override
+    public Iterator<BattleParticipantEffectType<?, ?>> getEffects() {
+        return Iterators.unmodifiableIterator(effects.keySet().iterator());
     }
 
     @Override

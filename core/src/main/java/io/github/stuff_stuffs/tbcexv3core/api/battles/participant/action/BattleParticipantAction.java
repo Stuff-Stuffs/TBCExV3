@@ -7,6 +7,7 @@ import net.minecraft.text.OrderedText;
 
 import java.util.function.Consumer;
 
+//TODO tags?
 public interface BattleParticipantAction {
     OrderedText name(BattleParticipantStateView stateView);
 

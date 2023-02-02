@@ -7,7 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.tag.TagKey;
-import net.minecraft.text.OrderedText;
+import net.minecraft.text.Text;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,7 +18,7 @@ public interface BattleParticipantItem {
 
     BattleParticipantItemRarity rarity();
 
-    OrderedText name(BattleParticipantStateView stateView);
+    Text name(BattleParticipantStateView stateView);
 
     TooltipText description(BattleParticipantStateView stateView);
 

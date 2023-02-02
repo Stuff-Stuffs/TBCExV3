@@ -7,12 +7,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemSorts
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemRarity;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.gui.OneHotComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
-import io.wispforest.owo.ui.parsing.UIParsing;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
@@ -20,7 +18,6 @@ import net.minecraft.text.Text;
 public class TBCExV3CoreClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        UIParsing.registerFactory(componentName("onehot"), OneHotComponent.StringIndexed::parse);
         BattleUpdateReceiver.init();
         EntityBattlesUpdateReceiver.init();
         PlayerCurrentBattleReceiver.init();
@@ -57,9 +54,5 @@ public class TBCExV3CoreClient implements ClientModInitializer {
                 return Text.of("RARITY").asOrderedText();
             }
         }, view -> true);
-    }
-
-    private static String componentName(final String name) {
-        return "tbcex-" + name;
     }
 }

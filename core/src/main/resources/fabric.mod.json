@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "tbcexv3_core",
+  "id": "tbcexv3core",
   "version": "${version}",
   "name": "TBCExV3-Core",
   "description": "Turn Based Combat Experiment Version 3 Core",

@@ -10,7 +10,6 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.tag.TagKey;
-import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.random.Random;
 
@@ -40,8 +39,8 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
     }
 
     @Override
-    public OrderedText name(final BattleParticipantStateView stateView) {
-        return Text.of(Long.toString(id, 16)).asOrderedText();
+    public Text name(final BattleParticipantStateView stateView) {
+        return Text.of(Long.toString(id, 16));
     }
 
     @Override

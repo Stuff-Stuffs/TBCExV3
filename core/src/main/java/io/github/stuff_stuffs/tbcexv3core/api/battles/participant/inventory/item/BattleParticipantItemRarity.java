@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
 import java.text.DecimalFormat;
@@ -44,7 +45,7 @@ public final class BattleParticipantItemRarity {
     }
 
     public Text getAsText() {
-        return Text.of(rarityClass.name());
+        return Text.literal(rarityClass.name()).setStyle(Style.EMPTY.withColor(rarityClass.color | 0xFF000000));
     }
 
     public enum RarityClass {

@@ -21,6 +21,8 @@ import java.util.UUID;
 public interface BattleParticipantStateView {
     EventMapView getEventMap();
 
+    Iterator<BattleParticipantEffectType<?, ?>> getEffects();
+
     <View extends BattleParticipantEffect> Optional<View> getEffectView(BattleParticipantEffectType<View, ?> type);
 
     BattleParticipantBounds getBounds();

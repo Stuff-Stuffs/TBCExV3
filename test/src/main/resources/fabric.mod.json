@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "tbcexv3_test",
+  "id": "tbcexv3test",
   "version": "${version}",
   "name": "TBCExV3-Test",
   "description": "Turn Based Combat Experiment Version 3 Test",
@@ -19,7 +19,7 @@
     "client": [
       "io.github.stuff_stuffs.tbcexv3_test.client.TBCExV3TestClient"
     ],
-    "preLaunch":[
+    "preLaunch": [
       "io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test"
     ]
   },

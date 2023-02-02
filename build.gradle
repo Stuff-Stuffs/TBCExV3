@@ -40,7 +40,7 @@ allprojects {
     }
 
     subprojects.each { p ->
-        loom.mods.register("tbcexv3_" + p.name) {
+        loom.mods.register("tbcexv3" + p.name) {
             sourceSet p.sourceSets.main
             sourceSet p.sourceSets.client
         }
