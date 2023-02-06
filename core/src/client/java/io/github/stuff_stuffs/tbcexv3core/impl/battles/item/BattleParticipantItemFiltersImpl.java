@@ -1,7 +1,7 @@
-package io.github.stuff_stuffs.tbcexv3core.impl.battles;
+package io.github.stuff_stuffs.tbcexv3core.impl.battles.item;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemFilter;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemFilters;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.item.BattleParticipantItemFilter;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.item.BattleParticipantItemFilters;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;

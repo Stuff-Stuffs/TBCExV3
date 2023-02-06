@@ -20,6 +20,6 @@
     "fabric": "*",
     "minecraft": "~1.19",
     "java": ">=17",
-    "tbcexv3_core": "*"
+    "tbcexv3core": "*"
   }
 }

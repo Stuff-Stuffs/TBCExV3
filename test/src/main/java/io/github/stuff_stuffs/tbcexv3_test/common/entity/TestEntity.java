@@ -34,6 +34,7 @@ public class TestEntity extends LivingEntity implements BattleEntity {
         final NbtCompound compound = new NbtCompound();
         writeNbt(compound);
         builder.addComponent(new SaveEntityDataComponent(getUuid(), compound));
+        builder.addComponent(new TestEntityComponent(20, 20));
     }
 
     @Override

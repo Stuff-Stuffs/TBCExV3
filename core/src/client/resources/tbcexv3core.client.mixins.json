@@ -4,11 +4,16 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "AccessorTextHandler",
-    "MixinClientPlayer",
+    "MixinAbstractClientPlayerEntity",
+    "MixinClientPlayerEntity",
     "MixinClientWorld",
-    "MixinMinecraftClient"
+    "MixinGameRenderer",
+    "MixinMinecraftClient",
+    "MixinMouse"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "mixins": [
+  ]
 }

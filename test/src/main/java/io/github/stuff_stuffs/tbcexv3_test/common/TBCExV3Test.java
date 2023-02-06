@@ -1,7 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3_test.common;
 
 import com.mojang.brigadier.CommandDispatcher;
+import io.github.stuff_stuffs.tbcexv3_test.common.action.TestBattleActions;
 import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntities;
+import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntityComponent;
 import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItem;
 import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItemTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
@@ -33,21 +35,25 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
     public static final String MOD_ID = "tbcexv3_test";
+    public static Consumer<Text> MESSAGE_CONSUMER = text -> {
+    };
 
     @Override
     public void onInitialize() {
         TestEntities.init();
         TestBattleParticipantItemTypes.init();
+        TestBattleActions.init();
         BattlePlayerComponentEvent.EVENT.register((entity, builder) -> {
             final InventoryBattleEntityComponent.Builder componentBuilder = InventoryBattleEntityComponent.builder();
             final Random random = entity.getRandom();
             for (int i = 0; i < 32; i++) {
                 componentBuilder.addStack(BattleParticipantItemStack.of(new TestBattleParticipantItem(random.nextLong()), random.nextBetween(1, 128)));
             }
-
+            builder.addComponent(new TestEntityComponent(20, 20));
             builder.addComponent(componentBuilder.build());
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> testCommand(dispatcher));
@@ -80,7 +86,11 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             builder.addTeam(TBCExV3Core.createId("player"));
             builder.addTeam(TBCExV3Core.createId("enemy"));
             builder.setRelation(TBCExV3Core.createId("player"), TBCExV3Core.createId("enemy"), BattleParticipantTeamRelation.ENEMIES);
-            ((ServerBattleWorld) context.getSource().getWorld()).createBattle(teamMap, builder.build());
+            try {
+                ((ServerBattleWorld) context.getSource().getWorld()).createBattle(teamMap, builder.build());
+            } catch (final Throwable t) {
+                return 1;
+            }
             return 0;
         })));
     }

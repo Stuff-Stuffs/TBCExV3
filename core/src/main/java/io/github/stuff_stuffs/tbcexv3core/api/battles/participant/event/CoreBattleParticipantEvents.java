@@ -4,6 +4,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipmen
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostUnequipBattleParticipantEquipmentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreEquipBattleParticipantEquipmentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreUnequipBattleParticipantEquipmentEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PostBattleParticipantSetHealthEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantDeathEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantSetHealthEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostGiveBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreGiveBattleParticipantItemEvent;
@@ -27,6 +30,11 @@ public final class CoreBattleParticipantEvents {
 
     public static final EventKey<PreBattleParticipantSetBoundsEvent.View, PreBattleParticipantSetBoundsEvent> PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT = EventKey.create(TBCExV3Core.createId("pre_participant_set_bounds"), PreBattleParticipantSetBoundsEvent.View.class, PreBattleParticipantSetBoundsEvent.class);
     public static final EventKey<PostBattleParticipantSetBoundsEvent.View, PostBattleParticipantSetBoundsEvent> POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT = EventKey.create(TBCExV3Core.createId("post_participant_set_bounds"), PostBattleParticipantSetBoundsEvent.View.class, PostBattleParticipantSetBoundsEvent.class);
+
+    public static final EventKey<PreBattleParticipantSetHealthEvent.View, PreBattleParticipantSetHealthEvent> PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT = EventKey.create(TBCExV3Core.createId("pre_participant_set_health"), PreBattleParticipantSetHealthEvent.View.class, PreBattleParticipantSetHealthEvent.class);
+    public static final EventKey<PostBattleParticipantSetHealthEvent.View, PostBattleParticipantSetHealthEvent> POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT = EventKey.create(TBCExV3Core.createId("post_participant_set_health"), PostBattleParticipantSetHealthEvent.View.class, PostBattleParticipantSetHealthEvent.class);
+
+    public static final EventKey<PreBattleParticipantDeathEvent.View, PreBattleParticipantDeathEvent> PRE_BATTLE_PARTICIPANT_DEATH_EVENT = EventKey.create(TBCExV3Core.createId("pre_participant_death"), PreBattleParticipantDeathEvent.View.class, PreBattleParticipantDeathEvent.class);
 
     private CoreBattleParticipantEvents() {
     }

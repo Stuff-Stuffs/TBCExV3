@@ -1,7 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action;
 
 import com.google.common.collect.Iterators;
-import com.mojang.datafixers.util.Function3;
 import com.mojang.datafixers.util.Pair;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
@@ -11,6 +10,7 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.action.BattleP
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.ApiStatus;
+import org.joml.Vector3d;
 
 import java.util.*;
 import java.util.function.*;
@@ -21,7 +21,7 @@ import java.util.stream.StreamSupport;
 public interface BattleParticipantActionBuilder {
     <T extends BattleParticipantActionTarget> TargetIterator<? extends T> targets(BattleParticipantActionTargetType<T> type);
 
-    <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(BattleParticipantActionTargetType<T> type, Vec3d start, Vec3d end);
+    <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(BattleParticipantActionTargetType<T> type);
 
     Iterator<? extends BattleParticipantActionTargetType<?>> types();
 
@@ -33,86 +33,119 @@ public interface BattleParticipantActionBuilder {
         return new BattleParticipantActionBuilderImpl<>(view, predicate, builder, state, factory, updater, consumer);
     }
 
+    record RaycastIterator<T extends BattleParticipantActionTarget>(
+            TargetRaycaster<? extends T> raycaster,
+            TargetIterator<? extends T> iterator
+    ) {
+    }
+
     interface TargetRaycaster<T extends BattleParticipantActionTarget> {
-        void accept();
+        default Optional<? extends Pair<? extends T, Double>> raycast(final Vector3d start, final Vector3d end) {
+            return raycast(new Vec3d(start.x, start.y, start.z), new Vec3d(end.x, end.y, end.z));
+        }
 
-        Optional<? extends Pair<? extends T, Double>> raycast();
+        Optional<? extends Pair<? extends T, Double>> raycast(Vec3d start, Vec3d end);
 
-        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> of(final List<T> list, final Function<T, Iterator<Box>> boxExtractor, final Consumer<? super T> consumer, final Vec3d start, final Vec3d end) {
+        default Optional<? extends Pair<? extends T, Double>> query(final Vector3d start, final Vector3d end) {
+            return query(new Vec3d(start.x, start.y, start.z), new Vec3d(end.x, end.y, end.z));
+        }
+
+        Optional<? extends Pair<? extends T, Double>> query(Vec3d start, Vec3d end);
+
+        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> of(final Supplier<? extends Iterator<? extends T>> iteratorFactory, final Function<? super T, ? extends Iterator<? extends Box>> boxFactory, final Consumer<T> consumer) {
             return new TargetRaycaster<>() {
-                private int lastIndex = -1;
-
                 @Override
-                public void accept() {
-                    if (lastIndex == -1 || lastIndex >= list.size()) {
-                        throw new IllegalStateException("Tried to accept empty raycast!");
+                public Optional<? extends Pair<? extends T, Double>> raycast(final Vec3d start, final Vec3d end) {
+                    final Optional<? extends Pair<? extends T, Double>> query = query(start, end);
+                    if (query.isEmpty()) {
+                        return Optional.empty();
                     }
-                    consumer.accept(list.get(lastIndex));
+                    final Iterator<? extends T> iterator = iteratorFactory.get();
+                    while (iterator.hasNext()) {
+                        final T next = iterator.next();
+                        final Iterator<? extends Box> boxIter = boxFactory.apply(next);
+                        while (boxIter.hasNext()) {
+                            final Optional<Vec3d> raycast = boxIter.next().raycast(start, end);
+                            if (raycast.isPresent()) {
+                                final double dist = raycast.get().squaredDistanceTo(start);
+                                if (dist == query.get().getSecond()) {
+                                    consumer.accept(next);
+                                    return query;
+                                }
+                            }
+                        }
+                    }
+                    return Optional.empty();
                 }
 
                 @Override
-                public Optional<? extends Pair<? extends T, Double>> raycast() {
-                    int best = -1;
+                public Optional<? extends Pair<? extends T, Double>> query(final Vec3d start, final Vec3d end) {
+                    final Iterator<? extends T> iterator = iteratorFactory.get();
                     double bestDist = Double.POSITIVE_INFINITY;
-                    for (int i = lastIndex + 1; i < list.size(); i++) {
-                        final T t = list.get(i);
-                        final Iterator<Box> boxes = boxExtractor.apply(t);
-                        while (boxes.hasNext()) {
-                            final Box box = boxes.next();
-                            final Optional<Vec3d> raycast = box.raycast(start, end);
+                    T best = null;
+                    while (iterator.hasNext()) {
+                        final T next = iterator.next();
+                        final Iterator<? extends Box> boxIter = boxFactory.apply(next);
+                        while (boxIter.hasNext()) {
+                            final Optional<Vec3d> raycast = boxIter.next().raycast(start, end);
                             if (raycast.isPresent()) {
                                 final double dist = raycast.get().squaredDistanceTo(start);
                                 if (dist < bestDist) {
-                                    best = i;
+                                    best = next;
                                     bestDist = dist;
                                 }
                             }
                         }
                     }
-                    if (best != -1) {
-                        lastIndex = best;
-                        return Optional.of(Pair.of(list.get(best), bestDist));
-                    } else {
-                        lastIndex = -1;
-                        return Optional.empty();
-                    }
+                    return best == null ? Optional.empty() : Optional.of(Pair.of(best, bestDist));
                 }
             };
         }
 
+
         static <T extends BattleParticipantActionTarget> TargetRaycaster<T> empty() {
             return new TargetRaycaster<>() {
-
                 @Override
-                public void accept() {
-                    throw new IllegalStateException("Tried to accept empty raycast!");
+                public Optional<Pair<? extends T, Double>> raycast(final Vec3d start, final Vec3d end) {
+                    return Optional.empty();
                 }
 
                 @Override
-                public Optional<? extends Pair<? extends T, Double>> raycast() {
+                public Optional<? extends Pair<? extends T, Double>> query(final Vec3d start, final Vec3d end) {
                     return Optional.empty();
                 }
             };
         }
 
-        @SafeVarargs
-        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> union(final TargetRaycaster<? extends T>... raycasters) {
+        static <T extends BattleParticipantActionTarget> TargetRaycaster<T> union(final TargetRaycaster<? extends T>[] raycasters) {
             return new TargetRaycaster<>() {
-                private int index = 0;
-
                 @Override
-                public void accept() {
-                    raycasters[index].accept();
+                public Optional<? extends Pair<? extends T, Double>> raycast(final Vec3d start, final Vec3d end) {
+                    Optional<? extends Pair<? extends T, Double>> opt = Optional.empty();
+                    int bestIndex = -1;
+                    for (int i = 0; i < raycasters.length; i++) {
+                        final TargetRaycaster<? extends T> raycaster = raycasters[i];
+                        final Optional<? extends Pair<? extends T, Double>> raycast = raycaster.query(start, end);
+                        if (raycast.isPresent() && (opt.isEmpty() || raycast.get().getSecond() < opt.get().getSecond())) {
+                            opt = raycast;
+                            bestIndex = i;
+                        }
+                    }
+                    if (bestIndex == -1) {
+                        return Optional.empty();
+                    } else {
+                        return raycasters[bestIndex].raycast(start, end);
+                    }
                 }
 
                 @Override
-                public Optional<? extends Pair<? extends T, Double>> raycast() {
+                public Optional<? extends Pair<? extends T, Double>> query(final Vec3d start, final Vec3d end) {
                     Optional<? extends Pair<? extends T, Double>> opt = Optional.empty();
-                    while (index < raycasters.length && (opt = raycasters[index].raycast()).isEmpty()) {
-                        index++;
-                    }
-                    if (index == raycasters.length) {
-                        return Optional.empty();
+                    for (final TargetRaycaster<? extends T> raycaster : raycasters) {
+                        final Optional<? extends Pair<? extends T, Double>> raycast = raycaster.query(start, end);
+                        if (raycast.isPresent() && (opt.isEmpty() || raycast.get().getSecond() < opt.get().getSecond())) {
+                            opt = raycast;
+                        }
                     }
                     return opt;
                 }
@@ -209,7 +242,7 @@ public interface BattleParticipantActionBuilder {
     interface TargetProvider {
         <T extends BattleParticipantActionTarget> TargetIterator<? extends T> targets(BattleParticipantActionTargetType<T> type);
 
-        <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(BattleParticipantActionTargetType<T> type, Vec3d start, Vec3d end);
+        <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(BattleParticipantActionTargetType<T> type);
 
         Iterator<? extends BattleParticipantActionTargetType<?>> types();
 
@@ -221,7 +254,7 @@ public interface BattleParticipantActionBuilder {
                 }
 
                 @Override
-                public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end) {
+                public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type) {
                     return TargetRaycaster.empty();
                 }
 
@@ -232,20 +265,20 @@ public interface BattleParticipantActionBuilder {
             };
         }
 
-        static <T extends BattleParticipantActionTarget> TargetProvider single(final BattleParticipantStateView stateView, final Consumer<BattleParticipantActionTarget> targetConsumer, final BattleParticipantActionTargetType<T> type, final BiFunction<BattleParticipantStateView, Consumer<BattleParticipantActionTarget>,  TargetIterator<T>> iteratorFactory, final TargetRaycasterFactory<T> raycastFactory) {
+        static <T extends BattleParticipantActionTarget> TargetProvider single(final BattleParticipantStateView stateView, final Consumer<BattleParticipantActionTarget> targetConsumer, final BattleParticipantActionTargetType<T> type, final Supplier<? extends TargetIterator<? extends T>> iteratorFactory, final Supplier<? extends TargetRaycaster<? extends T>> raycastFactory) {
             return new TargetProvider() {
                 @Override
                 public <T0 extends BattleParticipantActionTarget> TargetIterator<? extends T0> targets(final BattleParticipantActionTargetType<T0> t) {
                     if (t == type) {
-                        return (TargetIterator<? extends T0>) iteratorFactory.apply(stateView, targetConsumer);
+                        return (TargetIterator<? extends T0>) iteratorFactory.get();
                     }
                     return TargetIterator.empty();
                 }
 
                 @Override
-                public <T0 extends BattleParticipantActionTarget> TargetRaycaster<? extends T0> raycastTargets(final BattleParticipantActionTargetType<T0> t, final Vec3d start, final Vec3d end) {
+                public <T0 extends BattleParticipantActionTarget> TargetRaycaster<? extends T0> raycastTargets(final BattleParticipantActionTargetType<T0> t) {
                     if (t == type) {
-                        return (TargetRaycaster<? extends T0>) raycastFactory.build(stateView, targetConsumer, start, end);
+                        return (TargetRaycaster<? extends T0>) raycastFactory.get();
                     }
                     return TargetRaycaster.empty();
                 }
@@ -255,10 +288,6 @@ public interface BattleParticipantActionBuilder {
                     return Iterators.singletonIterator(type);
                 }
             };
-        }
-
-        interface TargetRaycasterFactory<T extends BattleParticipantActionTarget> {
-            TargetRaycaster<T> build(BattleParticipantStateView stateView, Consumer<BattleParticipantActionTarget> consumer, Vec3d start, Vec3d end);
         }
 
         static TargetProvider typeCheck(final TargetProvider delegate, final BattleParticipantActionTargetType<?> type) {
@@ -276,9 +305,9 @@ public interface BattleParticipantActionBuilder {
                 }
 
                 @Override
-                public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end) {
+                public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type) {
                     if (typeChecker.test(type)) {
-                        return delegate.raycastTargets(type, start, end);
+                        return delegate.raycastTargets(type);
                     }
                     return TargetRaycaster.empty();
                 }
@@ -309,10 +338,10 @@ public interface BattleParticipantActionBuilder {
                 }
 
                 @Override
-                public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end) {
+                public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type) {
                     final TargetRaycaster<? extends T>[] raycasters = new TargetRaycaster[providers.length];
                     for (int i = 0; i < providers.length; i++) {
-                        raycasters[i] = providers[i].raycastTargets(type, start, end);
+                        raycasters[i] = providers[i].raycastTargets(type);
                     }
                     return TargetRaycaster.union(raycasters);
                 }

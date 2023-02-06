@@ -3,7 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventoryHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
@@ -42,13 +42,13 @@ public final class ParticipantActionTraces {
     public record BattleParticipantAddEffect(
             BattleParticipantHandle handle,
             boolean combined,
-            BattleParticipantEffect effect
+            BattleParticipantEffectType<?, ?> effect
     ) implements ActionTrace {
     }
 
     public record BattleParticipantRemoveEffect(
             BattleParticipantHandle handle,
-            BattleParticipantEffect effect
+            BattleParticipantEffectType<?, ?> effect
     ) implements ActionTrace {
     }
 
@@ -93,6 +93,17 @@ public final class ParticipantActionTraces {
         }
 
         public record Give(BattleParticipantInventoryHandle handle) implements ActionTrace {
+        }
+    }
+
+    public static final class Health {
+        private Health() {
+        }
+
+        public record Heal(BattleParticipantHandle handle, double oldHealth, double amount) implements ActionTrace {
+        }
+
+        public record Damage(BattleParticipantHandle handle, double oldHealth, double amount) implements ActionTrace {
         }
     }
 

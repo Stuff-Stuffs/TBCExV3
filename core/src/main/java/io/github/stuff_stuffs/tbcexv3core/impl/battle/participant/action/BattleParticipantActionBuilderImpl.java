@@ -41,8 +41,8 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     }
 
     @Override
-    public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type, final Vec3d start, final Vec3d end) {
-        return currentProvider.raycastTargets(type, start, end);
+    public <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(final BattleParticipantActionTargetType<T> type) {
+        return currentProvider.raycastTargets(type);
     }
 
     @Override

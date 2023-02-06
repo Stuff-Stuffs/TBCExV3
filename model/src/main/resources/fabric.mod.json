@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "tbcexv3model",
+  "version": "${version}",
+  "name": "TBCExV3-Model",
+  "description": "Turn Based Combat Experiment Version 3 Model",
+  "authors": [
+    "Stuff-Stuffs"
+  ],
+  "contact": {
+    "sources": "https://github.com/Stuff-Stuffs/TBCExV3"
+  },
+  "license": "LGPL-3.0-or-later",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.stuff_stuffs.tbcexv3model.internal.common.TBCExV3Model"
+    ],
+    "client": [
+      "io.github.stuff_stuffs.tbcexv3model.internal.client.TBCExV3ModelClient"
+    ]
+  },
+  "mixins": [
+    "tbcexv3model.mixins.json",
+    {
+      "config": "tbcexv3model.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.6",
+    "fabric": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  }
+}

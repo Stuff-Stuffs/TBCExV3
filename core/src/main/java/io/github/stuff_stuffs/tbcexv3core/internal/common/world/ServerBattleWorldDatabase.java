@@ -39,7 +39,7 @@ public class ServerBattleWorldDatabase {
     private static final Codec<List<Pair<UUID, BattleEntityComponent>>> DELAYED_COMPONENT_CODEC = Codec.list(Codec.pair(CodecUtil.UUID_CODEC, BattleEntityComponent.CODEC));
     private static final String BATTLE_DIRECTORY = "./battles";
     private static final String BATTLE_ACTIVE_ENTITIES_DIRECTORY = "./battle_entities";
-    private static final String BATTLE_INACTIVE_ENTITIES_DIRECTORY = "./battle_entities";
+    private static final String BATTLE_INACTIVE_ENTITIES_DIRECTORY = "./battle_entities_history";
     private static final String DELAYED_COMPONENT_DIRECTORY = "./delayed_components";
     private final Path rootFolder;
     private final Path battles;
@@ -210,7 +210,9 @@ public class ServerBattleWorldDatabase {
     private static long findUUID(final SeekableByteChannel channel, final UUID uuid) throws IOException {
         final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
         long start = 0;
-        long end = channel.size() / (Long.BYTES * 2);
+        long size = channel.size();
+        size = size - (size % (Long.BYTES * 2));
+        long end = size / (Long.BYTES * 2);
         if (end == 0) {
             return -1;
         }
@@ -222,6 +224,7 @@ public class ServerBattleWorldDatabase {
             if (read != Long.BYTES * 2) {
                 throw new RuntimeException();
             } else {
+                buffer.flip();
                 final UUID single = new UUID(buffer.getLong(), buffer.getLong());
                 final int i = uuid.compareTo(single);
                 if (i == 0) {

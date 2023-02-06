@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(AbstractClientPlayerEntity.class)
-public abstract class MixinClientPlayer implements TBCExPlayerEntity {
+public abstract class MixinAbstractClientPlayerEntity implements TBCExPlayerEntity {
     @Unique
     private @Nullable BattleHandle tbcex$currentBattle;
 

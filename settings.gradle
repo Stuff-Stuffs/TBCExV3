@@ -11,3 +11,4 @@ pluginManagement {
 
 include ':core'
 include ':test'
+include ':model'

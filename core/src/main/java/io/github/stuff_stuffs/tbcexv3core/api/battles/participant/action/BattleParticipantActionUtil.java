@@ -9,12 +9,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equi
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-public final class ActionUtil {
+public final class BattleParticipantActionUtil {
     public static List<Pair<BattleParticipantActionSource, BattleParticipantAction>> gather(final BattleParticipantStateView state) {
         final BattleParticipantInventoryView inventory = state.getInventory();
         final Iterator<BattleParticipantInventoryHandle> handles = inventory.getHandles();
@@ -55,6 +52,6 @@ public final class ActionUtil {
         return list;
     }
 
-    private ActionUtil() {
+    private BattleParticipantActionUtil() {
     }
 }

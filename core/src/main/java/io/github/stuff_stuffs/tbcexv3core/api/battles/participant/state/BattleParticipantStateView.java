@@ -41,6 +41,8 @@ public interface BattleParticipantStateView {
 
     BattleParticipantTeam getTeam();
 
+    double getHealth();
+
     <T extends BattleEntityComponent> Optional<T> getEntityComponent(BattleEntityComponentType<T> componentType);
 
     Iterator<? extends BattleEntityComponent> entityComponents();

@@ -19,6 +19,8 @@ public interface Battle extends BattleView {
 
     void pushAction(BattleAction action);
 
+    boolean tryPushAction(BattleAction action);
+
     static Encoder<Battle> encoder() {
         return BattleImpl.CASTED_ENCODER;
     }

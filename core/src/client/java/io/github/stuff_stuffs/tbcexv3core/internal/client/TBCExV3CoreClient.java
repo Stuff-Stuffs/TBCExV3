@@ -1,23 +1,51 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemFilter;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemFilters;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemSort;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleParticipantItemSorts;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.item.BattleParticipantItemFilter;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.item.BattleParticipantItemFilters;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.item.BattleParticipantItemSort;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.item.BattleParticipantItemSorts;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemRarity;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import io.github.stuff_stuffs.tbcexv3core.internal.client.entity.TBCExClientPlayerExtensions;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleReceiver;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 public class TBCExV3CoreClient implements ClientModInitializer {
+    private static List<Consumer<WorldRenderContext>> DEFERRED_RENDERING = new ArrayList<>();
+
+    public static void defer(final Consumer<WorldRenderContext> consumer) {
+        DEFERRED_RENDERING.add(consumer);
+    }
+
     @Override
     public void onInitializeClient() {
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (client.player != null && ((TBCExClientPlayerExtensions) client.player).tbcexcore$action$current() != null) {
+                if (((TBCExPlayerEntity) client.player).tbcex$getCurrentBattle() == null) {
+                    ((TBCExClientPlayerExtensions) client.player).tbcexcore$action$setCurrent(null, null);
+                } else {
+
+                }
+            }
+        });
+        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
+            DEFERRED_RENDERING.forEach(e -> e.accept(context));
+            DEFERRED_RENDERING.clear();
+        });
         BattleUpdateReceiver.init();
         EntityBattlesUpdateReceiver.init();
         PlayerCurrentBattleReceiver.init();

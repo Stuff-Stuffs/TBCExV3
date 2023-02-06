@@ -60,7 +60,7 @@ public final class TopologicalSort {
             final T item = items.get(idx);
             output.add(item);
             for (int j = 0; j < size; j++) {
-                if (childPredicate.isChild(i, j, items)) {
+                if (childPredicate.isChild(idx, j, items)) {
                     if ((--indexToDependencyCount[j]) == 0) {
                         queue.enqueue(j);
                     }

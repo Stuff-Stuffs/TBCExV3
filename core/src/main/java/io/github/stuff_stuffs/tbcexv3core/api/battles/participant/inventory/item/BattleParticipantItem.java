@@ -9,7 +9,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +21,7 @@ public interface BattleParticipantItem {
 
     TooltipText description(BattleParticipantStateView stateView);
 
-    Collection<ItemStack> toItemStacks(BattleParticipantItemStack stack);
+    List<ItemStack> toItemStacks(BattleParticipantItemStack stack);
 
     boolean matches(BattleParticipantItem other);
 

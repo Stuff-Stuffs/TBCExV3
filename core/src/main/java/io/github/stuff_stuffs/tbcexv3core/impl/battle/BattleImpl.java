@@ -6,8 +6,9 @@ import com.mojang.serialization.Encoder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
@@ -18,6 +19,7 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class BattleImpl implements Battle, BattleView {
@@ -79,6 +81,16 @@ public class BattleImpl implements Battle, BattleView {
         }
         action.apply(state, tracer);
         actions.push(action);
+    }
+
+    @Override
+    public boolean tryPushAction(final BattleAction action) {
+        final Optional<BattleParticipantHandle> actor = action.getActor();
+        if (actor.isEmpty() || !state.isCurrentTurn(actor.get())) {
+            return false;
+        }
+        pushAction(action);
+        return true;
     }
 
     @Override

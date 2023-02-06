@@ -10,10 +10,10 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class BattleParticipantBoundsImpl implements BattleParticipantBounds {
     private static final Codec<Box> BOX_CODEC = Codec.DOUBLE.listOf().comapFlatMap(BattleParticipantBoundsImpl::of, BattleParticipantBoundsImpl::of);
@@ -32,8 +32,8 @@ public class BattleParticipantBoundsImpl implements BattleParticipantBounds {
     }
 
     @Override
-    public Iterator<Part> parts() {
-        return parts.values().stream().map(part -> (Part) part).iterator();
+    public Stream<Part> partStream() {
+        return parts.values().stream().map(p -> p);
     }
 
     @Override

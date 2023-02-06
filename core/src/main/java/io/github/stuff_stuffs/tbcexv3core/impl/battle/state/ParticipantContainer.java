@@ -61,6 +61,9 @@ public class ParticipantContainer {
     }
 
     public BattleParticipantTeamRelation getTeamRelation(final BattleParticipantTeam first, final BattleParticipantTeam second) {
+        if (first.equals(second)) {
+            return BattleParticipantTeamRelation.ALLIES;
+        }
         return relations.getOrDefault(new UnorderedTeamPair(first, second), BattleParticipantTeamRelation.NEUTRAL);
     }
 

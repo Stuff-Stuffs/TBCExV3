@@ -12,14 +12,19 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipmen
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostUnequipBattleParticipantEquipmentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreEquipBattleParticipantEquipmentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreUnequipBattleParticipantEquipmentEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PostBattleParticipantSetHealthEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantDeathEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantSetHealthEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostGiveBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreGiveBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.*;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleTryActionReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.EntityBattlesUpdateRequestReceiver;
 import net.fabricmc.api.ModInitializer;
@@ -28,6 +33,7 @@ import net.minecraft.util.WorldSavePath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.Iterator;
 
 public class TBCExV3Core implements ModInitializer {
@@ -45,8 +51,10 @@ public class TBCExV3Core implements ModInitializer {
         CoreBattleEffects.init();
         CoreBattleParticipantEffects.init();
         BattleUpdateRequestReceiver.init();
+        BattleTryActionReceiver.init();
         EntityBattlesUpdateRequestReceiver.init();
         CoreBattleEntityComponents.init();
+        CoreBattleParticipantStats.init();
         BattleListenerEvent.EVENT.register((view, world) -> view.getState().getEventMap().getEventView(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((state, battleStateView, reason, tracer) -> {
             final Iterator<? extends BattleEntityComponent> iterator = state.entityComponents();
             while (iterator.hasNext()) {
@@ -85,6 +93,11 @@ public class TBCExV3Core implements ModInitializer {
 
             builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT, PreBattleParticipantSetBoundsEvent::convert, PreBattleParticipantSetBoundsEvent::invoker);
             builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT, PostBattleParticipantSetBoundsEvent::convert, PostBattleParticipantSetBoundsEvent::invoker);
+
+            builder.sorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT, PreBattleParticipantSetHealthEvent::convert, PreBattleParticipantSetHealthEvent::invoker, Comparator.comparing(PreBattleParticipantSetHealthEvent::phase, PreBattleParticipantSetHealthEvent.PHASE_TRACKER.phaseComparator()));
+            builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT, PostBattleParticipantSetHealthEvent::convert, PostBattleParticipantSetHealthEvent::invoker);
+
+            builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT, PreBattleParticipantDeathEvent::convert, PreBattleParticipantDeathEvent::invoker);
         });
     }
 

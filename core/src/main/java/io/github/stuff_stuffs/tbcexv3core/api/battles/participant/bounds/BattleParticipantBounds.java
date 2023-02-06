@@ -11,12 +11,17 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface BattleParticipantBounds {
     Identifier BODY = TBCExV3Core.createId("body");
     Codec<BattleParticipantBounds> CODEC = BattleParticipantBoundsImpl.CASTED_CODEC;
 
-    Iterator<Part> parts();
+    default Iterator<Part> parts() {
+        return partStream().iterator();
+    }
+
+    Stream<Part> partStream();
 
     Optional<Part> byId(Identifier id);
 

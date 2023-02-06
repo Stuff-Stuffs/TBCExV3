@@ -5,19 +5,17 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
-import net.minecraft.text.OrderedText;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.text.Text;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public record BattleParticipantActionBattleParticipantTarget(
         BattleParticipantStateView state,
-        Function<? super BattleParticipantStateView, ? extends OrderedText> name,
-        Function<? super BattleParticipantStateView, ? extends TooltipText> description
+        Text name,
+        TooltipText description
 ) implements BattleParticipantActionTarget {
     @Override
     public BattleParticipantActionTargetType<?> type() {
@@ -25,38 +23,18 @@ public record BattleParticipantActionBattleParticipantTarget(
     }
 
     @Override
-    public OrderedText name(final BattleParticipantStateView stateView) {
-        return name.apply(stateView);
+    public Text name() {
+        return name;
     }
 
     @Override
-    public TooltipText description(final BattleParticipantStateView stateView) {
-        return description.apply(stateView);
+    public TooltipText description() {
+        return description;
     }
 
-    public static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBattleParticipantTarget> allIterator(final BattleParticipantStateView stateView, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView,? extends OrderedText>> nameFunction, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends TooltipText>> descriptionFunction, final Consumer<BattleParticipantActionTarget> consumer) {
-        return filterIterator(stateView, nameFunction, descriptionFunction, consumer, i -> true);
-    }
-
-    public static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBattleParticipantTarget> filterIterator(final BattleParticipantStateView stateView, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends OrderedText>> nameFunction, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends TooltipText>> descriptionFunction, final Consumer<BattleParticipantActionTarget> consumer, final Predicate<BattleParticipantStateView> predicate) {
-        final BattleStateView view = stateView.getBattleState();
-        return BattleParticipantActionBuilder.TargetIterator.of(view.getParticipantStream().map(view::getParticipantByHandle).filter(predicate).map(state -> new BattleParticipantActionBattleParticipantTarget(state, nameFunction.apply(state), descriptionFunction.apply(state))).iterator(), consumer);
-    }
-
-    public static BattleParticipantActionBuilder.TargetRaycaster<BattleParticipantActionBattleParticipantTarget> allRaycast(final BattleParticipantStateView stateView, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends OrderedText>> nameFunction, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends TooltipText>> descriptionFunction, final Consumer<BattleParticipantActionTarget> consumer, final Vec3d start, final Vec3d end) {
-        return filterRaycast(stateView, nameFunction, descriptionFunction, consumer, i -> true, start, end);
-    }
-
-    public static BattleParticipantActionBuilder.TargetRaycaster<BattleParticipantActionBattleParticipantTarget> filterRaycast(final BattleParticipantStateView stateView, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends OrderedText>> nameFunction, final Function<BattleParticipantStateView, ? extends Function<? super BattleParticipantStateView, ? extends TooltipText>> descriptionFunction, final Consumer<BattleParticipantActionTarget> consumer, final Predicate<BattleParticipantStateView> predicate, final Vec3d start, final Vec3d end) {
-        final BattleStateView view = stateView.getBattleState();
-        return BattleParticipantActionBuilder.TargetRaycaster.of(view.getParticipantStream().map(view::getParticipantByHandle).filter(predicate).map(state -> new BattleParticipantActionBattleParticipantTarget(state, nameFunction.apply(state), descriptionFunction.apply(state))).toList(), target -> {
-            final BattleParticipantBounds bounds = target.state.getBounds();
-            final Stream.Builder<BattleParticipantBounds.Part> builder = Stream.builder();
-            final Iterator<BattleParticipantBounds.Part> parts = bounds.parts();
-            while (parts.hasNext()) {
-                builder.add(parts.next());
-            }
-            return builder.build().map(BattleParticipantBounds.Part::box).iterator();
-        }, consumer, start, end);
+    public static BattleParticipantActionBuilder.RaycastIterator<BattleParticipantActionBattleParticipantTarget> filter(final BattleParticipantStateView stateView, final Predicate<BattleParticipantStateView> predicate, final Function<BattleParticipantStateView, Text> nameFunction, final Function<BattleParticipantStateView, TooltipText> description, final Consumer<BattleParticipantActionTarget> consumer) {
+        final BattleStateView state = stateView.getBattleState();
+        final List<BattleParticipantActionBattleParticipantTarget> views = state.getParticipantStream().map(state::getParticipantByHandle).filter(predicate).map(view -> new BattleParticipantActionBattleParticipantTarget(view, nameFunction.apply(view), description.apply(view))).toList();
+        return new BattleParticipantActionBuilder.RaycastIterator<>(BattleParticipantActionBuilder.TargetRaycaster.of(views::iterator, view -> view.state().getBounds().partStream().map(BattleParticipantBounds.Part::box).iterator(), consumer::accept), BattleParticipantActionBuilder.TargetIterator.of(views.iterator(), consumer));
     }
 }

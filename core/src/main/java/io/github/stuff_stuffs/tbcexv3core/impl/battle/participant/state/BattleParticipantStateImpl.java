@@ -4,12 +4,14 @@ import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.BattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatMap;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
@@ -41,6 +43,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     private AbstractBattleStateImpl battleState;
     private BattleParticipantStatePhase phase;
     private BattleParticipantBounds bounds;
+    private double health = 1.0;
 
     public BattleParticipantStateImpl(final UUID uuid, final BattleEntityComponentMap componentMap, final BattleParticipantBounds bounds) {
         this.componentMap = componentMap;
@@ -120,7 +123,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
         if (removed == null) {
             throw new TBCExException();
         }
-        tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantRemoveEffect(handle, removed)).buildAndApply();
+        tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantRemoveEffect(handle, type)).buildAndApply();
         removed.deinit(tracer);
         tracer.pop();
     }
@@ -133,7 +136,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
             effect = combine(current, effect, effect.getType());
             effects.put(effect.getType(), effect);
         }
-        tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantAddEffect(handle, current != null, effect)).buildAndApply();
+        tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantAddEffect(handle, current != null, effect.getType())).buildAndApply();
         effect.init(this, tracer);
         tracer.pop();
     }
@@ -151,6 +154,36 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     public boolean setTeam(final BattleParticipantTeam team, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         return battleState.setTeam(handle, team, tracer);
+    }
+
+    @Override
+    public double setHealth(final double amount, final Tracer<ActionTrace> tracer) {
+        final double newHealth = events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT).getInvoker().preSetHealth(this, amount, tracer);
+        final double maxHealth = statMap.compute(CoreBattleParticipantStats.MAX_HEALTH, null);
+        final double realHealth = Math.min(newHealth, maxHealth);
+        if (newHealth != health) {
+            final double oldHealth = health;
+            tracer.pushInstant(true).value(
+                    realHealth < oldHealth ?
+                            new ParticipantActionTraces.Health.Damage(handle, oldHealth, oldHealth - realHealth) :
+                            new ParticipantActionTraces.Health.Heal(handle, oldHealth, realHealth - oldHealth)
+            ).buildAndApply();
+            events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT).getInvoker().postSetHealth(this, oldHealth, tracer);
+            health = realHealth;
+            if (realHealth <= 0) {
+                events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT).getInvoker().preDeath(this, tracer);
+                if (health <= 0) {
+                    if (battleState.removeParticipant(handle, BattleParticipantRemovalReason.DIED, tracer)) {
+                        return 0;
+                    } else if (health <= 0) {
+                        throw new TBCExException("Participant with zero health unable to leave battle!");
+                    }
+                }
+            }
+            tracer.pop();
+            return health;
+        }
+        return health;
     }
 
     @Override
@@ -191,6 +224,11 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     public BattleParticipantTeam getTeam() {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FINISHED);
         return battleState.getTeamByParticipant(handle);
+    }
+
+    @Override
+    public double getHealth() {
+        return health;
     }
 
     @Override

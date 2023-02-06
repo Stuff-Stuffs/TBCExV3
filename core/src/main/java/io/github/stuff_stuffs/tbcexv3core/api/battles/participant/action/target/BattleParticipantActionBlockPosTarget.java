@@ -1,13 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
-import net.minecraft.text.OrderedText;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 public record BattleParticipantActionBlockPosTarget(
         BlockPos pos,
-        OrderedText name,
+        Text name,
         TooltipText description
 ) implements BattleParticipantActionTarget {
     @Override
@@ -16,12 +15,12 @@ public record BattleParticipantActionBlockPosTarget(
     }
 
     @Override
-    public OrderedText name(final BattleParticipantStateView stateView) {
+    public Text name() {
         return name;
     }
 
     @Override
-    public TooltipText description(final BattleParticipantStateView stateView) {
+    public TooltipText description() {
         return description;
     }
 }

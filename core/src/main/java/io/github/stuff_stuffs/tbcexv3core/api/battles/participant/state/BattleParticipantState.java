@@ -38,6 +38,8 @@ public interface BattleParticipantState extends BattleParticipantStateView {
 
     boolean setTeam(BattleParticipantTeam team, Tracer<ActionTrace> tracer);
 
+    double setHealth(double amount, Tracer<ActionTrace> tracer);
+
     @Override
     BattleParticipantInventory getInventory();
 

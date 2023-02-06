@@ -1,13 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
-import net.minecraft.text.OrderedText;
+import net.minecraft.text.Text;
 
 public interface BattleParticipantActionTarget {
     BattleParticipantActionTargetType<?> type();
 
-    OrderedText name(BattleParticipantStateView stateView);
+    Text name();
 
-    TooltipText description(BattleParticipantStateView stateView);
+    TooltipText description();
 }

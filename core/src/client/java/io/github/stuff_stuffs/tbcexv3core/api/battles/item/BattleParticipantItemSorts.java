@@ -1,7 +1,7 @@
-package io.github.stuff_stuffs.tbcexv3core.api.battles;
+package io.github.stuff_stuffs.tbcexv3core.api.battles.item;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import io.github.stuff_stuffs.tbcexv3core.impl.battles.BattleParticipantItemSortsImpl;
+import io.github.stuff_stuffs.tbcexv3core.impl.battles.item.BattleParticipantItemSortsImpl;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
