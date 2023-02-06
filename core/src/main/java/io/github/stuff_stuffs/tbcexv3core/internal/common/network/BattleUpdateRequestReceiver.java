@@ -3,10 +3,13 @@ package io.github.stuff_stuffs.tbcexv3core.internal.common.network;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
+import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
+import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -15,6 +18,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class BattleUpdateRequestReceiver {
     public static final Identifier CHANNEL = TBCExV3Core.createId("battle_update_request");
@@ -42,12 +46,18 @@ public final class BattleUpdateRequestReceiver {
                             for (int i = request.lastKnownGoodState() + 1; i < size; i++) {
                                 actions.add(battle.getAction(i));
                             }
-                            updates.add(new BattleUpdate(request.handle(), actions, request.lastKnownGoodState() + 1));
+                            final Optional<BattleEnvironmentImpl.Initial> opt;
+                            if (request.lastKnownGoodState() == -1) {
+                                opt = Optional.of(((BattleImpl) battle).environment());
+                            } else {
+                                opt = Optional.empty();
+                            }
+                            updates.add(new BattleUpdate(request.handle(), actions, request.lastKnownGoodState() + 1, opt));
                         }
                     }
                 }
             }
-            BattleUpdateSender.send(updates, sender);
+            BattleUpdateSender.send(updates, sender, server.getRegistryManager().get(RegistryKeys.BIOME));
         });
     }
 

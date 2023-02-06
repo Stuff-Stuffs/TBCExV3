@@ -17,14 +17,18 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class TBCExV3CoreClient implements ClientModInitializer {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TBCExV3Core.MOD_ID + "(Client)");
     private static List<Consumer<WorldRenderContext>> DEFERRED_RENDERING = new ArrayList<>();
 
     public static void defer(final Consumer<WorldRenderContext> consumer) {
@@ -33,6 +37,13 @@ public class TBCExV3CoreClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        TBCExV3Core.setClientLogger(() -> {
+            if (MinecraftClient.getInstance().isOnThread()) {
+                return LOGGER;
+            } else {
+                return null;
+            }
+        });
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             if (client.player != null && ((TBCExClientPlayerExtensions) client.player).tbcexcore$action$current() != null) {
                 if (((TBCExPlayerEntity) client.player).tbcex$getCurrentBattle() == null) {

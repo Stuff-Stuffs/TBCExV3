@@ -56,7 +56,7 @@ public abstract class MixinServerWorld extends World implements AbstractServerBa
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initialize(final MinecraftServer server, final Executor workerExecutor, final LevelStorage.Session session, final ServerWorldProperties properties, final RegistryKey<World> worldKey, final DimensionOptions dimensionOptions, final WorldGenerationProgressListener worldGenerationProgressListener, final boolean debugWorld, final long seed, final List spawners, final boolean shouldTickTime, final CallbackInfo ci) {
-        battleWorldContainer = new ServerBattleWorldContainer((ServerWorld) (Object) this, worldKey, session.getDirectory(TBCExV3Core.TBCEX_WORLD_SAVE_PATH));
+        battleWorldContainer = new ServerBattleWorldContainer((ServerWorld) (Object) this, worldKey, session.getDirectory(TBCExV3Core.TBCEX_WORLD_SAVE_PATH), server.getThread());
     }
 
     @Inject(method = "close", at = @At("HEAD"))
@@ -88,8 +88,8 @@ public abstract class MixinServerWorld extends World implements AbstractServerBa
     }
 
     @Override
-    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds) {
-        return battleWorldContainer.createBattle(entities, teamSetupAction, bounds);
+    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds, int padding) {
+        return battleWorldContainer.createBattle(entities, teamSetupAction, bounds, padding);
     }
 
     @Override

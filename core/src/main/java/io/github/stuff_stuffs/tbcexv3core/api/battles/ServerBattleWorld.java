@@ -16,7 +16,7 @@ public interface ServerBattleWorld extends BattleWorld {
 
     BattleHandle createBattle(Map<BattleEntity, Identifier> entities, InitialTeamSetupBattleAction teamSetupAction);
 
-    BattleHandle createBattle(Map<BattleEntity, Identifier> entities, InitialTeamSetupBattleAction teamSetupAction, BattleBounds bounds);
+    BattleHandle createBattle(Map<BattleEntity, Identifier> entities, InitialTeamSetupBattleAction teamSetupAction, BattleBounds bounds, int padding);
 
     void pushDelayedPlayerComponent(UUID uuid, BattleHandle handle, BattleEntityComponent component);
 }

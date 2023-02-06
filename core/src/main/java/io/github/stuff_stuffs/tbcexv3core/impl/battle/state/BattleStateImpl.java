@@ -6,6 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
@@ -38,6 +39,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     private BattleHandle handle;
     private BattleBounds bounds;
     private BattleStatePhase phase;
+    private BattleEnvironment environment;
 
     public BattleStateImpl(final BattleStateMode mode) {
         this.mode = mode;
@@ -51,10 +53,11 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
-    public void setup(final BattleHandle handle) {
+    public void setup(final BattleHandle handle, final BattleEnvironment environment) {
         checkPhase(BattleStatePhase.SETUP, true);
         this.handle = handle;
         phase = BattleStatePhase.INITIALIZATION;
+        this.environment = environment;
         turnSelector.init(this);
     }
 
@@ -276,6 +279,12 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
             throw new TBCExException("Team owner mismatch!");
         }
         return participantContainer.removeTeam(team);
+    }
+
+    @Override
+    public BattleEnvironment getEnvironment() {
+        checkPhase(BattleStatePhase.INITIALIZATION, false);
+        return environment;
     }
 
     private void checkPhase(final BattleStatePhase phase, final boolean exact) {

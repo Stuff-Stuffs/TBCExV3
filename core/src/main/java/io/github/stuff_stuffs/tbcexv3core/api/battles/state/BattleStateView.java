@@ -4,6 +4,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
@@ -46,4 +48,6 @@ public interface BattleStateView {
     BattleHandle getHandle();
 
     boolean isCurrentTurn(BattleParticipantHandle handle);
+
+    BattleEnvironmentView getEnvironment();
 }

@@ -14,7 +14,9 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.registry.Registry;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
@@ -41,6 +43,7 @@ public class ServerBattleWorldDatabase {
     private static final String BATTLE_ACTIVE_ENTITIES_DIRECTORY = "./battle_entities";
     private static final String BATTLE_INACTIVE_ENTITIES_DIRECTORY = "./battle_entities_history";
     private static final String DELAYED_COMPONENT_DIRECTORY = "./delayed_components";
+    private final Registry<Biome> biomeRegistry;
     private final Path rootFolder;
     private final Path battles;
     private final Path activeParticipants;
@@ -48,7 +51,8 @@ public class ServerBattleWorldDatabase {
     private final Path delayedComponents;
 
 
-    public ServerBattleWorldDatabase(final Path path) {
+    public ServerBattleWorldDatabase(Registry<Biome> registry, final Path path) {
+        biomeRegistry = registry;
         rootFolder = path;
         battles = rootFolder.resolve(BATTLE_DIRECTORY);
         activeParticipants = rootFolder.resolve(BATTLE_ACTIVE_ENTITIES_DIRECTORY);
@@ -114,7 +118,7 @@ public class ServerBattleWorldDatabase {
         return uuids.toArray(new UUID[0]);
     }
 
-    public DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> loadBattle(final UUID uuid) {
+    public DataResult<Battle.Factory> loadBattle(final UUID uuid) {
         try {
             final byte[] bytes = Files.readAllBytes(file(battles, uuid));
             return decodeBattle(bytes);
@@ -324,9 +328,9 @@ public class ServerBattleWorldDatabase {
         }
     }
 
-    private static byte[] encodeBattle(final Battle battle) {
+    private byte[] encodeBattle(final Battle battle) {
         final NbtCompound wrapper = new NbtCompound();
-        wrapper.put("data", Battle.encoder().encodeStart(NbtOps.INSTANCE, battle).getOrThrow(false, s -> {
+        wrapper.put("data", Battle.encoder(biomeRegistry).encodeStart(NbtOps.INSTANCE, battle).getOrThrow(false, s -> {
             throw new RuntimeException(s);
         }));
         final ByteArrayOutputStream stream = new ByteArrayOutputStream(65535);
@@ -338,11 +342,11 @@ public class ServerBattleWorldDatabase {
         }
     }
 
-    private static DataResult<BiFunction<BattleHandle, BattleStateMode, Battle>> decodeBattle(final byte[] bytes) {
+    private DataResult<Battle.Factory> decodeBattle(final byte[] bytes) {
         try {
             final NbtCompound compound = NbtIo.readCompressed(new ByteArrayInputStream(bytes));
             final NbtElement data = compound.get("data");
-            return Battle.decoder().parse(NbtOps.INSTANCE, data);
+            return Battle.decoder(biomeRegistry).parse(NbtOps.INSTANCE, data);
         } catch (final IOException e) {
             throw new RuntimeException("Error while loading battle", e);
         }

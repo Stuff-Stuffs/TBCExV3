@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.Encoder;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.UUID;
@@ -38,6 +39,18 @@ public final class CodecUtil {
             @Override
             public <T> DataResult<Pair<S, T>> decode(final DynamicOps<T> ops, final T input) {
                 return baseCodec.decode(ops, input).map(p -> Pair.of(p.getFirst(), p.getSecond()));
+            }
+        };
+    }
+
+    public static <S, B extends S> Encoder<S> castedEncoder(final Encoder<B> baseCodec, final Class<B> baseClass, final Class<S> derivedClass) {
+        return new Encoder<>() {
+            @Override
+            public <T> DataResult<T> encode(final S input, final DynamicOps<T> ops, final T prefix) {
+                if (baseClass.isInstance(input)) {
+                    return baseCodec.encode((B) input, ops, prefix);
+                }
+                return DataResult.error("Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface!");
             }
         };
     }

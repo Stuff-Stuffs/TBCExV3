@@ -30,16 +30,19 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.network.EntityBattlesU
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.function.Supplier;
 
 public class TBCExV3Core implements ModInitializer {
     public static final String MOD_ID = "tbcexv3_core";
     public static final WorldSavePath TBCEX_WORLD_SAVE_PATH = AccessorWorldSavePath.create("tbcex");
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static Supplier<@Nullable Logger> CLIENT_LOGGER = null;
 
     @Override
     public void onInitialize() {
@@ -99,6 +102,19 @@ public class TBCExV3Core implements ModInitializer {
 
             builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT, PreBattleParticipantDeathEvent::convert, PreBattleParticipantDeathEvent::invoker);
         });
+    }
+
+    public static void setClientLogger(final Supplier<@Nullable Logger> logger) {
+        CLIENT_LOGGER = logger;
+    }
+
+    public static Logger getLogger() {
+        if (CLIENT_LOGGER == null) {
+            return LOGGER;
+        } else {
+            final Logger logger = CLIENT_LOGGER.get();
+            return logger == null ? LOGGER : logger;
+        }
     }
 
     public static Identifier createId(final String path) {

@@ -18,15 +18,20 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityC
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
+import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import it.unimi.dsi.fastutil.objects.*;
 import net.fabricmc.fabric.api.util.TriState;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.BiomeKeys;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -41,25 +46,28 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     private final Random random;
     private final RegistryKey<World> worldKey;
     private final ServerBattleWorldDatabase database;
+    private final @Nullable Thread serverThread;
     private long tickCount;
 
-    public ServerBattleWorldContainer(final ServerWorld world, final RegistryKey<World> worldKey, final Path directory) {
+    public ServerBattleWorldContainer(final ServerWorld world, final RegistryKey<World> worldKey, final Path directory, @Nullable final Thread thread) {
         this.world = world;
         this.worldKey = worldKey;
+        serverThread = thread;
         battles = new Object2ReferenceOpenHashMap<>();
         lastAccessTime = new Object2LongOpenHashMap<>();
         componentsToApply = new Object2ReferenceOpenHashMap<>();
         random = Random.createLocal();
-        database = new ServerBattleWorldDatabase(directory.resolve(worldKey.getValue().toUnderscoreSeparatedString()));
+        database = new ServerBattleWorldDatabase(world.getRegistryManager().get(RegistryKeys.BIOME), directory.resolve(worldKey.getValue().toUnderscoreSeparatedString()));
     }
 
     public Battle getBattle(final UUID uuid) {
+        checkThread();
         Battle battle = battles.get(uuid);
         if (battle != null) {
             lastAccessTime.put(uuid, tickCount);
             return battle;
         }
-        battle = database.loadBattle(uuid).map(func -> func.apply(BattleHandle.of(worldKey, uuid), BattleStateMode.SERVER)).getOrThrow(false, s -> {
+        battle = database.loadBattle(uuid).map(func -> func.create(BattleHandle.of(worldKey, uuid), BattleStateMode.SERVER)).getOrThrow(false, s -> {
             throw new TBCExException(s);
         });
         attachListeners(battle);
@@ -91,6 +99,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     public void tick() {
+        checkThread();
         tickCount++;
         final Set<UUID> toRemove = new ObjectOpenHashSet<>();
         for (final Object2LongMap.Entry<UUID> entry : lastAccessTime.object2LongEntrySet()) {
@@ -105,23 +114,25 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction) {
+        checkThread();
         final Optional<Box> reduced = entities.keySet().stream().map(BattleEntity::getDefaultBounds).flatMap(bounds -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(bounds.parts(), 0), false)).map(BattleParticipantBounds.Part::box).reduce(Box::union);
         if (reduced.isEmpty()) {
             throw new TBCExException("Tried to create auto-sizing battle with no bounded entities!");
         }
-        final Box expanded = reduced.get().expand(10);
+        final Box expanded = reduced.get();
         final BattleBounds bounds = new BattleBounds(expanded);
-        return createBattle(entities, teamSetupAction, bounds);
+        return createBattle(entities, teamSetupAction, bounds, 24);
     }
 
-    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds) {
+    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds, int padding) {
+        checkThread();
         for (final BattleEntity entity : entities.keySet()) {
             if (entity instanceof Entity regularEntity && regularEntity.isRemoved()) {
                 throw new TBCExException("Tried to add a removed entity to a battle");
             }
         }
         final BattleHandle handle = BattleHandle.of(worldKey, database.findUnusedBattleUuid(random));
-        final Battle battle = new BattleImpl(handle, BattleStateMode.SERVER);
+        final Battle battle = new BattleImpl(handle, BattleStateMode.SERVER, BattleEnvironmentImpl.Initial.of(bounds, world, padding, Blocks.BARRIER.getDefaultState(), world.getRegistryManager().get(RegistryKeys.BIOME).entryOf(BiomeKeys.PLAINS)));
         battles.put(handle.getUuid(), battle);
         attachListeners(battle);
         battle.pushAction(teamSetupAction);
@@ -141,10 +152,12 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     public void pushDelayedPlayerComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {
+        checkThread();
         componentsToApply.computeIfAbsent(playerUuid, database::getDelayedComponents).addDelayedComponent(handle.getUuid(), component);
     }
 
     public boolean delayedComponent(final UUID uuid, final ServerWorld world) {
+        checkThread();
         final DelayedComponents delayedComponents = componentsToApply.computeIfAbsent(uuid, database::getDelayedComponents);
         if (delayedComponents != null) {
             if (delayedComponents.apply(this, world)) {
@@ -158,6 +171,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
 
     @Override
     public void close() {
+        checkThread();
         for (final Map.Entry<UUID, Battle> entry : battles.entrySet()) {
             final UUID uuid = entry.getKey();
             final Battle battle = entry.getValue();
@@ -171,6 +185,7 @@ public class ServerBattleWorldContainer implements AutoCloseable {
     }
 
     public List<BattleParticipantHandle> getBattles(final UUID entityUuid, final TriState active) {
+        checkThread();
         return Arrays.stream(database.getParticipatedBattles(entityUuid, active)).map(id -> BattleParticipantHandle.of(entityUuid, BattleHandle.of(worldKey, id))).toList();
     }
 
@@ -214,6 +229,12 @@ public class ServerBattleWorldContainer implements AutoCloseable {
                 }
             }
             return components.isEmpty();
+        }
+    }
+
+    private void checkThread() {
+        if (serverThread != null && Thread.currentThread() != serverThread) {
+            throw new TBCExException("Battle access only allowed on server thread!");
         }
     }
 }

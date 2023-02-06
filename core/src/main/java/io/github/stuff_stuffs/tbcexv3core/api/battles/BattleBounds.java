@@ -2,7 +2,6 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles;
 
 import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
-import io.wispforest.owo.ui.core.Component;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
@@ -38,6 +37,10 @@ public final class BattleBounds {
         maxX = Math.max(x0, x1);
         maxY = Math.max(y0, y1);
         maxZ = Math.max(z0, z1);
+    }
+
+    public Box asBox() {
+        return new Box(minX, minY, minZ, Math.nextAfter(maxX, 1.0F), Math.nextAfter(maxY, 1.0F), Math.nextAfter(maxZ, 1.0F));
     }
 
     public boolean isIn(final BattleParticipantBounds bounds) {
