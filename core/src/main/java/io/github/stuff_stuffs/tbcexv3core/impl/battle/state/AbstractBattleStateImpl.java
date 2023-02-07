@@ -7,6 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import net.minecraft.util.math.BlockPos;
 
 public interface AbstractBattleStateImpl extends BattleState {
     void setup(BattleHandle handle, BattleEnvironment environment);

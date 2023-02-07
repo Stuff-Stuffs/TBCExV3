@@ -40,6 +40,9 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Shadow
     public abstract ServerWorld getWorld();
 
+    @Shadow
+    public abstract void endCombat();
+
     @Unique
     private @Nullable BattleHandle tbcex$currentBattle;
     @Unique
@@ -70,9 +73,14 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Inject(at = @At("HEAD"), method = "tick")
     private void tickHook(final CallbackInfo ci) {
         if (tbcex$currentBattle != null) {
-            @Nullable final BattleView view = ((BattleWorld) world).tryGetBattleView(tbcex$currentBattle);
-            if (view == null || view.getState().getPhase() == BattleStatePhase.FINISHED) {
+            final ServerWorld sourceWorld = world.getServer().getWorld(tbcex$currentBattle.getWorldKey());
+            if (sourceWorld == null) {
                 tbcex$setCurrentBattle(null);
+            } else {
+                @Nullable final BattleView view = ((BattleWorld) sourceWorld).tryGetBattleView(tbcex$currentBattle);
+                if (view == null || view.getState().getPhase() == BattleStatePhase.FINISHED) {
+                    tbcex$setCurrentBattle(null);
+                }
             }
         }
         if (tbcex$currentBattle == null && tbcex$preBattleGameMode != null) {

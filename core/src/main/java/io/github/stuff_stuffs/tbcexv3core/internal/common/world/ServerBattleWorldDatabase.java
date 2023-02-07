@@ -197,7 +197,7 @@ public class ServerBattleWorldDatabase {
                     final long size = channel.size() - realPos;
                     final ByteBuffer buffer = ByteBuffer.allocate((int) size).order(ByteOrder.LITTLE_ENDIAN);
                     final int read = channel.read(buffer, realPos);
-                    channel.truncate(position);
+                    channel.truncate(realPos);
                     final ByteBuffer inserted = ByteBuffer.allocate(Long.BYTES * 2).order(ByteOrder.LITTLE_ENDIAN);
                     channel.write(inserted);
                     if (read > 0) {
@@ -216,10 +216,7 @@ public class ServerBattleWorldDatabase {
         long start = 0;
         long size = channel.size();
         size = size - (size % (Long.BYTES * 2));
-        long end = size / (Long.BYTES * 2);
-        if (end == 0) {
-            return -1;
-        }
+        long end = size / (Long.BYTES * 2) - 1;
         while (start <= end) {
             buffer.clear();
             final long mid = (start + end) >>> 1;

@@ -34,7 +34,7 @@ public final class BattleUpdateReceiver {
         }
         client.execute(() -> {
             for (final BattleUpdate update : updates) {
-                if (client.world != null && client.world.getRegistryKey().equals(update.handle().getWorldKey())) {
+                if (client.world != null) {
                     ((ClientBattleWorld) client.world).update(update);
                 }
             }

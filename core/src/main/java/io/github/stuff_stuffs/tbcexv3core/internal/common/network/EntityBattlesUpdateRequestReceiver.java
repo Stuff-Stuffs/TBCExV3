@@ -17,12 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-//TODO read from other worlds
 public final class EntityBattlesUpdateRequestReceiver {
     public static final Identifier CHANNEL = TBCExV3Core.createId("entity_battles_update_request");
 
-    public static void init() {
-        ServerPlayNetworking.registerGlobalReceiver(CHANNEL, EntityBattlesUpdateRequestReceiver::receive);
+    public static void init(final ServerPlayNetworkHandler handler) {
+        ServerPlayNetworking.registerReceiver(handler, CHANNEL, EntityBattlesUpdateRequestReceiver::receive);
     }
 
     private static void receive(final MinecraftServer server, final ServerPlayerEntity entity, final ServerPlayNetworkHandler handler, final PacketByteBuf buf, final PacketSender sender) {
@@ -33,12 +32,13 @@ public final class EntityBattlesUpdateRequestReceiver {
         }
         server.execute(() -> {
             for (final UUID request : requests) {
-                final ServerWorld world = entity.getWorld();
-                if (world != null) {
-                    final List<BattleParticipantHandle> activeBattles = ((ServerBattleWorld) world).getBattles(request, TriState.TRUE);
-                    final List<BattleParticipantHandle> inactiveBattles = ((ServerBattleWorld) world).getBattles(request, TriState.TRUE);
-                    EntityBattlesUpdateSender.send(entity, request, activeBattles, inactiveBattles);
+                final List<BattleParticipantHandle> activeBattles = new ArrayList<>();
+                final List<BattleParticipantHandle> inactiveBattles = new ArrayList<>();
+                for (final ServerWorld world : server.getWorlds()) {
+                    activeBattles.addAll(((ServerBattleWorld) world).getBattles(request, TriState.TRUE));
+                    inactiveBattles.addAll(((ServerBattleWorld) world).getBattles(request, TriState.FALSE));
                 }
+                EntityBattlesUpdateSender.send(entity, request, activeBattles, inactiveBattles);
             }
         });
     }

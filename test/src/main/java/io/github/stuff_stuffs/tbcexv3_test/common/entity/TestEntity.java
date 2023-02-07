@@ -12,6 +12,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Arm;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -33,6 +34,9 @@ public class TestEntity extends LivingEntity implements BattleEntity {
     public void buildParticipantState(final BattleParticipantStateBuilder builder) {
         final NbtCompound compound = new NbtCompound();
         writeNbt(compound);
+        final EntityType<?> entityType = getType();
+        final Identifier identifier = EntityType.getId(entityType);
+        compound.putString("id", identifier.toString());
         builder.addComponent(new SaveEntityDataComponent(getUuid(), compound));
         builder.addComponent(new TestEntityComponent(20, 20));
     }

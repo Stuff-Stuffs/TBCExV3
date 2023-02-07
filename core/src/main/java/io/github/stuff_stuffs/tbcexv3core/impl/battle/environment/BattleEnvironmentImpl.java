@@ -12,6 +12,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
+import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class BattleEnvironmentImpl implements BattleEnvironment {
@@ -34,30 +36,18 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
     private final RegistryEntry<Biome> outOfBoundsBiome;
     private final BlockPos min;
     private final BlockPos max;
-    private final BattleEnvironmentSection[] sections;
-    private final int sectionMinX;
-    private final int sectionMinY;
-    private final int sectionMinZ;
-    private final int sectionMaxX;
-    private final int sectionMaxY;
-    private final int sectionMaxZ;
+    private final World delegate;
+    private final Map<BlockPos, BattleEnvironmentBlock> specialBlocks;
+    private BlockPos realOrigin;
     private BattleState state = null;
 
-    public BattleEnvironmentImpl(final BlockState outOfBoundsState, final RegistryEntry<Biome> outOfBoundsBiome, final BlockPos min, final BlockPos max, final BattleEnvironmentSection[] sections) {
+    public BattleEnvironmentImpl(final BlockState outOfBoundsState, final RegistryEntry<Biome> outOfBoundsBiome, final BlockPos min, final BlockPos max, final World delegate) {
         this.outOfBoundsState = outOfBoundsState;
         this.outOfBoundsBiome = outOfBoundsBiome;
         this.min = min;
         this.max = max;
-        this.sections = sections;
-        sectionMinX = min.getX() >> 4;
-        sectionMinY = min.getY() >> 4;
-        sectionMinZ = min.getZ() >> 4;
-        sectionMaxX = (max.getX() + 15) >> 4;
-        sectionMaxY = (max.getY() + 15) >> 4;
-        sectionMaxZ = (max.getZ() + 15) >> 4;
-        if (sections.length != calculateArrayLength(sectionMaxX - sectionMinX + 1, sectionMaxY - sectionMinY + 1, sectionMaxZ - sectionMinZ + 1)) {
-            throw new RuntimeException("Size mismatch!");
-        }
+        this.delegate = delegate;
+        specialBlocks = new Object2ReferenceOpenHashMap<>();
     }
 
     private void checkSetup() {
@@ -66,52 +56,27 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
         }
     }
 
-    public void setup(final BattleState state) {
+    public void setup(final BattleState state, final BlockPos origin) {
         this.state = state;
-    }
-
-    private static int calculateArrayLength(final int xSections, final int ySections, final int zSections) {
-        return xSections * ySections * zSections;
-    }
-
-    private int toIndex(final int x, final int y, final int z) {
-        final int sectionX = (x >> 4) - sectionMinX;
-        final int sectionY = (y >> 4) - sectionMinY;
-        final int sectionZ = (z >> 4) - sectionMinZ;
-        final int xSpan = sectionMaxX - sectionMinX + 1;
-        final int ySpan = sectionMaxY - sectionMinY + 1;
-        final int zSpan = sectionMaxZ - sectionMinZ + 1;
-        return (sectionX * xSpan + sectionY) * ySpan + sectionZ;
+        realOrigin = origin;
     }
 
     @Override
-    public boolean setBiome(final BlockPos pos, final RegistryEntry<Biome> biome, final Tracer<ActionTrace> tracer) {
-        checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
-            return false;
-        }
-        if (state.getEventMap().getEvent(CoreBattleEvents.PRE_BIOME_SET_EVENT).getInvoker().preBiomeSet(pos, state, biome, tracer)) {
-            final BattleEnvironmentSection section = sections[index];
-            final RegistryEntry<Biome> oldBiome = section.getBiome(pos.getX(), pos.getY(), pos.getZ());
-            section.setBiome(pos.getX(), pos.getY(), pos.getZ(), biome);
-            state.getEventMap().getEvent(CoreBattleEvents.POST_BIOME_SET_EVENT).getInvoker().postBiomeSet(pos, state, oldBiome, tracer);
-            return true;
-        }
-        return false;
+    public BlockPos origin() {
+        return realOrigin;
     }
 
     @Override
     public boolean setBlockState(final BlockPos pos, final BlockState state, final Tracer<ActionTrace> tracer) {
         checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
+        if (!(min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ() &&
+                pos.getX() <= max.getX() && pos.getY() <= max.getY() && pos.getZ() <= max.getZ())) {
             return false;
         }
         if (this.state.getEventMap().getEvent(CoreBattleEvents.PRE_BLOCK_STATE_SET_EVENT).getInvoker().preBlockStateSet(pos, this.state, state, tracer)) {
-            final BattleEnvironmentSection section = sections[index];
-            final BlockState oldState = section.getBlockState(pos.getX(), pos.getY(), pos.getZ());
-            section.setBlockState(pos.getX(), pos.getY(), pos.getZ(), state);
+            final BlockPos realPos = pos.subtract(min).add(realOrigin);
+            final BlockState oldState = delegate.getBlockState(realPos);
+            delegate.setBlockState(realPos, state);
             this.state.getEventMap().getEvent(CoreBattleEvents.POST_BLOCK_STATE_SET_EVENT).getInvoker().postBlockStateSet(pos, this.state, oldState, tracer);
             return true;
         }
@@ -121,17 +86,16 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
     @Override
     public boolean setBattleBlock(final BlockPos pos, final BattleEnvironmentBlock.Factory factory, final Tracer<ActionTrace> tracer) {
         checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
+        if (!(min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ() &&
+                pos.getX() <= max.getX() && pos.getY() <= max.getY() && pos.getZ() <= max.getZ())) {
             return false;
         }
-        final BattleEnvironmentSection section = sections[index];
-        final BattleEnvironmentBlock old = section.getBattleBlock(pos.getX(), pos.getY(), pos.getZ());
+        final BattleEnvironmentBlock old = specialBlocks.get(pos);
         if (state.getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT).getInvoker().preBattleBlockSet(pos, state, Optional.ofNullable(old), tracer)) {
             if (old != null) {
                 old.deinit(tracer);
             }
-            section.setBattleBlock(pos.getX(), pos.getY(), pos.getZ(), factory.create(state, pos, tracer));
+            specialBlocks.put(pos, factory.create(state, pos, tracer));
             state.getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT).getInvoker().postBattleBlockSet(pos, state, Optional.ofNullable(old), tracer);
             return true;
         }
@@ -141,18 +105,17 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
     @Override
     public boolean removeBattleBlock(final BlockPos pos, final Tracer<ActionTrace> tracer) {
         checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
+        if (!(min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ() &&
+                pos.getX() <= max.getX() && pos.getY() <= max.getY() && pos.getZ() <= max.getZ())) {
             return false;
         }
-        final BattleEnvironmentSection section = sections[index];
-        final BattleEnvironmentBlock old = section.getBattleBlock(pos.getX(), pos.getY(), pos.getZ());
+        final BattleEnvironmentBlock old = specialBlocks.get(pos);
         if (old == null) {
             return false;
         }
         if (state.getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT).getInvoker().preBattleBlockSet(pos, state, Optional.of(old), tracer)) {
             old.deinit(tracer);
-            section.setBattleBlock(pos.getX(), pos.getY(), pos.getZ(), null);
+            specialBlocks.remove(pos);
             state.getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT).getInvoker().postBattleBlockSet(pos, state, Optional.of(old), tracer);
             return true;
         }
@@ -172,31 +135,33 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
     @Override
     public BlockState getBlockState(final BlockPos pos) {
         checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
+        if (!(min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ() &&
+                pos.getX() <= max.getX() && pos.getY() <= max.getY() && pos.getZ() <= max.getZ())) {
             return outOfBoundsState;
         }
-        return sections[index].getBlockState(pos.getX(), pos.getY(), pos.getZ());
+        final BlockPos realPos = pos.subtract(min).add(realOrigin);
+        return delegate.getBlockState(realPos);
     }
 
     @Override
     public RegistryEntry<Biome> getBiome(final BlockPos pos) {
         checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
+        if (!(min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ() &&
+                pos.getX() <= max.getX() && pos.getY() <= max.getY() && pos.getZ() <= max.getZ())) {
             return outOfBoundsBiome;
         }
-        return sections[index].getBiome(pos.getX(), pos.getY(), pos.getZ());
+        final BlockPos realPos = pos.subtract(min).add(realOrigin);
+        return delegate.getBiome(realPos);
     }
 
     @Override
     public Optional<BattleEnvironmentBlock> getBattleBlock(final BlockPos pos) {
         checkSetup();
-        final int index = toIndex(pos.getX(), pos.getY(), pos.getZ());
-        if (index < 0 || index >= sections.length) {
+        if (!(min.getX() <= pos.getX() && min.getY() <= pos.getY() && min.getZ() <= pos.getZ() &&
+                pos.getX() <= max.getX() && pos.getY() <= max.getY() && pos.getZ() <= max.getZ())) {
             return Optional.empty();
         }
-        return Optional.ofNullable(sections[index].getBattleBlock(pos.getX(), pos.getY(), pos.getZ()));
+        return Optional.ofNullable(specialBlocks.get(pos));
     }
 
     public record Initial(
@@ -216,8 +181,8 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
             ).apply(instance, Initial::new));
         }
 
-        public BattleEnvironment create() {
-            return new BattleEnvironmentImpl(outOfBoundsState, outOfBoundsBiome, min, max, sections.stream().map(BattleEnvironmentSection.Initial::create).toArray(BattleEnvironmentSection[]::new));
+        public BattleEnvironment create(final World delegate) {
+            return new BattleEnvironmentImpl(outOfBoundsState, outOfBoundsBiome, min, max, delegate);
         }
 
         public static Initial of(final BattleBounds bounds, final World world, final int padding, final BlockState outOfBoundsState, final RegistryEntry<Biome> outOfBoundsBiome) {
@@ -235,7 +200,7 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
             }
             int minY = bounds.minY - padding;
             if (minY < world.getBottomY()) {
-                logger.warn("Could not set padding(Y axis) around BattleEnvironment due to world height, moved from " + minY + " to " + lowestX);
+                logger.warn("Could not set padding(Y axis) around BattleEnvironment due to world height, moved from " + minY + " to " + world.getBottomY());
                 minY = world.getBottomY();
             }
             int minZ = bounds.minZ - padding;
@@ -254,8 +219,8 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
             }
             int maxY = bounds.maxY + padding;
             if (maxY >= world.getTopY()) {
-                logger.warn("Could not set padding(Y axis) around BattleEnvironment due to world height, moved from " + maxY + " to " + (world.getTopY() - 1));
-                maxY = world.getTopY() - 1;
+                logger.warn("Could not set padding(Y axis) around BattleEnvironment due to world height, moved from " + maxY + " to " + (world.getTopY() - 16));
+                maxY = world.getTopY() - 16;
             }
             int maxZ = bounds.maxZ + padding;
             final int highestZ = MathHelper.floor(border.getBoundSouth());
@@ -264,30 +229,34 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
                 maxZ = highestZ;
             }
             final BlockPos max = new BlockPos(maxX, maxY, maxZ);
-            final int sectionMinX = min.getX() >> 4;
-            final int sectionMinY = min.getY() >> 4;
-            final int sectionMinZ = min.getZ() >> 4;
-            final int sectionMaxX = (max.getX() + 15) >> 4;
-            final int sectionMaxY = (max.getY() + 15) >> 4;
-            final int sectionMaxZ = (max.getZ() + 15) >> 4;
-            final int capacity = calculateArrayLength(sectionMaxX - sectionMinX + 1, sectionMaxY - sectionMinY + 1, sectionMaxZ - sectionMinZ + 1);
+            final int sectionMinX = minX >> 4;
+            final int sectionMinY = minY >> 4;
+            final int sectionMinZ = minZ >> 4;
+            final int sectionMaxX = (maxX + 15) >> 4;
+            final int sectionMaxY = (maxY + 15) >> 4;
+            final int sectionMaxZ = (maxZ + 15) >> 4;
+            final int capacity = (sectionMaxX - sectionMinX + 1) * (sectionMaxY - sectionMinY + 1) * (sectionMaxZ - sectionMinZ + 1);
             final BattleEnvironmentSection.Initial[] sections = new BattleEnvironmentSection.Initial[capacity];
             for (int x = sectionMinX; x <= sectionMaxX; x++) {
-                for (int z = sectionMinZ; z <= sectionMaxX; z++) {
+                for (int z = sectionMinZ; z <= sectionMaxZ; z++) {
                     final Chunk chunk = world.getChunk(x, z, ChunkStatus.FULL, true);
                     for (int y = sectionMinY; y <= sectionMaxY; y++) {
                         final ChunkSection section = chunk.getSection(world.sectionCoordToIndex(y));
-                        final int sectionX = (x >> 4) - sectionMinX;
-                        final int sectionY = (y >> 4) - sectionMinY;
-                        final int sectionZ = (z >> 4) - sectionMinZ;
-                        final int xSpan = sectionMaxX - sectionMinX + 1;
+                        final int sectionX = x - sectionMinX;
+                        final int sectionY = y - sectionMinY;
+                        final int sectionZ = z - sectionMinZ;
                         final int ySpan = sectionMaxY - sectionMinY + 1;
-                        final int index = (sectionX * xSpan + sectionY) * ySpan + sectionZ;
+                        final int zSpan = sectionMaxZ - sectionMinZ + 1;
+                        final int index = toSectionIndex(sectionX, zSpan, sectionY, ySpan, sectionZ);
                         sections[index] = BattleEnvironmentSection.of(section);
                     }
                 }
             }
             return new Initial(outOfBoundsState, outOfBoundsBiome, min, max, Arrays.asList(sections));
+        }
+
+        public static int toSectionIndex(final int sectionX, final int zSpan, final int sectionY, final int ySpan, final int sectionZ) {
+            return (sectionX * ySpan + sectionY) * zSpan + sectionZ;
         }
     }
 }

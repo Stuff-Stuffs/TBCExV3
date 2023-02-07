@@ -89,6 +89,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             try {
                 ((ServerBattleWorld) context.getSource().getWorld()).createBattle(teamMap, builder.build());
             } catch (final Throwable t) {
+                t.printStackTrace();
                 return 1;
             }
             return 0;

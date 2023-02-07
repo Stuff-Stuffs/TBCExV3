@@ -6,6 +6,7 @@
     "AccessorTextHandler",
     "MixinAbstractClientPlayerEntity",
     "MixinClientPlayerEntity",
+    "MixinClientPlayerInteractionManager",
     "MixinClientWorld",
     "MixinGameRenderer",
     "MixinMinecraftClient",

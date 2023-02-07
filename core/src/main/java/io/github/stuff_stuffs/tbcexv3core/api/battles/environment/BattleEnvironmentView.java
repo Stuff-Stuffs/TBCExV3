@@ -8,6 +8,8 @@ import net.minecraft.world.biome.Biome;
 import java.util.Optional;
 
 public interface BattleEnvironmentView {
+    BlockPos origin();
+
     BlockPos min();
 
     BlockPos max();

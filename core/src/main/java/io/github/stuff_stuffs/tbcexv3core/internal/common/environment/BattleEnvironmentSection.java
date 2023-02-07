@@ -69,10 +69,10 @@ public class BattleEnvironmentSection {
     }
 
     public record Initial(
-            ReadableContainer<BlockState> blockStateContainer,
+            PalettedContainer<BlockState> blockStateContainer,
             ReadableContainer<RegistryEntry<Biome>> biomeContainer
     ) {
-        private static final Codec<ReadableContainer<BlockState>> BLOCK_CONTAINER_CODEC = PalettedContainer.createReadableContainerCodec(
+        private static final Codec<PalettedContainer<BlockState>> BLOCK_CONTAINER_CODEC = PalettedContainer.createPalettedContainerCodec(
                 Block.STATE_IDS, BlockState.CODEC, PalettedContainer.PaletteProvider.BLOCK_STATE, Blocks.AIR.getDefaultState()
         );
 
@@ -90,7 +90,7 @@ public class BattleEnvironmentSection {
         }
 
         public BattleEnvironmentSection create() {
-            return new BattleEnvironmentSection(blockStateContainer.slice(), biomeContainer.slice(), new Short2ObjectOpenHashMap<>());
+            return new BattleEnvironmentSection(blockStateContainer.copy(), biomeContainer.slice(), new Short2ObjectOpenHashMap<>());
         }
     }
 }

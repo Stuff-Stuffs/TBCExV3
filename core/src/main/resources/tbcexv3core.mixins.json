@@ -4,9 +4,11 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "AccessorWorldSavePath",
+    "MixinChunkSection",
     "MixinServerPlayer",
     "MixinServerPlayerInteractionManager",
-    "MixinServerWorld"
+    "MixinServerWorld",
+    "MixinWorldBorder"
   ],
   "injectors": {
     "defaultRequire": 1

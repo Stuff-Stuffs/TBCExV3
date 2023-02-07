@@ -5,7 +5,6 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.impl.ClientBattleImpl;
-import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
@@ -13,38 +12,34 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRe
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.api.util.TriState;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Stream;
 
 public class ClientBattleWorldContainer {
-    private final Map<UUID, ClientBattleImpl> battles = new Object2ReferenceOpenHashMap<>();
-    private final Map<UUID, List<UUID>> entityBattles = new Object2ReferenceOpenHashMap<>();
-    private final Map<UUID, List<UUID>> activeEntityBattles = new Object2ReferenceOpenHashMap<>();
-    private final Set<UUID> battleUpdateRequestsToSend = new ObjectOpenHashSet<>();
+    private final Map<BattleHandle, ClientBattleImpl> battles = new Object2ReferenceOpenHashMap<>();
+    private final Map<UUID, List<BattleParticipantHandle>> entityBattles = new Object2ReferenceOpenHashMap<>();
+    private final Map<UUID, List<BattleParticipantHandle>> activeEntityBattles = new Object2ReferenceOpenHashMap<>();
+    private final Set<BattleHandle> battleUpdateRequestsToSend = new ObjectOpenHashSet<>();
     private final Set<UUID> entityBattleRequestsToSend = new ObjectOpenHashSet<>();
-    private final RegistryKey<World> worldKey;
 
-    public ClientBattleWorldContainer(final RegistryKey<World> worldKey) {
-        this.worldKey = worldKey;
+    public ClientBattleWorldContainer() {
     }
 
-    public @Nullable BattleView getBattle(final UUID uuid) {
-        battleUpdateRequestsToSend.add(uuid);
-        return battles.get(uuid);
+    public @Nullable BattleView getBattle(final BattleHandle handle) {
+        battleUpdateRequestsToSend.add(handle);
+        return battles.get(handle);
     }
 
     public void tick() {
         if (!battleUpdateRequestsToSend.isEmpty()) {
             final List<BattleUpdateRequest> updateRequests = new ArrayList<>(battleUpdateRequestsToSend.size());
-            for (final UUID uuid : battleUpdateRequestsToSend) {
-                if (battles.containsKey(uuid)) {
-                    updateRequests.add(battles.get(uuid).createUpdateRequest());
+            for (final BattleHandle handle : battleUpdateRequestsToSend) {
+                if (battles.containsKey(handle)) {
+                    updateRequests.add(battles.get(handle).createUpdateRequest());
                 } else {
-                    updateRequests.add(new BattleUpdateRequest(BattleHandle.of(worldKey, uuid), -1));
+                    updateRequests.add(new BattleUpdateRequest(handle, -1));
                 }
             }
             BattleUpdateRequestSender.send(updateRequests);
@@ -57,16 +52,17 @@ public class ClientBattleWorldContainer {
     }
 
     public void update(final BattleUpdate update) {
-        if (battles.containsKey(update.handle().getUuid())) {
-            battles.get(update.handle().getUuid()).update(update);
-        } else if (update.offset() == 0 && update.environment().isPresent()) {
-            final ClientBattleImpl battle = new ClientBattleImpl(new BattleImpl(update.handle(), BattleStateMode.CLIENT, update.environment().get()));
+        if (battles.containsKey(update.handle())) {
+            battles.get(update.handle()).update(update);
+        } else if (update.offset() == 0 && update.initialData().isPresent()) {
+            final BattleUpdate.InitialData data = update.initialData().get();
+            final ClientBattleImpl battle = new ClientBattleImpl(update.handle(), BattleStateMode.CLIENT, data.initialEnvironment(), data.origin());
             battle.update(update);
-            battles.put(update.handle().getUuid(), battle);
+            battles.put(update.handle(), battle);
         }
     }
 
-    public void update(final UUID entityId, final List<UUID> battles, final List<UUID> inactiveBattles) {
+    public void update(final UUID entityId, final List<BattleParticipantHandle> battles, final List<BattleParticipantHandle> inactiveBattles) {
         activeEntityBattles.put(entityId, battles);
         entityBattles.put(entityId, inactiveBattles);
     }
@@ -74,11 +70,11 @@ public class ClientBattleWorldContainer {
     public List<BattleParticipantHandle> getEntityBattles(final UUID entityId, final TriState active) {
         entityBattleRequestsToSend.add(entityId);
         if (active == TriState.TRUE) {
-            return activeEntityBattles.getOrDefault(entityId, List.of()).stream().map(id -> BattleParticipantHandle.of(entityId, BattleHandle.of(worldKey, id))).toList();
+            return activeEntityBattles.getOrDefault(entityId, List.of());
         } else if (active == TriState.FALSE) {
-            return entityBattles.getOrDefault(entityId, List.of()).stream().map(id -> BattleParticipantHandle.of(entityId, BattleHandle.of(worldKey, id))).toList();
+            return entityBattles.getOrDefault(entityId, List.of());
         } else {
-            return Stream.concat(activeEntityBattles.getOrDefault(entityId, List.of()).stream(), entityBattles.getOrDefault(entityId, List.of()).stream()).map(id -> BattleParticipantHandle.of(entityId, BattleHandle.of(worldKey, id))).toList();
+            return Stream.concat(activeEntityBattles.getOrDefault(entityId, List.of()).stream(), entityBattles.getOrDefault(entityId, List.of()).stream()).toList();
         }
     }
 }

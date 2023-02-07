@@ -21,9 +21,11 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.AbstractBattleParticipantState;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.Map;
 import java.util.Optional;
@@ -289,7 +291,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
 
     private void checkPhase(final BattleStatePhase phase, final boolean exact) {
         if ((exact && phase != this.phase) || (!exact && this.phase.getOrder() < phase.getOrder())) {
-            throw new TBCExException();
+            throw new TBCExException("Phase is " + this.phase);
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.common.world;
 
+import com.mojang.serialization.DataResult;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
@@ -7,6 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleListenerEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialBoundsBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialParticipantJoinBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.StartBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
@@ -27,6 +29,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
@@ -60,19 +63,42 @@ public class ServerBattleWorldContainer implements AutoCloseable {
         database = new ServerBattleWorldDatabase(world.getRegistryManager().get(RegistryKeys.BIOME), directory.resolve(worldKey.getValue().toUnderscoreSeparatedString()));
     }
 
-    public Battle getBattle(final UUID uuid) {
+    public @Nullable Battle getBattle(final UUID uuid) {
         checkThread();
         Battle battle = battles.get(uuid);
         if (battle != null) {
             lastAccessTime.put(uuid, tickCount);
             return battle;
         }
-        battle = database.loadBattle(uuid).map(func -> func.create(BattleHandle.of(worldKey, uuid), BattleStateMode.SERVER)).getOrThrow(false, s -> {
-            throw new TBCExException(s);
+        final ServerWorld displayWorld = world.getServer().getWorld(BattleDisplayWorld.BATTLE_DISPLAY_WORLD);
+        if (displayWorld == null) {
+            throw new RuntimeException("No battle display world exists, did you break the datapack?");
+        }
+        final BattleHandle handle = BattleHandle.of(worldKey, uuid);
+        final DataResult<Battle.Factory> result = database.loadBattle(uuid);
+        if (result.result().isEmpty()) {
+            return null;
+        }
+        final Battle.Factory factory = result.getOrThrow(false, s -> {
+            throw new RuntimeException(s);
         });
-        attachListeners(battle);
-        battles.put(uuid, battle);
-        lastAccessTime.put(uuid, tickCount);
+        final BattleEnvironmentImpl.Initial environment = factory.environment();
+        final int xSpan = environment.max().getX() - environment.min().getX();
+        final int zSpan = environment.max().getZ() - environment.min().getZ();
+        boolean success = false;
+        try {
+            final BlockPos pos = ((BattleDisplayWorld) displayWorld).tbccex$allocate(handle, Math.max(xSpan, zSpan));
+            final Runnable reset = () -> ((BattleDisplayWorld) displayWorld).tbcex$apply(pos, environment);
+            battle = factory.create(handle, BattleStateMode.SERVER, world, pos, reset);
+            attachListeners(battle);
+            battles.put(uuid, battle);
+            lastAccessTime.put(uuid, tickCount);
+            success = true;
+        } finally {
+            if (!success) {
+                ((BattleDisplayWorld) displayWorld).tbcex$deallocate(handle);
+            }
+        }
         return battle;
     }
 
@@ -93,7 +119,12 @@ public class ServerBattleWorldContainer implements AutoCloseable {
                 if (state.getParticipantByHandle(participant).getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
                     database.onBattleJoinLeave(participant.getUuid(), state.getHandle().getUuid(), false);
                 }
+                final Iterator<? extends BattleEntityComponent> iterator = state.getParticipantByHandle(participant).entityComponents();
+                while (iterator.hasNext()) {
+                    iterator.next().onLeave(battle, world);
+                }
             }
+            ((BattleDisplayWorld) world.getServer().getWorld(BattleDisplayWorld.BATTLE_DISPLAY_WORLD)).tbcex$deallocate(state.getHandle());
         });
         BattleListenerEvent.EVENT.invoker().attachListeners(battle, world);
     }
@@ -119,12 +150,12 @@ public class ServerBattleWorldContainer implements AutoCloseable {
         if (reduced.isEmpty()) {
             throw new TBCExException("Tried to create auto-sizing battle with no bounded entities!");
         }
-        final Box expanded = reduced.get();
+        final Box expanded = reduced.get().expand(16);
         final BattleBounds bounds = new BattleBounds(expanded);
         return createBattle(entities, teamSetupAction, bounds, 24);
     }
 
-    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds, int padding) {
+    public BattleHandle createBattle(final Map<BattleEntity, Identifier> entities, final InitialTeamSetupBattleAction teamSetupAction, final BattleBounds bounds, final int padding) {
         checkThread();
         for (final BattleEntity entity : entities.keySet()) {
             if (entity instanceof Entity regularEntity && regularEntity.isRemoved()) {
@@ -132,23 +163,49 @@ public class ServerBattleWorldContainer implements AutoCloseable {
             }
         }
         final BattleHandle handle = BattleHandle.of(worldKey, database.findUnusedBattleUuid(random));
-        final Battle battle = new BattleImpl(handle, BattleStateMode.SERVER, BattleEnvironmentImpl.Initial.of(bounds, world, padding, Blocks.BARRIER.getDefaultState(), world.getRegistryManager().get(RegistryKeys.BIOME).entryOf(BiomeKeys.PLAINS)));
-        battles.put(handle.getUuid(), battle);
-        attachListeners(battle);
-        battle.pushAction(teamSetupAction);
-        battle.pushAction(new InitialBoundsBattleAction(bounds));
-        for (final Map.Entry<BattleEntity, Identifier> entry : entities.entrySet()) {
-            final BattleEntity entity = entry.getKey();
-            final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid(), entity.getDefaultBounds());
-            entity.buildParticipantState(builder);
-            final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
-            final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);
-            battle.pushAction(joinBattleAction);
-            if (entry.getKey() instanceof Entity regularEntity) {
-                built.onJoin(handle, regularEntity);
+        final BattleEnvironmentImpl.Initial environment = BattleEnvironmentImpl.Initial.of(bounds, world, padding, Blocks.BARRIER.getDefaultState(), world.getRegistryManager().get(RegistryKeys.BIOME).entryOf(BiomeKeys.PLAINS));
+        final ServerWorld displayWorld = world.getServer().getWorld(BattleDisplayWorld.BATTLE_DISPLAY_WORLD);
+        if (displayWorld == null) {
+            throw new RuntimeException("No battle display world exists, did you break the datapack?");
+        }
+        boolean success = false;
+        try {
+            final int xSpan = environment.max().getX() - environment.min().getX();
+            final int zSpan = environment.max().getZ() - environment.min().getZ();
+            final BlockPos pos = ((BattleDisplayWorld) displayWorld).tbccex$allocate(handle, Math.max(xSpan, zSpan));
+            final Runnable reset = () -> ((BattleDisplayWorld) displayWorld).tbcex$apply(pos, environment);
+            final Battle battle = new BattleImpl(handle, BattleStateMode.SERVER, environment, world, getOrigin(pos, environment), reset);
+            battles.put(handle.getUuid(), battle);
+            attachListeners(battle);
+            battle.pushAction(teamSetupAction);
+            battle.pushAction(new InitialBoundsBattleAction(bounds));
+            for (final Map.Entry<BattleEntity, Identifier> entry : entities.entrySet()) {
+                final BattleEntity entity = entry.getKey();
+                final BattleParticipantStateBuilder builder = BattleParticipantStateBuilder.create(entity.getUuid(), entity.getDefaultBounds());
+                entity.buildParticipantState(builder);
+                final BattleParticipantStateBuilder.Built built = builder.build(entry.getValue());
+                final InitialParticipantJoinBattleAction joinBattleAction = new InitialParticipantJoinBattleAction(built);
+                battle.pushAction(joinBattleAction);
+                if (entry.getKey() instanceof Entity regularEntity) {
+                    built.onJoin(handle, regularEntity);
+                }
+            }
+            battle.pushAction(StartBattleAction.INSTANCE);
+            success = true;
+        } finally {
+            if (!success) {
+                ((BattleDisplayWorld) displayWorld).tbcex$deallocate(handle);
             }
         }
         return handle;
+    }
+
+    private static BlockPos getOrigin(final BlockPos start, final BattleEnvironmentImpl.Initial initial) {
+        final int sectionMinX = initial.min().getX() >> 4;
+        final int sectionMinY = initial.min().getY() >> 4;
+        final int sectionMinZ = initial.min().getZ() >> 4;
+
+        return new BlockPos(start.getX() + initial.min().getX() - (sectionMinX << 4), start.getY() + initial.min().getY() - (sectionMinY << 4), start.getZ() + initial.min().getZ() - (sectionMinZ << 4));
     }
 
     public void pushDelayedPlayerComponent(final UUID playerUuid, final BattleHandle handle, final BattleEntityComponent component) {

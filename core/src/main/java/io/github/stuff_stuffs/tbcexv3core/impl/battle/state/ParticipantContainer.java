@@ -98,6 +98,7 @@ public class ParticipantContainer {
         }
         if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, state, reason, tracer)) {
             final AbstractBattleParticipantState removed = participantStates.remove(handle);
+            handlesByTeam.get(removed.getTeam()).remove(handle);
             removed.finish();
             tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(removed, state, reason, tracer);
@@ -129,7 +130,13 @@ public class ParticipantContainer {
 
     public boolean canEnd() {
         for (final BattleParticipantTeam first : teams.values()) {
+            if(handlesByTeam.get(first).isEmpty()) {
+                continue;
+            }
             for (final BattleParticipantTeam second : teams.values()) {
+                if(handlesByTeam.get(second).isEmpty()) {
+                    continue;
+                }
                 if (first == second) {
                     continue;
                 }

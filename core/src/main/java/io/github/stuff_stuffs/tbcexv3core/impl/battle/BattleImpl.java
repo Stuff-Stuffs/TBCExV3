@@ -7,6 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
@@ -17,6 +18,9 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateI
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.registry.Registry;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 
 import java.util.List;
@@ -29,15 +33,24 @@ public class BattleImpl implements Battle, BattleView {
     private final BattleHandle handle;
     private final BattleStateMode mode;
     private final BattleEnvironmentImpl.Initial initialEnvironment;
+    private final World world;
+    private final BlockPos origin;
+    private final Runnable reset;
     private AbstractBattleStateImpl state;
     private Tracer<ActionTrace> tracer;
 
-    public BattleImpl(final BattleHandle handle, final BattleStateMode mode, final BattleEnvironmentImpl.Initial environment) {
+    public BattleImpl(final BattleHandle handle, final BattleStateMode mode, final BattleEnvironmentImpl.Initial environment, final World world, final BlockPos origin, final Runnable reset) {
         this.handle = handle;
         this.mode = mode;
         initialEnvironment = environment;
+        this.reset = reset;
         state = (AbstractBattleStateImpl) BattleState.createEmpty(this.mode);
-        state.setup(handle, environment.create());
+        final BattleEnvironment battleEnvironment = environment.create(world);
+        reset.run();
+        ((BattleEnvironmentImpl) battleEnvironment).setup(state, origin);
+        state.setup(handle, battleEnvironment);
+        this.world = world;
+        this.origin = origin;
         actions = new ObjectArrayList<>();
         tracer = createTracer();
     }
@@ -46,11 +59,16 @@ public class BattleImpl implements Battle, BattleView {
         return Tracer.create(ROOT_START_TRACER, ROOT_END_TRACER);
     }
 
-    private BattleImpl(final List<BattleAction> actions, final BattleStateMode mode, final BattleHandle handle, final BattleEnvironmentImpl.Initial environment) {
-        this(handle, mode, environment);
+    private BattleImpl(final List<BattleAction> actions, final BattleStateMode mode, final BattleHandle handle, final BattleEnvironmentImpl.Initial environment, final World world, final BlockPos origin, final Runnable reset) {
+        this(handle, mode, environment, world, origin, reset);
         for (final BattleAction action : actions) {
             pushAction(action);
         }
+    }
+
+    @Override
+    public BlockPos origin() {
+        return origin;
     }
 
     @Override
@@ -64,7 +82,10 @@ public class BattleImpl implements Battle, BattleView {
             actions.removeElements(size, actions.size());
             tracer = createTracer();
             state = (AbstractBattleStateImpl) BattleState.createEmpty(mode);
-            state.setup(handle, initialEnvironment.create());
+            reset.run();
+            final BattleEnvironment environment = initialEnvironment.create(world);
+            ((BattleEnvironmentImpl) environment).setup(state, origin);
+            state.setup(handle, environment);
             for (final BattleAction action : actions) {
                 action.apply(state, tracer);
             }
@@ -108,6 +129,26 @@ public class BattleImpl implements Battle, BattleView {
         return tracer;
     }
 
+    @Override
+    public BlockPos toLocal(final BlockPos global) {
+        return global.subtract(origin).add(environment().min());
+    }
+
+    @Override
+    public BlockPos toGlobal(final BlockPos local) {
+        return local.subtract(environment().min()).add(origin);
+    }
+
+    @Override
+    public Vec3d toLocal(Vec3d global) {
+        return global.subtract(origin.getX(), origin.getY(), origin.getZ()).add(environment().min().getX(), environment().min().getY(), environment().min().getZ());
+    }
+
+    @Override
+    public Vec3d toGlobal(Vec3d local) {
+        return local.subtract(environment().min().getX(), environment().min().getY(), environment().min().getZ()).add(origin.getX(), origin.getY(), origin.getZ());
+    }
+
     public BattleEnvironmentImpl.Initial environment() {
         return initialEnvironment;
     }
@@ -125,7 +166,7 @@ public class BattleImpl implements Battle, BattleView {
                                 )
                         )
                 ).add(
-                        "environment",
+                        "initialData",
                         BattleEnvironmentImpl.Initial.codec(registry).encodeStart(ops, input.initialEnvironment).getOrThrow(false, s -> {
                             throw new RuntimeException(s);
                         })
@@ -150,10 +191,20 @@ public class BattleImpl implements Battle, BattleView {
                         throw new RuntimeException(s);
                     }));
                 });
-                final BattleEnvironmentImpl.Initial initial = BattleEnvironmentImpl.Initial.codec(registry).parse(ops, map.get("environment")).getOrThrow(false, s -> {
+                final BattleEnvironmentImpl.Initial initial = BattleEnvironmentImpl.Initial.codec(registry).parse(ops, map.get("initialData")).getOrThrow(false, s -> {
                     throw new RuntimeException(s);
                 });
-                return DataResult.success(Pair.of((handle, mode) -> new BattleImpl(actions, mode, handle, initial), ops.empty()));
+                return DataResult.success(Pair.of(new Factory() {
+                    @Override
+                    public Battle create(final BattleHandle handle, final BattleStateMode mode, final World world, final BlockPos pos, final Runnable worldReset) {
+                        return new BattleImpl(actions, mode, handle, initial, world, pos, worldReset);
+                    }
+
+                    @Override
+                    public BattleEnvironmentImpl.Initial environment() {
+                        return initial;
+                    }
+                }, ops.empty()));
             }
         };
     }

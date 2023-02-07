@@ -11,10 +11,12 @@ import io.github.stuff_stuffs.tbcexv3core.internal.client.entity.TBCExClientPlay
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleReceiver;
+import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
@@ -29,7 +31,7 @@ import java.util.function.Consumer;
 
 public class TBCExV3CoreClient implements ClientModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(TBCExV3Core.MOD_ID + "(Client)");
-    private static List<Consumer<WorldRenderContext>> DEFERRED_RENDERING = new ArrayList<>();
+    private final static List<Consumer<WorldRenderContext>> DEFERRED_RENDERING = new ArrayList<>();
 
     public static void defer(final Consumer<WorldRenderContext> consumer) {
         DEFERRED_RENDERING.add(consumer);
@@ -45,11 +47,12 @@ public class TBCExV3CoreClient implements ClientModInitializer {
             }
         });
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if(client.player!=null&&client.player.age%20==0) {
+                PlayerCurrentBattleRequestSender.send();
+            }
             if (client.player != null && ((TBCExClientPlayerExtensions) client.player).tbcexcore$action$current() != null) {
                 if (((TBCExPlayerEntity) client.player).tbcex$getCurrentBattle() == null) {
                     ((TBCExClientPlayerExtensions) client.player).tbcexcore$action$setCurrent(null, null);
-                } else {
-
                 }
             }
         });

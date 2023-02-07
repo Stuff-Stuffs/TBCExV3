@@ -1,6 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.event;
 
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.*;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PostBattleBlockSetEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PostBlockStateSetEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PreBattleBlockSetEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PreBlockStateSetEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PostChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PreChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.event.EventKey;
@@ -24,9 +27,6 @@ public final class CoreBattleEvents {
 
     public static final EventKey<PreBlockStateSetEvent.View, PreBlockStateSetEvent> PRE_BLOCK_STATE_SET_EVENT = EventKey.create(TBCExV3Core.createId("pre_block_state_set"), PreBlockStateSetEvent.View.class, PreBlockStateSetEvent.class);
     public static final EventKey<PostBlockStateSetEvent.View, PostBlockStateSetEvent> POST_BLOCK_STATE_SET_EVENT = EventKey.create(TBCExV3Core.createId("post_block_state_set"), PostBlockStateSetEvent.View.class, PostBlockStateSetEvent.class);
-
-    public static final EventKey<PreBiomeSetEvent.View, PreBiomeSetEvent> PRE_BIOME_SET_EVENT = EventKey.create(TBCExV3Core.createId("pre_biome_set"), PreBiomeSetEvent.View.class, PreBiomeSetEvent.class);
-    public static final EventKey<PostBiomeSetEvent.View, PostBiomeSetEvent> POST_BIOME_SET_EVENT = EventKey.create(TBCExV3Core.createId("post_biome_set"), PostBiomeSetEvent.View.class, PostBiomeSetEvent.class);
 
     public static final EventKey<PreBattleBlockSetEvent.View, PreBattleBlockSetEvent> PRE_BATTLE_BLOCK_SET_EVENT = EventKey.create(TBCExV3Core.createId("pre_battle_block_set"), PreBattleBlockSetEvent.View.class, PreBattleBlockSetEvent.class);
     public static final EventKey<PostBattleBlockSetEvent.View, PostBattleBlockSetEvent> POST_BATTLE_BLOCK_SET_EVENT = EventKey.create(TBCExV3Core.createId("post_battle_block_set"), PostBattleBlockSetEvent.View.class, PostBattleBlockSetEvent.class);

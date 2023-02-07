@@ -23,8 +23,8 @@ import java.util.Optional;
 public final class BattleUpdateRequestReceiver {
     public static final Identifier CHANNEL = TBCExV3Core.createId("battle_update_request");
 
-    public static void init() {
-        ServerPlayNetworking.registerGlobalReceiver(CHANNEL, BattleUpdateRequestReceiver::receive);
+    public static void init(ServerPlayNetworkHandler handler) {
+        ServerPlayNetworking.registerReceiver(handler, CHANNEL, BattleUpdateRequestReceiver::receive);
     }
 
     private static void receive(final MinecraftServer server, final ServerPlayerEntity entity, final ServerPlayNetworkHandler handler, final PacketByteBuf buf, final PacketSender sender) {
@@ -46,9 +46,9 @@ public final class BattleUpdateRequestReceiver {
                             for (int i = request.lastKnownGoodState() + 1; i < size; i++) {
                                 actions.add(battle.getAction(i));
                             }
-                            final Optional<BattleEnvironmentImpl.Initial> opt;
+                            final Optional<BattleUpdate.InitialData> opt;
                             if (request.lastKnownGoodState() == -1) {
-                                opt = Optional.of(((BattleImpl) battle).environment());
+                                opt = Optional.of(new BattleUpdate.InitialData(((BattleImpl) battle).environment(), battle.origin()));
                             } else {
                                 opt = Optional.empty();
                             }

@@ -19,11 +19,11 @@ public final class EntityBattlesUpdateSender {
         buf.writeUuid(entityId);
         buf.writeVarInt(activeBattles.size());
         for (final BattleParticipantHandle id : activeBattles) {
-            buf.writeUuid(id.getParent().getUuid());
+            buf.encode(BattleParticipantHandle.codec(), id);
         }
         buf.writeVarInt(inactiveBattles.size());
         for (final BattleParticipantHandle id : inactiveBattles) {
-            buf.writeUuid(id.getParent().getUuid());
+            buf.encode(BattleParticipantHandle.codec(), id);
         }
         ServerPlayNetworking.send(entity, CHANNEL, buf);
     }
