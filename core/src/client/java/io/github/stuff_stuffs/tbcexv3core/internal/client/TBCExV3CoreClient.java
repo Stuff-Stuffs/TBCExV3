@@ -12,6 +12,7 @@ import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRe
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleReceiver;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.PlayerCurrentBattleRequestSender;
+import io.github.stuff_stuffs.tbcexv3core.internal.client.world.ClientBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.api.ClientModInitializer;
@@ -59,6 +60,7 @@ public class TBCExV3CoreClient implements ClientModInitializer {
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             DEFERRED_RENDERING.forEach(e -> e.accept(context));
             DEFERRED_RENDERING.clear();
+            ((ClientBattleWorld)context.world()).tbcex$render(context);
         });
         BattleUpdateReceiver.init();
         EntityBattlesUpdateReceiver.init();

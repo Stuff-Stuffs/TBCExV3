@@ -2,6 +2,8 @@ package io.github.stuff_stuffs.tbcexv3core.api.util;
 
 import io.github.stuff_stuffs.tbcexv3core.impl.util.TracerImpl;
 
+import java.util.Optional;
+
 public interface Tracer<T> extends TracerView<T> {
     default NodeBuilder<T, IntervalStart<T>> pushStart() {
         return pushStart(true);

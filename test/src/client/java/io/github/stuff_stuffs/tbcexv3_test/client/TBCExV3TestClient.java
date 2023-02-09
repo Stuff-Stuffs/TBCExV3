@@ -4,16 +4,26 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test;
 import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntities;
 import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntity;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimator;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimatorRegistry;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.Animation;
+import io.github.stuff_stuffs.tbcexv3model.api.model.modelpart.CuboidModelPart;
+import io.github.stuff_stuffs.tbcexv3model.api.model.skeleton.Skeleton;
+import io.github.stuff_stuffs.tbcexv3model.api.scene.SceneRenderContext;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -33,13 +43,34 @@ import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class TBCExV3TestClient implements ClientModInitializer {
-    public static final String MOD_ID = "tbcexv3_test";
-
     @Override
     public void onInitializeClient() {
+        ActionTraceAnimatorRegistry.INSTANCE.register(ParticipantActionTraces.BattleParticipantJoined.ANIMATION_DATA, trace -> {
+            if (!(trace.value() instanceof ParticipantActionTraces.BattleParticipantJoined joined)) {
+                return Optional.empty();
+            }
+            final Identifier id = TBCExV3Test.id(joined.handle().getUuid().toString().replace('-', '_'));
+            return Optional.of(Animation.provideModel(id, (model, context) -> {
+                final Identifier root = TBCExV3Test.id("root");
+                final Skeleton skeleton = model.skeleton();
+                skeleton.addBone(root, Optional.empty());
+                final BlockPos center = context.context().state().getParticipantByHandle(joined.handle()).getBounds().center();
+                skeleton.bone(root).setTransform(new Matrix4f().identity().translate(center.getX() + 0.5F, center.getY(), center.getZ() + 0.5F));
+                model.get(root).addPart(TBCExV3Test.id("body"), new CuboidModelPart(0.5F, 1.0F, 0.5F, 0, 0, 256, 256));
+            }));
+        });
+
+        ActionTraceAnimatorRegistry.INSTANCE.register(ParticipantActionTraces.BattleParticipantLeft.ANIMATION_DATA, trace -> {
+            if (!(trace.value() instanceof ParticipantActionTraces.BattleParticipantJoined joined)) {
+                return Optional.empty();
+            }
+            final Identifier id = TBCExV3Test.id(joined.handle().getUuid().toString().replace('-', '_'));
+            return Optional.of(Animation.removeModel(id));
+        });
         TBCExV3Test.MESSAGE_CONSUMER = t -> MinecraftClient.getInstance().player.sendMessage(t);
         WorldRenderEvents.AFTER_ENTITIES.register(new WorldRenderEvents.AfterEntities() {
             @Override
@@ -67,7 +98,7 @@ public class TBCExV3TestClient implements ClientModInitializer {
                                 final BlockPos center = view.toGlobal(other.getBounds().center());
                                 final float r = relation == BattleParticipantTeamRelation.ENEMIES ? 1.0F : 0.0F;
                                 final float g = relation == BattleParticipantTeamRelation.ALLIES ? 1.0F : 0.0F;
-                                VertexConsumer consumer = context.consumers().getBuffer(RenderLayer.getLines());
+                                final VertexConsumer consumer = context.consumers().getBuffer(RenderLayer.getLines());
                                 other.getBounds().partStream().map(BattleParticipantBounds.Part::box).forEach(box -> WorldRenderer.drawBox(stack, consumer, view.toGlobal(box), r, g, 0.0F, 1));
                                 stack.translate(center.getX(), center.getY(), center.getZ());
                                 stack.translate(0, 2, 0);

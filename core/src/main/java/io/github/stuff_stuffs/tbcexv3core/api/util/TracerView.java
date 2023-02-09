@@ -87,6 +87,8 @@ public interface TracerView<T> {
         Map<Relation, Collection<Node<T>>> reversedRelations();
 
         T value();
+
+        NodeId id();
     }
 
     non-sealed interface Instant<T> extends Node<T> {
@@ -98,5 +100,13 @@ public interface TracerView<T> {
 
     non-sealed interface IntervalEnd<T> extends Node<T> {
         IntervalStart<T> start();
+    }
+
+    interface NodeId {
+        @Override
+        int hashCode();
+
+        @Override
+        boolean equals(Object other);
     }
 }

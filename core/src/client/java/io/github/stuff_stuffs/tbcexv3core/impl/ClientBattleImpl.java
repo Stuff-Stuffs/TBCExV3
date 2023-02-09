@@ -1,5 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.impl;
 
+import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimatorRegistry;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.Battle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
@@ -8,6 +10,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TracerEventStream;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
@@ -16,11 +19,13 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequest;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.Animation;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class ClientBattleImpl implements Battle {
     private static final ActionTrace ROOT_START_TRACER = ActionTrace.BattleStart.INSTANCE;
@@ -30,12 +35,16 @@ public class ClientBattleImpl implements Battle {
     private final BattleStateMode mode;
     private final BattleEnvironmentImpl.Initial initialEnvironment;
     private final BlockPos origin;
+    private final TracerEventStream<ActionTrace> eventStream;
+    private final Consumer<Animation<BattleAnimationContext>> animationConsumer;
     private ClientBattleEnvironmentImpl environment;
     private AbstractBattleStateImpl state;
     private Tracer<ActionTrace> tracer;
     private int lastKnownGoodState;
 
-    public ClientBattleImpl(final BattleHandle handle, final BattleStateMode mode, final BattleEnvironmentImpl.Initial environment, final BlockPos origin) {
+    public ClientBattleImpl(final BattleHandle handle, final BattleStateMode mode, final BattleEnvironmentImpl.Initial environment, final BlockPos origin, final Consumer<Animation<BattleAnimationContext>> consumer) {
+        animationConsumer = consumer;
+        eventStream = TracerEventStream.create();
         this.handle = handle;
         this.mode = mode;
         initialEnvironment = environment;
@@ -67,6 +76,8 @@ public class ClientBattleImpl implements Battle {
         for (final BattleAction action : update.actions()) {
             pushAction(action);
         }
+        eventStream.update(tracer);
+        eventStream.newEvents().map(ActionTraceAnimatorRegistry.INSTANCE::animate).filter(Optional::isPresent).map(Optional::get).forEach(animationConsumer);
         lastKnownGoodState = update.offset() + update.actions().size() - 1;
     }
 
@@ -110,12 +121,12 @@ public class ClientBattleImpl implements Battle {
     }
 
     @Override
-    public Vec3d toLocal(Vec3d global) {
+    public Vec3d toLocal(final Vec3d global) {
         return global.subtract(origin.getX(), origin.getY(), origin.getZ()).add(environment.min().getX(), environment.min().getY(), environment.min().getZ());
     }
 
     @Override
-    public Vec3d toGlobal(Vec3d local) {
+    public Vec3d toGlobal(final Vec3d local) {
         return local.subtract(environment.min().getX(), environment.min().getY(), environment.min().getZ()).add(origin.getX(), origin.getY(), origin.getZ());
     }
 

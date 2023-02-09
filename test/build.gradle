@@ -1,6 +1,8 @@
 archivesBaseName="tbcexv3test"
 
 dependencies {
-   api project(path: ':core', configuration: "namedElements")
-   clientImplementation project(path: ':core', configuration: "namedElements")
+   implementation project(path: ":model", configuration: "namedElements")
+   clientImplementation project(":model").sourceSets.client.output
+   implementation project(path: ":core", configuration: "namedElements")
+   clientImplementation project(":core").sourceSets.client.output
 }

@@ -9,7 +9,11 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equi
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStat;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+
+import java.util.Optional;
 
 public final class ParticipantActionTraces {
     private ParticipantActionTraces() {
@@ -25,6 +29,12 @@ public final class ParticipantActionTraces {
             BlockPos start,
             BlockPos end
     ) implements ActionTrace {
+        public static final Identifier ANIMATION_DATA = TBCExV3Core.createId("participant_moved");
+
+        @Override
+        public Optional<Identifier> animationData() {
+            return Optional.of(ANIMATION_DATA);
+        }
     }
 
     public record BattleParticipantEndMove(
@@ -62,12 +72,24 @@ public final class ParticipantActionTraces {
     public record BattleParticipantJoined(
             BattleParticipantHandle handle
     ) implements ActionTrace {
+        public static final Identifier ANIMATION_DATA = TBCExV3Core.createId("participant_joined");
+
+        @Override
+        public Optional<Identifier> animationData() {
+            return Optional.of(ANIMATION_DATA);
+        }
     }
 
     public record BattleParticipantLeft(
             BattleParticipantHandle handle,
             BattleParticipantRemovalReason reason
     ) implements ActionTrace {
+        public static final Identifier ANIMATION_DATA = TBCExV3Core.createId("participant_left");
+
+        @Override
+        public Optional<Identifier> animationData() {
+            return Optional.of(ANIMATION_DATA);
+        }
     }
 
     public static final class Inventory {

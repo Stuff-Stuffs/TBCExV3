@@ -74,7 +74,11 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
         InterceptingComponent<Component> interceptingComponent = new InterceptingComponent<>(Sizing.content(), Sizing.fill(100), () -> {
             canBuild.set(builder.canBuild());
             final Iterator<? extends BattleParticipantActionTargetType<?>> types = builder.types();
-            Vec3d camera = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
+            BattleView battle = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(((TBCExPlayerEntity) MinecraftClient.getInstance().player).tbcex$getCurrentBattle());
+            if (battle == null) {
+                return;
+            }
+            Vec3d camera = battle.toLocal(MinecraftClient.getInstance().gameRenderer.getCamera().getPos());
             Vec3d end = camera.add(BattleActionHudRegistry.getMouseVector().multiply(24));
             double best = targetObservable.get().map(Pair::getSecond).orElse(Double.POSITIVE_INFINITY);
             BattleParticipantActionTarget target = null;

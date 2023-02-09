@@ -21,10 +21,11 @@ public class TracerImpl<T> implements Tracer<T> {
     private final List<Instant<T>> instants;
     private final IntervalStartImpl<T> start;
     private final T endValue;
+    private long nextId = 0;
 
     public TracerImpl(final T startValue, final T endValue) {
         open = new ObjectOpenHashSet<>();
-        start = new IntervalStartImpl<>(this, startValue, Map.of());
+        start = new IntervalStartImpl<>(this, startValue, Map.of(), nextId++);
         open.add(start);
         this.endValue = endValue;
         starts = new ArrayList<>();
@@ -35,7 +36,7 @@ public class TracerImpl<T> implements Tracer<T> {
     @Override
     public NodeBuilder<T, IntervalStart<T>> pushStart(final boolean defaultRelations) {
         return new NodeBuilderImpl<>(this, defaultRelations, (value, relations) -> {
-            final IntervalStart<T> start = new IntervalStartImpl<>(TracerImpl.this, value, relations);
+            final IntervalStart<T> start = new IntervalStartImpl<>(TracerImpl.this, value, relations, nextId++);
             starts.add(start);
             open.add(start);
             applyRelations(relations, start);
@@ -71,7 +72,7 @@ public class TracerImpl<T> implements Tracer<T> {
             throw new RuntimeException();
         }
         return new NodeBuilderImpl<>(this, defaultRelation, (value, relations) -> {
-            final IntervalEndImpl<T> end = new IntervalEndImpl<>(TracerImpl.this, start, value, relations);
+            final IntervalEndImpl<T> end = new IntervalEndImpl<>(TracerImpl.this, start, value, nextId++, relations);
             ends.add(end);
             if (!open.remove(start)) {
                 throw new RuntimeException();
@@ -86,7 +87,7 @@ public class TracerImpl<T> implements Tracer<T> {
     @Override
     public NodeBuilder<T, Instant<T>> pushInstant(final boolean defaultRelations) {
         return new NodeBuilderImpl<>(this, defaultRelations, (value, relations) -> {
-            final Instant<T> instant = new InstantImpl<>(TracerImpl.this, value, relations);
+            final Instant<T> instant = new InstantImpl<>(TracerImpl.this, value, nextId++, relations);
             instants.add(instant);
             applyRelations(relations, instant);
             stack.push(instant);
@@ -186,12 +187,14 @@ public class TracerImpl<T> implements Tracer<T> {
     private static final class InstantImpl<T> implements Instant<T> {
         private final TracerImpl<T> parent;
         private final T value;
+        private final long id;
         private final Map<Relation, Collection<Node<T>>> relations;
         private final Map<Relation, Collection<Node<T>>> reversedRelations;
 
-        private InstantImpl(final TracerImpl<T> parent, final T value, final Map<Relation, Collection<Node<T>>> relations) {
+        private InstantImpl(final TracerImpl<T> parent, final T value, final long id, final Map<Relation, Collection<Node<T>>> relations) {
             this.parent = parent;
             this.value = value;
+            this.id = id;
             this.relations = relations;
             reversedRelations = new Object2ReferenceOpenHashMap<>();
         }
@@ -214,6 +217,11 @@ public class TracerImpl<T> implements Tracer<T> {
         @Override
         public T value() {
             return value;
+        }
+
+        @Override
+        public NodeId id() {
+            return new NodeIdImpl(parent, id);
         }
     }
 
@@ -221,13 +229,15 @@ public class TracerImpl<T> implements Tracer<T> {
         private final TracerImpl<T> parent;
         private final IntervalStart<T> start;
         private final T value;
+        private final long id;
         private final Map<Relation, Collection<Node<T>>> relations;
         private final Map<Relation, Collection<Node<T>>> reversedRelations;
 
-        private IntervalEndImpl(final TracerImpl<T> parent, final IntervalStart<T> start, final T value, final Map<Relation, Collection<Node<T>>> relations) {
+        private IntervalEndImpl(final TracerImpl<T> parent, final IntervalStart<T> start, final T value, final long id, final Map<Relation, Collection<Node<T>>> relations) {
             this.parent = parent;
             this.start = start;
             this.value = value;
+            this.id = id;
             this.relations = relations;
             reversedRelations = new Object2ReferenceOpenHashMap<>();
         }
@@ -250,6 +260,11 @@ public class TracerImpl<T> implements Tracer<T> {
         @Override
         public T value() {
             return value;
+        }
+
+        @Override
+        public NodeId id() {
+            return new NodeIdImpl(parent, id);
         }
 
         @Override
@@ -263,12 +278,14 @@ public class TracerImpl<T> implements Tracer<T> {
         private final T value;
         private final Map<Relation, Collection<Node<T>>> relations;
         private final Map<Relation, Collection<Node<T>>> reversedRelations;
+        private final long id;
         private @Nullable IntervalEnd<T> end;
 
-        private IntervalStartImpl(final TracerImpl<T> parent, final T value, final Map<Relation, Collection<Node<T>>> relations) {
+        private IntervalStartImpl(final TracerImpl<T> parent, final T value, final Map<Relation, Collection<Node<T>>> relations, final long id) {
             this.parent = parent;
             this.value = value;
             this.relations = relations;
+            this.id = id;
             reversedRelations = new Object2ReferenceOpenHashMap<>();
             end = null;
         }
@@ -294,8 +311,17 @@ public class TracerImpl<T> implements Tracer<T> {
         }
 
         @Override
+        public NodeId id() {
+            return new NodeIdImpl(parent, id);
+        }
+
+        @Override
         public Optional<IntervalEnd<T>> end() {
             return Optional.ofNullable(end);
         }
+    }
+
+    private record NodeIdImpl(TracerImpl<?> parent, long id) implements NodeId {
+
     }
 }
