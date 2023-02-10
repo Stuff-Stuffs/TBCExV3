@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierPhase;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TopologicalSort;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;

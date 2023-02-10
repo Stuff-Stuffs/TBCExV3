@@ -17,7 +17,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityComponents;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;

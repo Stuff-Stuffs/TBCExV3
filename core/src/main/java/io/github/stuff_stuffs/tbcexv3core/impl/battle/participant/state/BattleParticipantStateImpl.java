@@ -3,6 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state;
 import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
@@ -19,11 +20,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.inventory.AbstractBattleParticipantInventory;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.util.math.BlockPos;
 
@@ -248,6 +248,12 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
         handle = BattleParticipantHandle.of(uuid, state.getHandle());
         inventory.setup(this, handle);
         phase = BattleParticipantStatePhase.INITIALIZATION;
+    }
+
+    @Override
+    public void ready() {
+        checkPhaseExact(BattleParticipantStatePhase.INITIALIZATION);
+        phase = BattleParticipantStatePhase.FIGHT;
     }
 
     @Override

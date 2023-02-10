@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.event;
 
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventListenerKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventListenerKey;
 
 public class EventListenerKeyImpl implements EventListenerKey {
     private boolean exists = true;

@@ -4,14 +4,24 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentBlock;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.biome.Biome;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.Optional;
 
 public class ClientBattleEnvironmentImpl implements BattleEnvironment {
@@ -66,7 +76,7 @@ public class ClientBattleEnvironmentImpl implements BattleEnvironment {
         final int xSpan = sectionMaxX - sectionMinX + 1;
         final int ySpan = sectionMaxY - sectionMinY + 1;
         final int zSpan = sectionMaxZ - sectionMinZ + 1;
-        return (sectionX * xSpan + sectionY) * ySpan + sectionZ;
+        return (sectionX * ySpan + sectionY) * zSpan + sectionZ;
     }
 
     @Override
@@ -170,5 +180,76 @@ public class ClientBattleEnvironmentImpl implements BattleEnvironment {
             return Optional.empty();
         }
         return Optional.ofNullable(sections[index].getBattleBlock(pos.getX(), pos.getY(), pos.getZ()));
+    }
+
+    @Override
+    public BlockView asBlockView() {
+        return new BlockView() {
+            @Nullable
+            @Override
+            public BlockEntity getBlockEntity(final BlockPos pos) {
+                return null;
+            }
+
+            @Override
+            public BlockState getBlockState(final BlockPos pos) {
+                return ClientBattleEnvironmentImpl.this.getBlockState(pos);
+            }
+
+            @Override
+            public FluidState getFluidState(final BlockPos pos) {
+                return ClientBattleEnvironmentImpl.this.getBlockState(pos).getFluidState();
+            }
+
+            @Override
+            public int getHeight() {
+                return max.getY() - min.getY() + 1;
+            }
+
+            @Override
+            public int getBottomY() {
+                return min.getY();
+            }
+        };
+    }
+
+    @Override
+    public boolean checkForStanding(final BattleParticipantBounds bounds, final BlockPos pos, final boolean onGround) {
+        final BattleParticipantBounds move = BattleParticipantBounds.move(pos, bounds);
+        final Iterator<BattleParticipantBounds.Part> iterator = move.parts();
+        boolean foundFloor = false;
+        final BlockView blockView = asBlockView();
+        while (iterator.hasNext()) {
+            final BattleParticipantBounds.Part part = iterator.next();
+            final int minX = MathHelper.floor(part.box().minX - 1);
+            final int minY = MathHelper.floor(part.box().minY - 1);
+            final int minZ = MathHelper.floor(part.box().minZ - 1);
+            final int maxX = MathHelper.ceil(part.box().maxX + 1);
+            final int maxY = MathHelper.ceil(part.box().maxY + 1);
+            final int maxZ = MathHelper.ceil(part.box().maxZ + 1);
+            final VoxelShape collisionShape = VoxelShapes.cuboid(part.box());
+            final VoxelShape floorShape = VoxelShapes.cuboid(part.box().offset(0, -1, 0));
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        final BlockState state = getBlockState(new BlockPos(x, y, z));
+                        final VoxelShape shape = state.getCollisionShape(blockView, pos);
+                        if(shape.isEmpty()) {
+                            continue;
+                        }
+                        VoxelShape offset = shape.offset(x,y,z);
+                        if (VoxelShapes.matchesAnywhere(collisionShape, offset, BooleanBiFunction.AND)) {
+                            return false;
+                        }
+                        if (onGround && !foundFloor) {
+                            if (VoxelShapes.matchesAnywhere(floorShape, offset, BooleanBiFunction.AND)) {
+                                foundFloor = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return !onGround || foundFloor;
     }
 }

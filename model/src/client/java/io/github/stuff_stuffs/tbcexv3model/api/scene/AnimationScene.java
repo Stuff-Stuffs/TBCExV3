@@ -15,7 +15,11 @@ public interface AnimationScene {
 
     Model model(Identifier id);
 
-    void render(MatrixStack matrices, VertexConsumerProvider vertexConsumer, Vec3d cameraPos, Quaternionfc cameraLook);
+    void removeModel(Identifier id);
+
+    void addModel(Identifier id);
+
+    void render(MatrixStack matrices, VertexConsumerProvider vertexConsumer, Vec3d cameraPos, Quaternionfc cameraLook, double time);
 
     static AnimationScene create() {
         return new AnimationSceneImpl();

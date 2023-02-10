@@ -5,24 +5,24 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.impl.ClientBattleImpl;
-import io.github.stuff_stuffs.tbcexv3core.internal.client.TBCExV3CoreClient;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequest;
-import io.github.stuff_stuffs.tbcexv3model.api.animation.Animation;
 import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManager;
-import io.github.stuff_stuffs.tbcexv3model.api.scene.SceneRenderContext;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 //TODO timeout
@@ -97,15 +97,9 @@ public class ClientBattleWorldContainer {
 
     private static final class AnimationState {
         private final AnimationManager<BattleAnimationContext> manager = AnimationManager.create();
-        private double lastTime = Double.NEGATIVE_INFINITY;
 
-        public void add(final Animation<BattleAnimationContext> animation) {
-            final OptionalDouble submission = manager.submit(animation, lastTime);
-            if (submission.isPresent()) {
-                lastTime = submission.getAsDouble();
-            } else {
-                TBCExV3CoreClient.LOGGER.error("Error while trying to schedule animation");
-            }
+        public void add(final Consumer<AnimationManager<BattleAnimationContext>> consumer) {
+            consumer.accept(manager);
         }
 
         public void render(final WorldRenderContext context, final BattleView battle) {
@@ -114,10 +108,33 @@ public class ClientBattleWorldContainer {
             matrices.push();
             final Vec3d pos = battle.toLocal(context.camera().getPos());
             matrices.translate(-pos.x, -pos.y, -pos.z);
-            final SceneRenderContext<BattleAnimationContext> sceneRenderContext = SceneRenderContext.create(matrices, context.consumers(), pos, context.camera().getRotation(), manager.scene(), battle::getState);
-            manager.update(time);
-            manager.forEach(animation -> animation.render(sceneRenderContext, time));
-            manager.scene().render(matrices, context.consumers(), pos, context.camera().getRotation());
+            manager.update(time, new BattleAnimationContext() {
+                @Override
+                public BattleStateView state() {
+                    return battle.getState();
+                }
+
+                @Override
+                public BlockPos toLocal(final BlockPos global) {
+                    return battle.toLocal(global);
+                }
+
+                @Override
+                public BlockPos toGlobal(final BlockPos local) {
+                    return battle.toGlobal(local);
+                }
+
+                @Override
+                public Vec3d toLocal(final Vec3d global) {
+                    return battle.toLocal(global);
+                }
+
+                @Override
+                public Vec3d toGlobal(final Vec3d local) {
+                    return battle.toGlobal(local);
+                }
+            });
+            manager.scene().render(matrices, context.consumers(), pos, context.camera().getRotation(), time);
             matrices.pop();
         }
     }

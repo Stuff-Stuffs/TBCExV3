@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.event;
 
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventKey;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 

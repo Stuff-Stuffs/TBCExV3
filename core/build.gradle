@@ -5,4 +5,6 @@ dependencies {
     modClientImplementation "io.wispforest:owo-lib:${project.owo_version}"
     implementation project(path: ":model", configuration: "namedElements")
     clientImplementation project(":model").sourceSets.client.output
+    implementation project(path: ":util", configuration: "namedElements")
+    clientImplementation project(":util").sourceSets.client.output
 }

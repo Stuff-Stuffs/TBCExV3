@@ -5,8 +5,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.Batt
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 
 public interface PostEquipBattleParticipantEquipmentEvent {
     void postEquip(BattleParticipantState state, BattleParticipantInventoryHandle handle, BattleParticipantEquipmentSlot slot, Tracer<ActionTrace> tracer);

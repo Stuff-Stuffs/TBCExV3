@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3model.api.model.modelpart;
 
-import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderContext;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderPartContext;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
@@ -84,7 +84,7 @@ public class CuboidModelPart implements ModelPart {
     }
 
     @Override
-    public void render(final ModelRenderContext context) {
+    public void render(final ModelRenderPartContext context, double time) {
         final MatrixStack matrices = context.matrices();
         final Vector4f scratch = new Vector4f();
         final Vector3f normScratch = new Vector3f();

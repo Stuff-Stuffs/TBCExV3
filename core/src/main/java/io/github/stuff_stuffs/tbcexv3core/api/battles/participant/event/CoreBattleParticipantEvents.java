@@ -11,7 +11,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.Pos
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreGiveBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventKey;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 
 public final class CoreBattleParticipantEvents {

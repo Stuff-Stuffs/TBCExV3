@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3model.impl.scene;
 
 import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
-import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderContext;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderPartContext;
 import io.github.stuff_stuffs.tbcexv3model.api.model.modelpart.ModelPart;
 import io.github.stuff_stuffs.tbcexv3model.api.model.skeleton.Bone;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
@@ -29,10 +29,12 @@ public class AnimationSceneImpl implements AnimationScene {
         return models.get(id);
     }
 
+    @Override
     public void removeModel(final Identifier id) {
         models.remove(id);
     }
 
+    @Override
     public void addModel(final Identifier id) {
         if (!models.containsKey(id)) {
             models.put(id, Model.create());
@@ -40,7 +42,7 @@ public class AnimationSceneImpl implements AnimationScene {
     }
 
     @Override
-    public void render(final MatrixStack matrices, final VertexConsumerProvider vertexConsumer, final Vec3d cameraPos, final Quaternionfc cameraLook) {
+    public void render(final MatrixStack matrices, final VertexConsumerProvider vertexConsumer, final Vec3d cameraPos, final Quaternionfc cameraLook, final double time) {
         for (final Map.Entry<Identifier, Model> entry : models.entrySet()) {
             final Model model = entry.getValue();
             for (final Identifier boneId : model.skeleton().bones()) {
@@ -57,7 +59,7 @@ public class AnimationSceneImpl implements AnimationScene {
                         completeTransform.transform(vec);
                         cameraPosTransformed = new Vector3f(vec.x() / vec.w(), vec.y() / vec.w(), vec.z() / vec.w());
                     }
-                    part.render(ModelRenderContext.of(matrices, vertexConsumer, cameraPosTransformed, cameraLook, model, boneId, partId));
+                    part.render(ModelRenderPartContext.of(matrices, vertexConsumer, cameraPosTransformed, cameraLook, model, boneId, partId), time);
                 }
                 if (cameraPosTransformed != null) {
                     matrices.pop();

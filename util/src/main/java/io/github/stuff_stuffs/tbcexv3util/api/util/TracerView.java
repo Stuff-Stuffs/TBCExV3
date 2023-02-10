@@ -1,6 +1,5 @@
-package io.github.stuff_stuffs.tbcexv3core.api.util;
+package io.github.stuff_stuffs.tbcexv3util.api.util;
 
-import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -11,7 +10,7 @@ import java.util.stream.Stream;
 
 @ApiStatus.NonExtendable
 public interface TracerView<T> {
-    Relation CAUSED_BY = createRelation(TBCExV3Core.createId("caused_by"));
+    Relation CAUSED_BY = createRelation(new Identifier("tbcexv3_core", "caused_by"));
 
     IntervalStart<T> root();
 

@@ -5,8 +5,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 
 public interface PreChangeTeamRelationEvent {
     boolean preChangeTeamRelation(BattleState state, BattleParticipantTeam first, BattleParticipantTeam second, BattleParticipantTeamRelation oldRelation, BattleParticipantTeamRelation newRelation, Tracer<ActionTrace> tracer);

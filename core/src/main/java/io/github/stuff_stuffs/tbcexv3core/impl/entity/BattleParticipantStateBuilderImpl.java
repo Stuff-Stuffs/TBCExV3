@@ -14,8 +14,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityCompo
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TopologicalSort;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;

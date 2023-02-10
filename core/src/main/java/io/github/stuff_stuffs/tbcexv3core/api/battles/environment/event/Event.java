@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3core.api.event;
+package io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event;
 
 import org.jetbrains.annotations.ApiStatus;
 

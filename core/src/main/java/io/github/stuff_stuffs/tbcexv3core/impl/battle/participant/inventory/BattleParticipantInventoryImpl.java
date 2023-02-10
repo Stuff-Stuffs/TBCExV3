@@ -12,9 +12,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.Batt
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.equipment.BattleParticipantEquipmentSlot;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceAVLTreeMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceSortedMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;

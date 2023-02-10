@@ -21,6 +21,7 @@ public class SkeletonImpl implements Skeleton {
         return bones.get(id);
     }
 
+    @Override
     public boolean addBone(final Identifier id, final Optional<Identifier> parentId) {
         if (bones.containsKey(id)) {
             return false;
@@ -36,6 +37,7 @@ public class SkeletonImpl implements Skeleton {
         }
     }
 
+    @Override
     public boolean removeBone(final Identifier id) {
         if (!bones.containsKey(id)) {
             return false;

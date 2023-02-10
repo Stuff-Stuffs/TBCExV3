@@ -11,8 +11,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironm
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;

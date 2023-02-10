@@ -1,7 +1,7 @@
-package io.github.stuff_stuffs.tbcexv3core.impl.util;
+package io.github.stuff_stuffs.tbcexv3util.impl.util;
 
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerEventStream;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerEventStream;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 import java.util.ArrayList;

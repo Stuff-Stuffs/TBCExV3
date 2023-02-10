@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
@@ -13,10 +14,28 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public record BattleParticipantActionBattleParticipantTarget(
-        BattleParticipantStateView state,
+        BattleParticipantHandle handle,
         Text name,
         TooltipText description
 ) implements BattleParticipantActionTarget {
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BattleParticipantActionBattleParticipantTarget target)) {
+            return false;
+        }
+
+        return handle.equals(target.handle);
+    }
+
+    @Override
+    public int hashCode() {
+        return handle.hashCode();
+    }
+
     @Override
     public BattleParticipantActionTargetType<?> type() {
         return CoreBattleActionTargetTypes.BATTLE_PARTICIPANT_TARGET_TYPE;
@@ -34,7 +53,22 @@ public record BattleParticipantActionBattleParticipantTarget(
 
     public static BattleParticipantActionBuilder.RaycastIterator<BattleParticipantActionBattleParticipantTarget> filter(final BattleParticipantStateView stateView, final Predicate<BattleParticipantStateView> predicate, final Function<BattleParticipantStateView, Text> nameFunction, final Function<BattleParticipantStateView, TooltipText> description, final Consumer<BattleParticipantActionTarget> consumer) {
         final BattleStateView state = stateView.getBattleState();
-        final List<BattleParticipantActionBattleParticipantTarget> views = state.getParticipantStream().map(state::getParticipantByHandle).filter(predicate).map(view -> new BattleParticipantActionBattleParticipantTarget(view, nameFunction.apply(view), description.apply(view))).toList();
-        return new BattleParticipantActionBuilder.RaycastIterator<>(BattleParticipantActionBuilder.TargetRaycaster.of(views::iterator, view -> view.state().getBounds().partStream().map(BattleParticipantBounds.Part::box).iterator(), consumer::accept), BattleParticipantActionBuilder.TargetIterator.of(views.iterator(), consumer));
+        final List<BattleParticipantActionBattleParticipantTarget> targets = state.getParticipantStream().map(
+                state::getParticipantByHandle
+        ).filter(
+                predicate
+        ).map(
+                view -> new BattleParticipantActionBattleParticipantTarget(view.getHandle(), nameFunction.apply(view), description.apply(view))
+        ).toList();
+        return new BattleParticipantActionBuilder.RaycastIterator<>(
+                BattleParticipantActionBuilder.TargetRaycaster.of(
+                        targets::iterator,
+                        handle -> state.getParticipantByHandle(handle.handle()).getBounds().partStream().map(BattleParticipantBounds.Part::box).iterator(), consumer::accept
+                ),
+                BattleParticipantActionBuilder.TargetIterator.of(
+                        targets.iterator(),
+                        consumer
+                )
+        );
     }
 }

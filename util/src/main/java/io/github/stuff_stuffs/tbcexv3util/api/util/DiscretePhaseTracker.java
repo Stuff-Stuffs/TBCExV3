@@ -1,6 +1,6 @@
-package io.github.stuff_stuffs.tbcexv3core.api.util;
+package io.github.stuff_stuffs.tbcexv3util.api.util;
 
-import io.github.stuff_stuffs.tbcexv3core.impl.util.DiscretePhaseTrackerImpl;
+import io.github.stuff_stuffs.tbcexv3util.impl.util.DiscretePhaseTrackerImpl;
 import net.minecraft.util.Identifier;
 
 import java.util.Comparator;

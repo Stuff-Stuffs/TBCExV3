@@ -7,8 +7,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantAc
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Optional;
@@ -31,7 +31,7 @@ public class BattleParticipantTeleportBattleAction implements BattleAction {
 
     @Override
     public BattleActionType<?> getType() {
-        return null;
+        return CoreBattleActions.BATTLE_PARTICIPANT_TELEPORT_ACTION;
     }
 
     @Override

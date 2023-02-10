@@ -6,7 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PreBattl
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PreBlockStateSetEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PostChangeTeamRelationEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PreChangeTeamRelationEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventKey;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 
 public final class CoreBattleEvents {

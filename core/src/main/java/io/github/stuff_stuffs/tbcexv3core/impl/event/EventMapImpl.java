@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.event;
 
-import io.github.stuff_stuffs.tbcexv3core.api.event.*;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.Stack;

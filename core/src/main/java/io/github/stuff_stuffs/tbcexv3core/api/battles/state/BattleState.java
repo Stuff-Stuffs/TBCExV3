@@ -11,8 +11,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.BattleStateImpl;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;

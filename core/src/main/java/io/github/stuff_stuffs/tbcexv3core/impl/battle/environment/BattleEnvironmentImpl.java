@@ -8,16 +8,21 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentBlock;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.block.BlockState;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.border.WorldBorder;
@@ -26,10 +31,7 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.ChunkStatus;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class BattleEnvironmentImpl implements BattleEnvironment {
     private final BlockState outOfBoundsState;
@@ -163,6 +165,47 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
         }
         return Optional.ofNullable(specialBlocks.get(pos));
     }
+
+    @Override
+    public boolean checkForStanding(final BattleParticipantBounds bounds, final BlockPos pos, final boolean onGround) {
+        final BattleParticipantBounds move = BattleParticipantBounds.move(pos, bounds);
+        final Iterator<BattleParticipantBounds.Part> iterator = move.parts();
+        boolean foundFloor = false;
+        while (iterator.hasNext()) {
+            final BattleParticipantBounds.Part part = iterator.next();
+            final int minX = MathHelper.floor(part.box().minX - 1);
+            final int minY = MathHelper.floor(part.box().minY - 1);
+            final int minZ = MathHelper.floor(part.box().minZ - 1);
+            final int maxX = MathHelper.ceil(part.box().maxX + 1);
+            final int maxY = MathHelper.ceil(part.box().maxY + 1);
+            final int maxZ = MathHelper.ceil(part.box().maxZ + 1);
+            final VoxelShape collisionShape = VoxelShapes.cuboid(part.box());
+            final VoxelShape floorShape = VoxelShapes.cuboid(part.box().offset(0, -1, 0));
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        final BlockState state = getBlockState(new BlockPos(x, y, z));
+                        final VoxelShape shape = state.getCollisionShape(delegate, pos);
+                        if (VoxelShapes.matchesAnywhere(collisionShape, shape, BooleanBiFunction.AND)) {
+                            return false;
+                        }
+                        if (onGround && !foundFloor) {
+                            if (VoxelShapes.matchesAnywhere(floorShape, shape, BooleanBiFunction.AND)) {
+                                foundFloor = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return !onGround || foundFloor;
+    }
+
+    @Override
+    public BlockView asBlockView() {
+        return delegate;
+    }
+
 
     public record Initial(
             BlockState outOfBoundsState,

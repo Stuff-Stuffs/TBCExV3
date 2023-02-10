@@ -1,7 +1,7 @@
-package io.github.stuff_stuffs.tbcexv3core.impl.util;
+package io.github.stuff_stuffs.tbcexv3util.impl.util;
 
-import io.github.stuff_stuffs.tbcexv3core.api.util.DiscretePhaseTracker;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TopologicalSort;
+import io.github.stuff_stuffs.tbcexv3util.api.util.DiscretePhaseTracker;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TopologicalSort;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.util.Identifier;
 
@@ -68,7 +68,13 @@ public class DiscretePhaseTrackerImpl implements DiscretePhaseTracker {
 
     @Override
     public Comparator<Identifier> phaseComparator() {
-        return Comparator.comparingInt(order::getInt);
+        return Comparator.comparingInt(id -> {
+            final int i = order.getOrDefault(id, -1);
+            if (i == -1) {
+                throw new RuntimeException();
+            }
+            return i;
+        });
     }
 
     private record Relation(Set<Identifier> before, Set<Identifier> after) {

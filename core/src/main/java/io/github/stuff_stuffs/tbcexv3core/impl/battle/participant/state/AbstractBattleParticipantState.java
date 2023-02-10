@@ -6,5 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateI
 public interface AbstractBattleParticipantState extends BattleParticipantState {
     void setup(AbstractBattleStateImpl state);
 
+    void ready();
+
     void finish();
 }

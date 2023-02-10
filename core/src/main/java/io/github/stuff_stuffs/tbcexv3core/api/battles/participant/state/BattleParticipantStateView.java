@@ -10,7 +10,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMapView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMapView;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Iterator;

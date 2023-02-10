@@ -9,9 +9,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerEventStream;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManager;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerEventStream;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.AbstractBattleStateImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battles.ClientBattleEnvironmentImpl;
@@ -19,7 +20,6 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequest;
-import io.github.stuff_stuffs.tbcexv3model.api.animation.Animation;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -36,22 +36,24 @@ public class ClientBattleImpl implements Battle {
     private final BattleEnvironmentImpl.Initial initialEnvironment;
     private final BlockPos origin;
     private final TracerEventStream<ActionTrace> eventStream;
-    private final Consumer<Animation<BattleAnimationContext>> animationConsumer;
+    private final Consumer<Consumer<AnimationManager<BattleAnimationContext>>> animationConsumer;
     private ClientBattleEnvironmentImpl environment;
     private AbstractBattleStateImpl state;
     private Tracer<ActionTrace> tracer;
     private int lastKnownGoodState;
 
-    public ClientBattleImpl(final BattleHandle handle, final BattleStateMode mode, final BattleEnvironmentImpl.Initial environment, final BlockPos origin, final Consumer<Animation<BattleAnimationContext>> consumer) {
+    public ClientBattleImpl(final BattleHandle handle, final BattleStateMode mode, final BattleEnvironmentImpl.Initial environment, final BlockPos origin, final Consumer<Consumer<AnimationManager<BattleAnimationContext>>> consumer) {
         animationConsumer = consumer;
         eventStream = TracerEventStream.create();
         this.handle = handle;
         this.mode = mode;
         initialEnvironment = environment;
         this.origin = origin;
-        this.environment = createBattleEnvironment();
+        ClientBattleEnvironmentImpl env = createBattleEnvironment();
+        this.environment = env;
         state = (AbstractBattleStateImpl) BattleState.createEmpty(this.mode);
         state.setup(handle, this.environment);
+        env.setup(state);
         actions = new ObjectArrayList<>();
         tracer = createTracer();
     }
@@ -139,6 +141,7 @@ public class ClientBattleImpl implements Battle {
             final ClientBattleEnvironmentImpl environment = createBattleEnvironment();
             this.environment = environment;
             state.setup(handle, environment);
+            environment.setup(state);
             for (final BattleAction action : actions) {
                 action.apply(state, tracer);
             }

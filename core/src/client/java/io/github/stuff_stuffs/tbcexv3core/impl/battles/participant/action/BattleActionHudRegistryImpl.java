@@ -100,14 +100,16 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
                 while (iterator.hasNext()) {
                     final BattleParticipantActionTarget next = iterator.next();
                     if (type == CoreBattleActionTargetTypes.BATTLE_PARTICIPANT_TARGET_TYPE) {
-                        BattleParticipantBounds bounds = ((BattleParticipantActionBattleParticipantTarget) next).state().getBounds();
+                        final BattleParticipantHandle handle = ((BattleParticipantActionBattleParticipantTarget) next).handle();
+                        BattleParticipantBounds bounds = battle.getState().getParticipantByHandle(handle).getBounds();
+                        BattleParticipantBounds moved = BattleParticipantBounds.move(battle.toGlobal(bounds.center()), bounds);
                         TBCExV3CoreClient.defer(context -> {
                             final VertexConsumerProvider consumers = context.consumers();
                             final MatrixStack matrices = context.matrixStack();
                             matrices.push();
                             final Camera c = context.camera();
                             matrices.translate(-c.getPos().x, -c.getPos().y, -c.getPos().z);
-                            bounds.parts().forEachRemaining(part -> WorldRenderer.drawBox(matrices, consumers.getBuffer(RenderLayer.getLines()), part.box(), 0, 1, 0, 0.75F));
+                            moved.parts().forEachRemaining(part -> WorldRenderer.drawBox(matrices, consumers.getBuffer(RenderLayer.getLines()), part.box(), 0, 1, 0, 0.75F));
                             matrices.pop();
                         });
                     }
