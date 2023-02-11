@@ -8,7 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.entity.BattleParticipantStateBuilderImpl;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;

@@ -9,7 +9,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 
 import java.util.Optional;
 
@@ -18,7 +18,7 @@ public class BattleParticipantMeleeTestBattleAction implements BattleAction {
             BattleParticipantHandle.codec().fieldOf("attacker").forGetter(action -> action.attacker),
             BattleParticipantHandle.codec().fieldOf("target").forGetter(action -> action.target)
     ).apply(instance, BattleParticipantMeleeTestBattleAction::new));
-    private static final float DAMAGE = 5.0F;
+    private static final float DAMAGE = 20.0F;
     private final BattleParticipantHandle attacker;
     private final BattleParticipantHandle target;
 

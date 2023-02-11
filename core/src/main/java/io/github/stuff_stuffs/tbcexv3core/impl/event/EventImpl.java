@@ -1,9 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.event;
 
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventKey;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventListenerKey;
-import io.github.stuff_stuffs.tbcexv3core.api.event.Event;
-import io.github.stuff_stuffs.tbcexv3core.api.event.InvokerFactory;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventListenerKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.Event;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.InvokerFactory;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectLinkedOpenHashMap;
 

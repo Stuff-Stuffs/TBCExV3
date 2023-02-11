@@ -3,12 +3,12 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.action;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
-import io.github.stuff_stuffs.tbcexv3core.api.util.TracerView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Optional;
@@ -31,7 +31,7 @@ public class BattleParticipantTeleportBattleAction implements BattleAction {
 
     @Override
     public BattleActionType<?> getType() {
-        return null;
+        return CoreBattleActions.BATTLE_PARTICIPANT_TELEPORT_ACTION;
     }
 
     @Override
@@ -44,8 +44,8 @@ public class BattleParticipantTeleportBattleAction implements BattleAction {
         if (state.getPhase() != BattleStatePhase.FIGHT) {
             throw new RuntimeException();
         }
-        final TracerView.IntervalStart<ActionTrace> start = trace.pushStart(true).value(new ParticipantActionTraces.BattleParticipantStartMove(target)).buildAndApply();
+        final TracerView.IntervalStart<ActionTrace> start = trace.pushStart(true).value(new BattleParticipantActionTraces.BattleParticipantStartMove(target)).buildAndApply();
         state.getParticipantByHandle(target).setPosition(destination, trace);
-        trace.pushEnd(start, true).value(new ParticipantActionTraces.BattleParticipantEndMove(target)).buildAndApply();
+        trace.pushEnd(start, true).value(new BattleParticipantActionTraces.BattleParticipantEndMove(target)).buildAndApply();
     }
 }

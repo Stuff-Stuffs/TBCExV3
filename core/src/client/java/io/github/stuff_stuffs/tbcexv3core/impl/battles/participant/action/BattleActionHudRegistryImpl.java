@@ -13,7 +13,6 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.CoreBattleActionTargetTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.gui.InterceptingComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.TBCExGUI;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.TBCExV3CoreClient;
@@ -25,7 +24,10 @@ import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.GridLayout;
-import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.ParentComponent;
+import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.util.Observable;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.client.MinecraftClient;
@@ -71,54 +73,9 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
         }
         Observable<Optional<Pair<BattleParticipantActionTarget, Double>>> targetObservable = Observable.of(Optional.empty());
         Observable<Boolean> canBuild = Observable.of(false);
-        InterceptingComponent<Component> interceptingComponent = new InterceptingComponent<>(Sizing.content(), Sizing.fill(100), () -> {
-            canBuild.set(builder.canBuild());
-            final Iterator<? extends BattleParticipantActionTargetType<?>> types = builder.types();
-            Vec3d camera = MinecraftClient.getInstance().gameRenderer.getCamera().getPos();
-            Vec3d end = camera.add(BattleActionHudRegistry.getMouseVector().multiply(24));
-            double best = targetObservable.get().map(Pair::getSecond).orElse(Double.POSITIVE_INFINITY);
-            BattleParticipantActionTarget target = null;
-            boolean previous = false;
-            while (types.hasNext()) {
-                final BattleParticipantActionTargetType<?> type = types.next();
-                final BattleParticipantActionBuilder.TargetRaycaster<?> raycaster = builder.raycastTargets(type);
-                Optional<? extends Pair<? extends BattleParticipantActionTarget, Double>> query;
-                if ((query = raycaster.query(camera, end)).isPresent()) {
-                    if (targetObservable.get().isPresent() && query.get().getFirst().equals(targetObservable.get().get().getFirst())) {
-                        previous = true;
-                    }
-                    if (query.get().getSecond() < best) {
-                        best = query.get().getSecond();
-                        target = query.get().getFirst();
-                    }
-                }
-                final BattleParticipantActionBuilder.TargetIterator<?> iterator = builder.targets(type);
-                while (iterator.hasNext()) {
-                    final BattleParticipantActionTarget next = iterator.next();
-                    if (type == CoreBattleActionTargetTypes.BATTLE_PARTICIPANT_TARGET_TYPE) {
-                        BattleParticipantBounds bounds = ((BattleParticipantActionBattleParticipantTarget) next).state().getBounds();
-                        TBCExV3CoreClient.defer(context -> {
-                            final VertexConsumerProvider consumers = context.consumers();
-                            final MatrixStack matrices = context.matrixStack();
-                            matrices.push();
-                            final Camera c = context.camera();
-                            matrices.translate(-c.getPos().x, -c.getPos().y, -c.getPos().z);
-                            bounds.parts().forEachRemaining(part -> WorldRenderer.drawBox(matrices, consumers.getBuffer(RenderLayer.getLines()), part.box(), 0, 1, 0, 0.75F));
-                            matrices.pop();
-                        });
-                    }
-                }
-            }
-            if (target != null) {
-                targetObservable.set(Optional.of(Pair.of(target, best)));
-            } else if (!previous) {
-                targetObservable.set(Optional.empty());
-            }
-        });
         FlowLayout flowLayout = Containers.verticalFlow(Sizing.content(), Sizing.content());
         flowLayout.gap(8);
         flowLayout.surface(Surface.PANEL);
-        interceptingComponent.child(flowLayout);
         targetObservable.observe(pair -> {
             flowLayout.clearChildren();
             if (pair.isPresent()) {
@@ -145,6 +102,7 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
                 while (iterator.hasNext()) {
                     if (iterator.next().equals(pair.getFirst())) {
                         iterator.accept();
+                        canBuild.set(builder.canBuild());
                         return true;
                     }
                 }
@@ -172,7 +130,61 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
             }
             return false;
         });
-        layout.child(interceptingComponent);
+        layout.child(flowLayout);
+        layout.mouseDown().subscribe((mouseX, mouseY, button) -> {
+            if (button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+                return false;
+            }
+            canBuild.set(builder.canBuild());
+            final Iterator<? extends BattleParticipantActionTargetType<?>> types = builder.types();
+            BattleView battle = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(((TBCExPlayerEntity) MinecraftClient.getInstance().player).tbcex$getCurrentBattle());
+            if (battle == null) {
+                return false;
+            }
+            Vec3d camera = battle.toLocal(MinecraftClient.getInstance().gameRenderer.getCamera().getPos());
+            Vec3d end = camera.add(BattleActionHudRegistry.getMouseVector().multiply(24));
+            double best = targetObservable.get().map(Pair::getSecond).orElse(Double.POSITIVE_INFINITY);
+            BattleParticipantActionTarget target = null;
+            boolean previous = false;
+            while (types.hasNext()) {
+                final BattleParticipantActionTargetType<?> type = types.next();
+                final BattleParticipantActionBuilder.TargetRaycaster<?> raycaster = builder.raycastTargets(type);
+                Optional<? extends Pair<? extends BattleParticipantActionTarget, Double>> query;
+                if ((query = raycaster.query(camera, end)).isPresent()) {
+                    if (targetObservable.get().isPresent() && query.get().getFirst().equals(targetObservable.get().get().getFirst())) {
+                        previous = true;
+                    }
+                    if (query.get().getSecond() < best) {
+                        best = query.get().getSecond();
+                        target = query.get().getFirst();
+                    }
+                }
+                final BattleParticipantActionBuilder.TargetIterator<?> iterator = builder.targets(type);
+                while (iterator.hasNext()) {
+                    final BattleParticipantActionTarget next = iterator.next();
+                    if (type == CoreBattleActionTargetTypes.BATTLE_PARTICIPANT_TARGET_TYPE) {
+                        final BattleParticipantHandle handle = ((BattleParticipantActionBattleParticipantTarget) next).handle();
+                        BattleParticipantBounds bounds = battle.getState().getParticipantByHandle(handle).getBounds();
+                        BattleParticipantBounds moved = BattleParticipantBounds.move(battle.toGlobal(bounds.center()), bounds);
+                        TBCExV3CoreClient.defer(context -> {
+                            final VertexConsumerProvider consumers = context.consumers();
+                            final MatrixStack matrices = context.matrixStack();
+                            matrices.push();
+                            final Camera c = context.camera();
+                            matrices.translate(-c.getPos().x, -c.getPos().y, -c.getPos().z);
+                            moved.parts().forEachRemaining(part -> WorldRenderer.drawBox(matrices, consumers.getBuffer(RenderLayer.getLines()), part.box(), 0, 1, 0, 0.75F));
+                            matrices.pop();
+                        });
+                    }
+                }
+            }
+            if (target != null) {
+                targetObservable.set(Optional.of(Pair.of(target, best)));
+            } else if (!previous) {
+                targetObservable.set(Optional.empty());
+            }
+            return true;
+        });
         return layout;
     };
 

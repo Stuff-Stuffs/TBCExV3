@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.network;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.world.ClientBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.EntityBattlesUpdateSender;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -23,14 +24,14 @@ public final class EntityBattlesUpdateReceiver {
     private static void receive(final MinecraftClient client, final ClientPlayNetworkHandler handler, final PacketByteBuf buf, final PacketSender sender) {
         final UUID entityId = buf.readUuid();
         final int count = buf.readVarInt();
-        final List<UUID> activeBattles = new ArrayList<>(count);
+        final List<BattleParticipantHandle> activeBattles = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            activeBattles.add(buf.readUuid());
+            activeBattles.add(buf.decode(BattleParticipantHandle.codec()));
         }
         final int inactiveCount = buf.readVarInt();
-        final List<UUID> inactiveBattles = new ArrayList<>(inactiveCount);
+        final List<BattleParticipantHandle> inactiveBattles = new ArrayList<>(inactiveCount);
         for (int i = 0; i < inactiveCount; i++) {
-            inactiveBattles.add(buf.readUuid());
+            inactiveBattles.add(buf.decode(BattleParticipantHandle.codec()));
         }
         client.execute(() -> {
             if (client.world != null) {

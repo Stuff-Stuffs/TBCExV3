@@ -10,7 +10,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.util.Identifier;

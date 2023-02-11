@@ -115,7 +115,7 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
                 return BattleParticipantActionBuilder.create(
                         stateView,
                         l -> !l.isEmpty(),
-                        l -> new BattleParticipantMeleeTestBattleAction(state.getHandle(), l.get(0).state().getHandle()),
+                        l -> new BattleParticipantMeleeTestBattleAction(state.getHandle(), l.get(0).handle()),
                         new ArrayList<>(),
                         (stateView, targets, targetConsumer) -> BattleParticipantActionBuilder.TargetProvider.single(
                                 stateView,
@@ -125,7 +125,7 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
                                 () -> getTargets(stateView, targetConsumer).raycaster()
                         ),
                         (BiConsumer<ArrayList<BattleParticipantActionBattleParticipantTarget>, BattleParticipantActionTarget>) (targets, target) -> {
-                            TBCExV3Test.MESSAGE_CONSUMER.accept(Text.of("Targeted " + ((BattleParticipantActionBattleParticipantTarget) target).state().getHandle()));
+                            TBCExV3Test.MESSAGE_CONSUMER.accept(Text.of("Targeted " + ((BattleParticipantActionBattleParticipantTarget) target).handle()));
                             targets.add(
                                     (BattleParticipantActionBattleParticipantTarget) target
                             );

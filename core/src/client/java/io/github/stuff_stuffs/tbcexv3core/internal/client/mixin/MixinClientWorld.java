@@ -7,6 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.internal.client.world.ClientBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.world.ClientBattleWorldContainer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.render.WorldRenderer;
@@ -38,15 +39,12 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initialize(final ClientPlayNetworkHandler networkHandler, final ClientWorld.Properties properties, final RegistryKey<World> registryRef, final RegistryEntry dimensionTypeEntry, final int loadDistance, final int simulationDistance, final Supplier profiler, final WorldRenderer worldRenderer, final boolean debugWorld, final long seed, final CallbackInfo ci) {
-        battleWorldContainer = new ClientBattleWorldContainer(registryRef);
+        battleWorldContainer = new ClientBattleWorldContainer();
     }
 
     @Override
     public @Nullable BattleView tryGetBattleView(final BattleHandle handle) {
-        if (!handle.getWorldKey().equals(getRegistryKey())) {
-            return null;
-        }
-        return battleWorldContainer.getBattle(handle.getUuid());
+        return battleWorldContainer.getBattle(handle);
     }
 
     @Override
@@ -65,7 +63,12 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
     }
 
     @Override
-    public void update(final UUID entityId, final List<UUID> battleIds, final List<UUID> inactiveBattles) {
+    public void update(final UUID entityId, final List<BattleParticipantHandle> battleIds, final List<BattleParticipantHandle> inactiveBattles) {
         battleWorldContainer.update(entityId, battleIds, inactiveBattles);
+    }
+
+    @Override
+    public void tbcex$render(WorldRenderContext context) {
+        battleWorldContainer.render(context);
     }
 }

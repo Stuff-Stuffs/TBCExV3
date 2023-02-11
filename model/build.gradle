@@ -1,1 +1,6 @@
 archivesBaseName = "tbcexv3model"
+
+dependencies {
+    implementation project(path: ":util", configuration: "namedElements")
+    clientImplementation project(":util").sourceSets.client.output
+}

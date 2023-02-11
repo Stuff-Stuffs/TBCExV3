@@ -6,6 +6,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
@@ -17,10 +19,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.AbstractBattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 
@@ -38,6 +39,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     private BattleHandle handle;
     private BattleBounds bounds;
     private BattleStatePhase phase;
+    private BattleEnvironment environment;
 
     public BattleStateImpl(final BattleStateMode mode) {
         this.mode = mode;
@@ -51,10 +53,11 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     }
 
     @Override
-    public void setup(final BattleHandle handle) {
+    public void setup(final BattleHandle handle, final BattleEnvironment environment) {
         checkPhase(BattleStatePhase.SETUP, true);
         this.handle = handle;
         phase = BattleStatePhase.INITIALIZATION;
+        this.environment = environment;
         turnSelector.init(this);
     }
 
@@ -78,6 +81,9 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     public void ready() {
         checkPhase(BattleStatePhase.INITIALIZATION, true);
         phase = BattleStatePhase.FIGHT;
+        for (BattleParticipantHandle participant : getParticipants()) {
+            participantContainer.getParticipantByHandle(participant).ready();
+        }
     }
 
     @Override
@@ -234,6 +240,9 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         final Optional<BattleParticipantHandle> handle = participantContainer.addParticipant(participant, team, tracer, this.handle);
         handle.ifPresent(battleParticipantHandle -> {
             participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this);
+            if (phase == BattleStatePhase.FIGHT) {
+                participantContainer.getParticipantByHandle(battleParticipantHandle).ready();
+            }
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
             tracer.pop();
         });
@@ -278,9 +287,15 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         return participantContainer.removeTeam(team);
     }
 
+    @Override
+    public BattleEnvironment getEnvironment() {
+        checkPhase(BattleStatePhase.INITIALIZATION, false);
+        return environment;
+    }
+
     private void checkPhase(final BattleStatePhase phase, final boolean exact) {
         if ((exact && phase != this.phase) || (!exact && this.phase.getOrder() < phase.getOrder())) {
-            throw new TBCExException();
+            throw new TBCExException("Phase is " + this.phase);
         }
     }
 }

@@ -10,6 +10,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionSource;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import io.github.stuff_stuffs.tbcexv3core.api.gui.SimpleParentComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.gui.TBCExGUI;
 import io.github.stuff_stuffs.tbcexv3core.impl.battles.participant.action.BattleActionHudRegistryImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.entity.TBCExClientPlayerExtensions;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleTryActionSender;
@@ -19,9 +21,9 @@ import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
-import io.wispforest.owo.ui.core.Component;
-import io.wispforest.owo.ui.core.Sizing;
-import io.wispforest.owo.ui.core.Surface;
+import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.event.MouseEnter;
+import io.wispforest.owo.ui.event.MouseLeave;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -36,7 +38,7 @@ public final class ActionPart {
     private static Component entry(final BattleParticipantAction action, final BattleParticipantStateView state) {
         final Text name = action.name(state);
         final LabelComponent labelComponent = Components.label(name);
-        labelComponent.sizing(Sizing.fill(100), Sizing.content());
+        labelComponent.sizing(Sizing.fixed(64), Sizing.content());
         labelComponent.tooltip(action.description(state).texts());
         labelComponent.mouseDown().subscribe((mouseX, mouseY, button) -> {
             if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -47,7 +49,11 @@ public final class ActionPart {
             }
             return false;
         });
-        return labelComponent;
+        final ParentComponent simple = new SimpleParentComponent(Sizing.content(4), Sizing.content(4), labelComponent);
+        simple.surface(TBCExGUI.DARK_SURFACE);
+        simple.mouseEnter().subscribe(() -> simple.surface(TBCExGUI.SELECTED_SURFACE));
+        simple.mouseLeave().subscribe(() -> simple.surface(TBCExGUI.DARK_SURFACE));
+        return simple;
     }
 
     private static void actionSender(final BattleHandle handle, final BattleAction action) {
@@ -59,7 +65,8 @@ public final class ActionPart {
         final FlowLayout layout = Containers.horizontalFlow(Sizing.content(), Sizing.content());
         final FlowLayout actionList = Containers.verticalFlow(Sizing.content(), Sizing.content());
         actionList.gap(4);
-        final ScrollContainer<FlowLayout> scroller = Containers.verticalScroll(Sizing.fixed(50), Sizing.fill(100), actionList);
+        actionList.margins(Insets.both(4,4));
+        final ScrollContainer<FlowLayout> scroller = Containers.verticalScroll(Sizing.content(), Sizing.fill(100), actionList);
         layout.child(scroller);
         final ClientWorld world = MinecraftClient.getInstance().world;
         final BattleView battleView = ((BattleWorld) world).tryGetBattleView(handle.getParent());

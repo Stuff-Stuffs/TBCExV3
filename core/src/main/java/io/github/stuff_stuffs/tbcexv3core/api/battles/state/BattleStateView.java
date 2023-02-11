@@ -4,11 +4,12 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMapView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMapView;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -46,4 +47,6 @@ public interface BattleStateView {
     BattleHandle getHandle();
 
     boolean isCurrentTurn(BattleParticipantHandle handle);
+
+    BattleEnvironmentView getEnvironment();
 }

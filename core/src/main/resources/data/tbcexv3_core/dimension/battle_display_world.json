@@ -1,0 +1,11 @@
+{
+  "type": "tbcexv3_core:battle_display_world",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "layers": [
+      ],
+      "structure_overrides": []
+    }
+  }
+}

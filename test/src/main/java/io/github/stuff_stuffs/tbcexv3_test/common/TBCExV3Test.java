@@ -7,12 +7,23 @@ import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntityComponent;
 import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItem;
 import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItemTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantTeleportBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionBuilder;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantDefaultActionGatherEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionBlockPosTarget;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.CoreBattleActionTargetTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattlePlayerComponentEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.InventoryBattleEntityComponent;
+import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -28,13 +39,13 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.random.Random;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
@@ -57,6 +68,59 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             builder.addComponent(componentBuilder.build());
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> testCommand(dispatcher));
+        BattleParticipantDefaultActionGatherEvent.EVENT.register((state, actionConsumer) -> actionConsumer.accept(new BattleParticipantAction() {
+            @Override
+            public Text name(final BattleParticipantStateView state) {
+                return Text.of("walk");
+            }
+
+            @Override
+            public TooltipText description(final BattleParticipantStateView state) {
+                return new TooltipText(List.of(Text.of("The name is about all you need to know")));
+            }
+
+            private static BattleParticipantActionBuilder.TargetRaycaster<BattleParticipantActionBlockPosTarget> getRaycastTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer) {
+                final BattleEnvironmentView environment = state.getBattleState().getEnvironment();
+                return BattleParticipantActionBlockPosTarget.filterRaycast(pos -> environment.checkForStanding(state.getBounds(), pos, true), (pos, start, end) -> {
+                    final BlockHitResult raycast = environment.getBlockState(pos).getCollisionShape(environment.asBlockView(), pos).raycast(start, end, pos);
+                    return raycast != null && raycast.getType() != HitResult.Type.MISS;
+                }, p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
+            }
+
+            private static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBlockPosTarget> getIteratorTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer) {
+                final BattleEnvironmentView environment = state.getBattleState().getEnvironment();
+                return BattleParticipantActionBlockPosTarget.filterIterator(pos -> environment.checkForStanding(state.getBounds(), pos, true), state.getBounds().center(), 10, p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
+            }
+
+            @Override
+            public BattleParticipantActionBuilder builder(final BattleParticipantStateView state, final Consumer<BattleAction> consumer) {
+                return BattleParticipantActionBuilder.create(
+                        state,
+                        l -> !l.isEmpty(),
+                        l -> new BattleParticipantTeleportBattleAction(l.get(0).pos(), state.getHandle()),
+                        new ArrayList<>(),
+                        (stateView, targets, targetConsumer) -> BattleParticipantActionBuilder.TargetProvider.single(
+                                stateView,
+                                targetConsumer,
+                                CoreBattleActionTargetTypes.BLOCK_POS_TARGET_TYPE,
+                                () -> getIteratorTargets(stateView, targetConsumer),
+                                () -> getRaycastTargets(stateView, targetConsumer)
+                        ),
+                        (BiConsumer<ArrayList<BattleParticipantActionBlockPosTarget>, BattleParticipantActionTarget>) (targets, target) -> {
+                            TBCExV3Test.MESSAGE_CONSUMER.accept(Text.of("Targeted " + ((BattleParticipantActionBlockPosTarget) target).pos()));
+                            targets.add(
+                                    (BattleParticipantActionBlockPosTarget) target
+                            );
+                        },
+                        consumer
+                );
+            }
+
+            @Override
+            public Optional<Identifier> renderer(final BattleParticipantStateView state) {
+                return Optional.empty();
+            }
+        }));
     }
 
     private static void testCommand(final CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -89,6 +153,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             try {
                 ((ServerBattleWorld) context.getSource().getWorld()).createBattle(teamMap, builder.build());
             } catch (final Throwable t) {
+                t.printStackTrace();
                 return 1;
             }
             return 0;

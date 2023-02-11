@@ -9,7 +9,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;

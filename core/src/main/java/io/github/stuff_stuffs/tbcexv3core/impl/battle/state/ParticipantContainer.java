@@ -3,7 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.state;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
@@ -13,9 +13,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.AbstractBattleParticipantState;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -86,7 +86,7 @@ public class ParticipantContainer {
             participantStates.put(handle, (AbstractBattleParticipantState) participant);
             teamByHandle.put(handle, team);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
-            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantJoined(handle)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantJoined(handle)).buildAndApply();
             return Optional.of(handle);
         }
         return Optional.empty();
@@ -98,8 +98,9 @@ public class ParticipantContainer {
         }
         if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, state, reason, tracer)) {
             final AbstractBattleParticipantState removed = participantStates.remove(handle);
+            handlesByTeam.get(removed.getTeam()).remove(handle);
             removed.finish();
-            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(removed, state, reason, tracer);
             tracer.pop();
             return true;
@@ -129,7 +130,13 @@ public class ParticipantContainer {
 
     public boolean canEnd() {
         for (final BattleParticipantTeam first : teams.values()) {
+            if(handlesByTeam.get(first).isEmpty()) {
+                continue;
+            }
             for (final BattleParticipantTeam second : teams.values()) {
+                if(handlesByTeam.get(second).isEmpty()) {
+                    continue;
+                }
                 if (first == second) {
                     continue;
                 }
@@ -158,7 +165,7 @@ public class ParticipantContainer {
             handlesByTeam.get(currentTeam).remove(handle);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
             teamByHandle.put(handle, team);
-            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantSetTeam(handle, team, currentTeam)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantSetTeam(handle, team, currentTeam)).buildAndApply();
             state.getEventMap().getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().postSetTeam(state, currentTeam, tracer);
             tracer.pop();
             return true;

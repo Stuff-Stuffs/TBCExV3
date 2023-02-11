@@ -4,14 +4,15 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.BattleStateImpl;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
@@ -49,6 +50,9 @@ public interface BattleState extends BattleStateView {
     BattleParticipantTeam addTeam(Identifier identifier);
 
     boolean removeTeam(BattleParticipantTeam team);
+
+    @Override
+    BattleEnvironment getEnvironment();
 
     Event<EventInitializer> BATTLE_EVENT_INITIALIZATION_EVENT = EventFactory.createArrayBacked(EventInitializer.class, eventInitializers -> builder -> {
         for (EventInitializer initializer : eventInitializers) {

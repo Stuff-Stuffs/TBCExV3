@@ -126,7 +126,7 @@ public final class InventoryPart {
                 final BattleParticipantItemModel model = BattleParticipantItemModelRegistry.INSTANCE.get(stack.get().getItem());
                 TBCExV3CoreClient.defer(context -> {
                     final MatrixStack copied = new MatrixStack();
-                    final Matrix4f saved = RenderSystem.getProjectionMatrix();
+                    final Matrix4f saved = new Matrix4f(RenderSystem.getProjectionMatrix());
                     final Window window = MinecraftClient.getInstance().getWindow();
                     RenderSystem.disableDepthTest();
                     RenderSystem.disableCull();

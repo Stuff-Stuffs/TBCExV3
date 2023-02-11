@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.screen;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionSource;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.SelectionWheelComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.WrapperComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.screen.parts.ActionPart;
@@ -87,7 +88,7 @@ public class BattleMenuScreen extends BaseOwoScreen<FlowLayout> {
     private void updateState(final MenuState state, final Consumer<Component> push) {
         final Component child = switch (state) {
             case INVENTORY -> InventoryPart.inventory(handle, push);
-            case ACTIONS -> ActionPart.action(handle, i -> true, push);
+            case ACTIONS -> ActionPart.action(handle, source -> source instanceof BattleParticipantActionSource.Default || source instanceof BattleParticipantActionSource.Effect || source instanceof BattleParticipantActionSource.Equipped, push);
             default -> null;
         };
         push.accept(child);

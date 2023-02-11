@@ -17,8 +17,8 @@ import net.minecraft.util.Identifier;
 public final class BattleTryActionReceiver {
     public static final Identifier IDENTIFIER = TBCExV3Core.createId("try_action");
 
-    public static void init() {
-        ServerPlayNetworking.registerGlobalReceiver(IDENTIFIER, BattleTryActionReceiver::receive);
+    public static void init(final ServerPlayNetworkHandler handler) {
+        ServerPlayNetworking.registerReceiver(handler, IDENTIFIER, BattleTryActionReceiver::receive);
     }
 
     private static void receive(final MinecraftServer server, final ServerPlayerEntity entity, final ServerPlayNetworkHandler handler, final PacketByteBuf buf, final PacketSender sender) {

@@ -9,8 +9,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
-import io.github.stuff_stuffs.tbcexv3core.api.event.EventMap;
-import io.github.stuff_stuffs.tbcexv3core.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.BattleParticipantStateImpl;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
