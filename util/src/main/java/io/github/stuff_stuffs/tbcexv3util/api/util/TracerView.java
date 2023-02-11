@@ -90,17 +90,21 @@ public interface TracerView<T> {
         NodeId id();
     }
 
+    @ApiStatus.NonExtendable
     non-sealed interface Instant<T> extends Node<T> {
     }
 
+    @ApiStatus.NonExtendable
     non-sealed interface IntervalStart<T> extends Node<T> {
         Optional<IntervalEnd<T>> end();
     }
 
+    @ApiStatus.NonExtendable
     non-sealed interface IntervalEnd<T> extends Node<T> {
         IntervalStart<T> start();
     }
 
+    @ApiStatus.NonExtendable
     interface NodeId {
         @Override
         int hashCode();

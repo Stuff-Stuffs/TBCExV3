@@ -10,10 +10,12 @@ import java.util.*;
 public class DiscretePhaseTrackerImpl implements DiscretePhaseTracker {
     private final Map<Identifier, Relation> relations;
     private final Object2IntMap<Identifier> order;
+    private final List<Runnable> listeners;
 
     public DiscretePhaseTrackerImpl() {
         relations = new Object2ReferenceOpenHashMap<>();
         order = new Object2IntOpenHashMap<>();
+        listeners = new ArrayList<>();
     }
 
     @Override
@@ -64,6 +66,9 @@ public class DiscretePhaseTrackerImpl implements DiscretePhaseTracker {
         for (int i = 0; i < size; i++) {
             order.put(sorted.get(i), i);
         }
+        for (final Runnable listener : listeners) {
+            listener.run();
+        }
     }
 
     @Override
@@ -75,6 +80,11 @@ public class DiscretePhaseTrackerImpl implements DiscretePhaseTracker {
             }
             return i;
         });
+    }
+
+    @Override
+    public void addListener(final Runnable runnable) {
+        listeners.add(runnable);
     }
 
     private record Relation(Set<Identifier> before, Set<Identifier> after) {

@@ -40,14 +40,16 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
     @Shadow
     public abstract ServerWorld getWorld();
 
-    @Shadow
-    public abstract void endCombat();
+    @Shadow public abstract boolean changeGameMode(GameMode gameMode);
 
     @Unique
     private @Nullable BattleHandle tbcex$currentBattle;
     @Unique
     private @Nullable GameMode tbcex$preBattleGameMode = null;
-    private boolean setup = false;
+    @Unique
+    private boolean tbcex$setup = false;
+    @Unique
+    private int tbcex$delayedAttempts = 0;
 
     private MixinServerPlayer(final EntityType<?> type, final World world) {
         super(type, world);
@@ -65,7 +67,7 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
                 tbcex$preBattleGameMode = interactionManager.getGameMode();
             }
             tbcex$currentBattle = handle;
-            interactionManager.changeGameMode(GameMode.SPECTATOR);
+            changeGameMode(GameMode.SPECTATOR);
             PlayerCurrentBattleSender.send((ServerPlayerEntity) (Object) this, handle);
         }
     }
@@ -84,20 +86,24 @@ public abstract class MixinServerPlayer extends Entity implements BattleEntity, 
             }
         }
         if (tbcex$currentBattle == null && tbcex$preBattleGameMode != null) {
-            interactionManager.changeGameMode(tbcex$preBattleGameMode);
+            changeGameMode(tbcex$preBattleGameMode);
+            tbcex$preBattleGameMode = null;
         }
     }
 
     @Inject(at = @At("RETURN"), method = "tick")
     private void setupHook(final CallbackInfo ci) {
-        if (!setup && ((AbstractServerBattleWorld) getWorld()).tryApplyDelayedComponents(getUuid(), getWorld())) {
-            setup = true;
+        if (tbcex$delayedAttempts++ > 256) {
+            tbcex$setup = true;
+        }
+        if (!tbcex$setup && ((AbstractServerBattleWorld) getWorld()).tryApplyDelayedComponents(getUuid(), getWorld())) {
+            tbcex$setup = true;
         }
     }
 
     @Inject(at = @At("RETURN"), method = "setWorld")
     private void changeWorldHook(final ServerWorld world, final CallbackInfo ci) {
-        setup = false;
+        tbcex$setup = false;
     }
 
     @Override

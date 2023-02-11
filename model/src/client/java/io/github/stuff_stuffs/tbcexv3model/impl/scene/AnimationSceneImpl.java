@@ -42,7 +42,7 @@ public class AnimationSceneImpl implements AnimationScene {
     }
 
     @Override
-    public void render(final MatrixStack matrices, final VertexConsumerProvider vertexConsumer, final Vec3d cameraPos, final Quaternionfc cameraLook, final double time) {
+    public void render(MatrixStack matrices, final VertexConsumerProvider vertexConsumer, final Vec3d cameraPos, final Quaternionfc cameraLook, final double time) {
         for (final Map.Entry<Identifier, Model> entry : models.entrySet()) {
             final Model model = entry.getValue();
             for (final Identifier boneId : model.skeleton().bones()) {

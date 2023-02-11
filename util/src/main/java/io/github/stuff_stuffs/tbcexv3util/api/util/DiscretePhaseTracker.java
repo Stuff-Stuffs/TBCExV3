@@ -15,6 +15,8 @@ public interface DiscretePhaseTracker {
 
     Comparator<Identifier> phaseComparator();
 
+    void addListener(Runnable runnable);
+
     static DiscretePhaseTracker create() {
         return new DiscretePhaseTrackerImpl();
     }

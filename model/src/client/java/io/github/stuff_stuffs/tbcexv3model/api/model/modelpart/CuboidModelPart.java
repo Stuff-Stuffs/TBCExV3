@@ -74,7 +74,7 @@ public class CuboidModelPart implements ModelPart {
                         new Vector2f(uZ / textureWidth, vZY / textureHeight),
                         new Vector2f(uZX / textureWidth, vZY / textureHeight)
                 }),
-                new Face(new Vector3fc[]{p001, p101, p111, p001}, Direction.SOUTH.getUnitVector(), colors, new Vector2fc[]{
+                new Face(new Vector3fc[]{p001, p101, p111, p011}, Direction.SOUTH.getUnitVector(), colors, new Vector2fc[]{
                         new Vector2f(uZZZX / textureWidth, vZ / textureHeight),
                         new Vector2f(uZZX / textureWidth, vZ / textureHeight),
                         new Vector2f(uZZX / textureWidth, vZY / textureHeight),
@@ -84,7 +84,7 @@ public class CuboidModelPart implements ModelPart {
     }
 
     @Override
-    public void render(final ModelRenderPartContext context, double time) {
+    public void render(final ModelRenderPartContext context, final double time) {
         final MatrixStack matrices = context.matrices();
         final Vector4f scratch = new Vector4f();
         final Vector3f normScratch = new Vector3f();

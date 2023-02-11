@@ -9,35 +9,46 @@ import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class ActionTraceAnimatorRegistryImpl implements ActionTraceAnimatorRegistry {
-    private final Map<Identifier, List<ActionTraceAnimator>> animators = new Object2ReferenceOpenHashMap<>();
+    private final Map<Identifier, List<PhasedActionTraceAnimator>> animators = new Object2ReferenceOpenHashMap<>();
+
+    public ActionTraceAnimatorRegistryImpl() {
+        PHASE_TRACKER.addListener(() -> {
+            for (final List<PhasedActionTraceAnimator> list : animators.values()) {
+                list.sort(PhasedActionTraceAnimator.COMPARATOR);
+            }
+        });
+    }
 
     @Override
-    public void register(final Identifier watch, final ActionTraceAnimator animator) {
-        animators.computeIfAbsent(watch, i -> new ArrayList<>()).add(animator);
+    public void register(final Identifier watch, final Identifier phase, final ActionTraceAnimator animator) {
+        final List<PhasedActionTraceAnimator> list = animators.computeIfAbsent(watch, i -> new ArrayList<>());
+        list.add(new PhasedActionTraceAnimator(phase, animator));
+        list.sort(PhasedActionTraceAnimator.COMPARATOR);
     }
 
     @Override
     public Optional<Consumer<AnimationManager<BattleAnimationContext>>> animate(final TracerView.Node<ActionTrace> trace) {
         final Optional<Identifier> identifier = trace.value().animationData();
         if (identifier.isPresent()) {
-            final List<ActionTraceAnimator> animators = this.animators.get(identifier.get());
+            final List<PhasedActionTraceAnimator> animators = this.animators.get(identifier.get());
             if (animators == null) {
                 return Optional.empty();
             }
-            for (final ActionTraceAnimator animator : animators) {
-                final Optional<Consumer<AnimationManager<BattleAnimationContext>>> animation = animator.animate(trace);
+            for (final PhasedActionTraceAnimator animator : animators) {
+                final Optional<Consumer<AnimationManager<BattleAnimationContext>>> animation = animator.animator().animate(trace);
                 if (animation.isPresent()) {
                     return animation;
                 }
             }
         }
         return Optional.empty();
+    }
+
+    private record PhasedActionTraceAnimator(Identifier phase, ActionTraceAnimator animator) {
+        public static final Comparator<PhasedActionTraceAnimator> COMPARATOR = Comparator.comparing(PhasedActionTraceAnimator::phase, ActionTraceAnimatorRegistry.PHASE_TRACKER.phaseComparator());
     }
 }

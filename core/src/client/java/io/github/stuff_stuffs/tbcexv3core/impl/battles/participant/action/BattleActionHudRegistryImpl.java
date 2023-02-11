@@ -13,7 +13,6 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.CoreBattleActionTargetTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.gui.InterceptingComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.TBCExGUI;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.TBCExV3CoreClient;
@@ -25,7 +24,10 @@ import io.wispforest.owo.ui.component.LabelComponent;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.GridLayout;
-import io.wispforest.owo.ui.core.*;
+import io.wispforest.owo.ui.core.Insets;
+import io.wispforest.owo.ui.core.ParentComponent;
+import io.wispforest.owo.ui.core.Sizing;
+import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.util.Observable;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.client.MinecraftClient;
@@ -71,12 +73,73 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
         }
         Observable<Optional<Pair<BattleParticipantActionTarget, Double>>> targetObservable = Observable.of(Optional.empty());
         Observable<Boolean> canBuild = Observable.of(false);
-        InterceptingComponent<Component> interceptingComponent = new InterceptingComponent<>(Sizing.content(), Sizing.fill(100), () -> {
+        FlowLayout flowLayout = Containers.verticalFlow(Sizing.content(), Sizing.content());
+        flowLayout.gap(8);
+        flowLayout.surface(Surface.PANEL);
+        targetObservable.observe(pair -> {
+            flowLayout.clearChildren();
+            if (pair.isPresent()) {
+                final BattleParticipantStateView stateView = tryGetState();
+                if (stateView == null) {
+                    return;
+                }
+                final LabelComponent name = Components.label(pair.get().getFirst().name());
+                flowLayout.child(name);
+                final FlowLayout descriptionLayout = Containers.verticalFlow(Sizing.content(), Sizing.content());
+                descriptionLayout.surface(TBCExGUI.TOOLTIP_SURFACE);
+                descriptionLayout.margins(Insets.both(4, 4));
+                final TooltipText description = pair.get().getFirst().description();
+                for (final Text text : description.texts()) {
+                    descriptionLayout.child(Components.label(text));
+                }
+                flowLayout.child(descriptionLayout);
+            }
+        });
+        layout.keyPress().subscribe((keyCode, scanCode, modifiers) -> {
+            if (keyCode == GLFW.GLFW_KEY_ENTER && targetObservable.get().isPresent()) {
+                final Pair<BattleParticipantActionTarget, Double> pair = targetObservable.get().get();
+                final BattleParticipantActionBuilder.TargetIterator<?> iterator = builder.targets(pair.getFirst().type());
+                while (iterator.hasNext()) {
+                    if (iterator.next().equals(pair.getFirst())) {
+                        iterator.accept();
+                        canBuild.set(builder.canBuild());
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+        GridLayout gridLayout = Containers.grid(Sizing.content(), Sizing.content(), 1, 1);
+        gridLayout.surface(Surface.PANEL);
+        LabelComponent buildLabel = Components.label(Text.of("Do it!"));
+        buildLabel.sizing(Sizing.fixed(24), Sizing.fixed(24));
+        gridLayout.child(buildLabel, 0, 0);
+        canBuild.observe(b -> {
+            if (b) {
+                layout.child(gridLayout);
+            } else {
+                layout.removeChild(gridLayout);
+            }
+        });
+        gridLayout.mouseDown().subscribe((mouseX, mouseY, button) -> {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && canBuild.get()) {
+                builder.build();
+                MinecraftClient.getInstance().setScreen(null);
+                locker.lockMouse();
+                return true;
+            }
+            return false;
+        });
+        layout.child(flowLayout);
+        layout.mouseDown().subscribe((mouseX, mouseY, button) -> {
+            if (button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+                return false;
+            }
             canBuild.set(builder.canBuild());
             final Iterator<? extends BattleParticipantActionTargetType<?>> types = builder.types();
             BattleView battle = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(((TBCExPlayerEntity) MinecraftClient.getInstance().player).tbcex$getCurrentBattle());
             if (battle == null) {
-                return;
+                return false;
             }
             Vec3d camera = battle.toLocal(MinecraftClient.getInstance().gameRenderer.getCamera().getPos());
             Vec3d end = camera.add(BattleActionHudRegistry.getMouseVector().multiply(24));
@@ -120,65 +183,8 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
             } else if (!previous) {
                 targetObservable.set(Optional.empty());
             }
+            return true;
         });
-        FlowLayout flowLayout = Containers.verticalFlow(Sizing.content(), Sizing.content());
-        flowLayout.gap(8);
-        flowLayout.surface(Surface.PANEL);
-        interceptingComponent.child(flowLayout);
-        targetObservable.observe(pair -> {
-            flowLayout.clearChildren();
-            if (pair.isPresent()) {
-                final BattleParticipantStateView stateView = tryGetState();
-                if (stateView == null) {
-                    return;
-                }
-                final LabelComponent name = Components.label(pair.get().getFirst().name());
-                flowLayout.child(name);
-                final FlowLayout descriptionLayout = Containers.verticalFlow(Sizing.content(), Sizing.content());
-                descriptionLayout.surface(TBCExGUI.TOOLTIP_SURFACE);
-                descriptionLayout.margins(Insets.both(4, 4));
-                final TooltipText description = pair.get().getFirst().description();
-                for (final Text text : description.texts()) {
-                    descriptionLayout.child(Components.label(text));
-                }
-                flowLayout.child(descriptionLayout);
-            }
-        });
-        layout.keyPress().subscribe((keyCode, scanCode, modifiers) -> {
-            if (keyCode == GLFW.GLFW_KEY_ENTER && targetObservable.get().isPresent()) {
-                final Pair<BattleParticipantActionTarget, Double> pair = targetObservable.get().get();
-                final BattleParticipantActionBuilder.TargetIterator<?> iterator = builder.targets(pair.getFirst().type());
-                while (iterator.hasNext()) {
-                    if (iterator.next().equals(pair.getFirst())) {
-                        iterator.accept();
-                        return true;
-                    }
-                }
-            }
-            return false;
-        });
-        GridLayout gridLayout = Containers.grid(Sizing.content(), Sizing.content(), 1, 1);
-        gridLayout.surface(Surface.PANEL);
-        LabelComponent buildLabel = Components.label(Text.of("Do it!"));
-        buildLabel.sizing(Sizing.fixed(24), Sizing.fixed(24));
-        gridLayout.child(buildLabel, 0, 0);
-        canBuild.observe(b -> {
-            if (b) {
-                layout.child(gridLayout);
-            } else {
-                layout.removeChild(gridLayout);
-            }
-        });
-        gridLayout.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && canBuild.get()) {
-                builder.build();
-                MinecraftClient.getInstance().setScreen(null);
-                locker.lockMouse();
-                return true;
-            }
-            return false;
-        });
-        layout.child(interceptingComponent);
         return layout;
     };
 

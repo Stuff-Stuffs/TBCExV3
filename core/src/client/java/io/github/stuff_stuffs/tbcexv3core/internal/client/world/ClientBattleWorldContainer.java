@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.impl.ClientBattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRequestSender;
@@ -103,39 +104,43 @@ public class ClientBattleWorldContainer {
         }
 
         public void render(final WorldRenderContext context, final BattleView battle) {
-            final double time = context.tickDelta() + context.world().getTime();
-            final MatrixStack matrices = context.matrixStack();
-            matrices.push();
-            final Vec3d pos = battle.toLocal(context.camera().getPos());
-            matrices.translate(-pos.x, -pos.y, -pos.z);
-            manager.update(time, new BattleAnimationContext() {
-                @Override
-                public BattleStateView state() {
-                    return battle.getState();
-                }
+            if (battle.getState().getPhase() == BattleStatePhase.FIGHT) {
+                final double time = context.tickDelta() + context.world().getTime();
+                final MatrixStack matrices = context.matrixStack();
+                matrices.push();
+                final Vec3d pos = context.camera().getPos();
+                matrices.translate(-pos.x, -pos.y, -pos.z);
+                final Vec3d v = battle.toGlobal(Vec3d.ZERO);
+                matrices.translate(v.x, v.y, v.z);
+                manager.update(time, new BattleAnimationContext() {
+                    @Override
+                    public BattleStateView state() {
+                        return battle.getState();
+                    }
 
-                @Override
-                public BlockPos toLocal(final BlockPos global) {
-                    return battle.toLocal(global);
-                }
+                    @Override
+                    public BlockPos toLocal(final BlockPos global) {
+                        return battle.toLocal(global);
+                    }
 
-                @Override
-                public BlockPos toGlobal(final BlockPos local) {
-                    return battle.toGlobal(local);
-                }
+                    @Override
+                    public BlockPos toGlobal(final BlockPos local) {
+                        return battle.toGlobal(local);
+                    }
 
-                @Override
-                public Vec3d toLocal(final Vec3d global) {
-                    return battle.toLocal(global);
-                }
+                    @Override
+                    public Vec3d toLocal(final Vec3d global) {
+                        return battle.toLocal(global);
+                    }
 
-                @Override
-                public Vec3d toGlobal(final Vec3d local) {
-                    return battle.toGlobal(local);
-                }
-            });
-            manager.scene().render(matrices, context.consumers(), pos, context.camera().getRotation(), time);
-            matrices.pop();
+                    @Override
+                    public Vec3d toGlobal(final Vec3d local) {
+                        return battle.toGlobal(local);
+                    }
+                });
+                manager.scene().render(matrices, context.consumers(), pos, context.camera().getRotation(), time);
+                matrices.pop();
+            }
         }
     }
 }

@@ -26,17 +26,24 @@ public final class BattleActionHudScreen extends BaseOwoScreen<ParentComponent> 
             @Override
             public void lockMouse() {
                 unlocked = true;
+                passEvents = true;
                 mouse.lockCursor();
             }
 
             @Override
             public void unlockMouse() {
                 unlocked = false;
+                passEvents = false;
                 mouse.unlockCursor();
             }
         };
         this.factory = factory.apply(mouseLocker);
         passEvents = true;
+    }
+
+    @Override
+    public boolean shouldPause() {
+        return false;
     }
 
     @Override

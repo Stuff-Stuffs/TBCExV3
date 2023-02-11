@@ -45,9 +45,9 @@ public class BattleImpl implements Battle, BattleView {
         initialEnvironment = environment;
         this.reset = reset;
         state = (AbstractBattleStateImpl) BattleState.createEmpty(this.mode);
-        final BattleEnvironment battleEnvironment = environment.create(world);
+        final BattleEnvironment battleEnvironment = environment.create();
         reset.run();
-        ((BattleEnvironmentImpl) battleEnvironment).setup(state, origin);
+        ((BattleEnvironmentImpl) battleEnvironment).setup(state);
         state.setup(handle, battleEnvironment);
         this.world = world;
         this.origin = origin;
@@ -83,8 +83,8 @@ public class BattleImpl implements Battle, BattleView {
             tracer = createTracer();
             state = (AbstractBattleStateImpl) BattleState.createEmpty(mode);
             reset.run();
-            final BattleEnvironment environment = initialEnvironment.create(world);
-            ((BattleEnvironmentImpl) environment).setup(state, origin);
+            final BattleEnvironment environment = initialEnvironment.create();
+            ((BattleEnvironmentImpl) environment).setup(state);
             state.setup(handle, environment);
             for (final BattleAction action : actions) {
                 action.apply(state, tracer);

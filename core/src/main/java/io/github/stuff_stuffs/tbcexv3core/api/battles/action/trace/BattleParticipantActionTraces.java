@@ -15,8 +15,15 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.Optional;
 
-public final class ParticipantActionTraces {
-    private ParticipantActionTraces() {
+public final class BattleParticipantActionTraces {
+    private BattleParticipantActionTraces() {
+    }
+
+    public record BattleParticipantStartTurnActions(BattleParticipantHandle handle) implements ActionTrace {
+    }
+
+    public record BattleParticipantEndTurnActions() implements ActionTrace {
+
     }
 
     public record BattleParticipantStartMove(

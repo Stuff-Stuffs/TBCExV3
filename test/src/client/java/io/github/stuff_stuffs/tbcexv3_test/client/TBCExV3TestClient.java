@@ -8,7 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimatorRegis
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
@@ -44,8 +44,8 @@ import java.util.function.Consumer;
 public class TBCExV3TestClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        ActionTraceAnimatorRegistry.INSTANCE.register(ParticipantActionTraces.BattleParticipantJoined.ANIMATION_DATA, trace -> {
-            if (!(trace.value() instanceof ParticipantActionTraces.BattleParticipantJoined joined)) {
+        ActionTraceAnimatorRegistry.INSTANCE.register(BattleParticipantActionTraces.BattleParticipantJoined.ANIMATION_DATA, trace -> {
+            if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantJoined joined)) {
                 return Optional.empty();
             }
             final Identifier id = TBCExV3Test.id(joined.handle().getUuid().toString().replace('-', '_'));
@@ -67,15 +67,15 @@ public class TBCExV3TestClient implements ClientModInitializer {
                 return true;
             })));
         });
-        ActionTraceAnimatorRegistry.INSTANCE.register(ParticipantActionTraces.BattleParticipantLeft.ANIMATION_DATA, trace -> {
-            if (!(trace.value() instanceof ParticipantActionTraces.BattleParticipantJoined joined)) {
+        ActionTraceAnimatorRegistry.INSTANCE.register(BattleParticipantActionTraces.BattleParticipantLeft.ANIMATION_DATA, trace -> {
+            if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantJoined joined)) {
                 return Optional.empty();
             }
             final Identifier id = TBCExV3Test.id(joined.handle().getUuid().toString().replace('-', '_'));
             return Optional.of(manager -> manager.scene().removeModel(id));
         });
-        ActionTraceAnimatorRegistry.INSTANCE.register(ParticipantActionTraces.BattleParticipantMove.ANIMATION_DATA, trace -> {
-            if (!(trace.value() instanceof ParticipantActionTraces.BattleParticipantMove moved)) {
+        ActionTraceAnimatorRegistry.INSTANCE.register(BattleParticipantActionTraces.BattleParticipantMove.ANIMATION_DATA, trace -> {
+            if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantMove moved)) {
                 return Optional.empty();
             }
             final Identifier id = TBCExV3Test.id(moved.handle().getUuid().toString().replace('-', '_'));
@@ -115,13 +115,9 @@ public class TBCExV3TestClient implements ClientModInitializer {
                             stack.push();
                             stack.translate(-pos.x, -pos.y, -pos.z);
                             final BlockPos center = view.toGlobal(other.getBounds().center());
-                            final float r = relation == BattleParticipantTeamRelation.ENEMIES ? 1.0F : 0.0F;
-                            final float g = relation == BattleParticipantTeamRelation.ALLIES ? 1.0F : 0.0F;
-                            final VertexConsumer consumer = context.consumers().getBuffer(RenderLayer.getLines());
-                            other.getBounds().partStream().map(BattleParticipantBounds.Part::box).forEach(box -> WorldRenderer.drawBox(stack, consumer, view.toGlobal(box), r, g, 0.0F, 0.1F));
-                            stack.translate(center.getX(), center.getY(), center.getZ());
+                            stack.translate(center.getX() + 0.5, center.getY(), center.getZ() + 0.5);
                             stack.translate(0, 2, 0);
-                            stack.multiplyPositionMatrix(new Matrix4f().identity().billboardCylindrical(new Vector3f(), new Vector3f((float) (center.getX() - pos.x), (float) (center.getY() - pos.y), (float) (center.getZ() - pos.z)), new Vector3f(0, 1, 0)));
+                            stack.multiplyPositionMatrix(new Matrix4f().identity().billboardCylindrical(new Vector3f(), new Vector3f((float) (center.getX() + 0.5 - pos.x), (float) (center.getY() - pos.y), (float) (center.getZ() + 0.5 - pos.z)), new Vector3f(0, 1, 0)));
                             stack.translate(-(182 / 32F / 2F), 0, 0);
                             stack.scale(1 / 32f, 1 / 32f, 1 / 32f);
                             final double health = other.getHealth();
@@ -134,6 +130,7 @@ public class TBCExV3TestClient implements ClientModInitializer {
                             RenderSystem.setShaderTexture(0, new Identifier("textures/gui/bars.png"));
                             DrawableHelper.drawTexture(stack, 0, 0, 0, 0, color.ordinal() * 5 * 2 + 5, width, 5, 256, 256);
                             DrawableHelper.drawTexture(stack, 0, 0, 0, 0, 80 + (4 - 1) * 5 * 2 + 5, 182, 5, 256, 256);
+                            RenderSystem.disableBlend();
                             stack.pop();
                         }
                     });

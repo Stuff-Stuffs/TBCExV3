@@ -3,7 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.state;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
@@ -86,7 +86,7 @@ public class ParticipantContainer {
             participantStates.put(handle, (AbstractBattleParticipantState) participant);
             teamByHandle.put(handle, team);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
-            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantJoined(handle)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantJoined(handle)).buildAndApply();
             return Optional.of(handle);
         }
         return Optional.empty();
@@ -100,7 +100,7 @@ public class ParticipantContainer {
             final AbstractBattleParticipantState removed = participantStates.remove(handle);
             handlesByTeam.get(removed.getTeam()).remove(handle);
             removed.finish();
-            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
             events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(removed, state, reason, tracer);
             tracer.pop();
             return true;
@@ -165,7 +165,7 @@ public class ParticipantContainer {
             handlesByTeam.get(currentTeam).remove(handle);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
             teamByHandle.put(handle, team);
-            tracer.pushInstant(true).value(new ParticipantActionTraces.BattleParticipantSetTeam(handle, team, currentTeam)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantSetTeam(handle, team, currentTeam)).buildAndApply();
             state.getEventMap().getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().postSetTeam(state, currentTeam, tracer);
             tracer.pop();
             return true;

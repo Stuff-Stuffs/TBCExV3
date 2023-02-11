@@ -1,7 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.stat;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3util.api.util.TopologicalSort;
@@ -54,14 +54,14 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
             final WrappedModifier wrappedModifier = new WrappedModifier(index, modifier);
             modifiers.add(wrappedModifier);
             sort();
-            tracer.pushInstant(true).value(new ParticipantActionTraces.Stat.AddStatModifier(stat)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.Stat.AddStatModifier(stat)).buildAndApply();
             tracer.pop();
             return new KeyImpl(wrappedModifier, this);
         }
 
         public void remove(final WrappedModifier modifier, final Tracer<ActionTrace> tracer) {
             modifiers.remove(modifier);
-            tracer.pushInstant(true).value(new ParticipantActionTraces.Stat.RemoveStatModifier(stat)).buildAndApply();
+            tracer.pushInstant(true).value(new BattleParticipantActionTraces.Stat.RemoveStatModifier(stat)).buildAndApply();
             tracer.pop();
             sort();
         }

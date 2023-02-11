@@ -3,7 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.action;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ParticipantActionTraces;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
@@ -44,8 +44,8 @@ public class BattleParticipantTeleportBattleAction implements BattleAction {
         if (state.getPhase() != BattleStatePhase.FIGHT) {
             throw new RuntimeException();
         }
-        final TracerView.IntervalStart<ActionTrace> start = trace.pushStart(true).value(new ParticipantActionTraces.BattleParticipantStartMove(target)).buildAndApply();
+        final TracerView.IntervalStart<ActionTrace> start = trace.pushStart(true).value(new BattleParticipantActionTraces.BattleParticipantStartMove(target)).buildAndApply();
         state.getParticipantByHandle(target).setPosition(destination, trace);
-        trace.pushEnd(start, true).value(new ParticipantActionTraces.BattleParticipantEndMove(target)).buildAndApply();
+        trace.pushEnd(start, true).value(new BattleParticipantActionTraces.BattleParticipantEndMove(target)).buildAndApply();
     }
 }
