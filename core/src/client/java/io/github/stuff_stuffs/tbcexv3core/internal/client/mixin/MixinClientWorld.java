@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.mixin;
 
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
@@ -79,7 +80,7 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
     }
 
     @Override
-    public @Nullable AnimationScene tbcex$getScene(final BattleHandle handle) {
+    public @Nullable AnimationScene<BattleAnimationContext> tbcex$getScene(final BattleHandle handle) {
         return battleWorldContainer.getScene(handle);
     }
 }

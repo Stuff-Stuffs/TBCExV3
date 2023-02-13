@@ -12,7 +12,6 @@ import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRe
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequest;
-import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManager;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -24,7 +23,7 @@ import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 //TODO timeout
@@ -39,10 +38,10 @@ public class ClientBattleWorldContainer implements AutoCloseable {
     public ClientBattleWorldContainer() {
     }
 
-    public @Nullable AnimationScene getScene(final BattleHandle handle) {
+    public @Nullable AnimationScene<BattleAnimationContext> getScene(final BattleHandle handle) {
         final AnimationState state = animationState.get(handle);
         if (state != null) {
-            return state.manager.scene();
+            return state.scene;
         }
         return null;
     }
@@ -77,7 +76,7 @@ public class ClientBattleWorldContainer implements AutoCloseable {
         } else if (update.offset() == 0 && update.initialData().isPresent()) {
             final BattleUpdate.InitialData data = update.initialData().get();
             final BattleHandle handle = update.handle();
-            final ClientBattleImpl battle = new ClientBattleImpl(handle, BattleStateMode.CLIENT, data.initialEnvironment(), data.origin(), animation -> animationState.computeIfAbsent(handle, i -> new AnimationState()).add(animation));
+            final ClientBattleImpl battle = new ClientBattleImpl(handle, BattleStateMode.CLIENT, data.initialEnvironment(), data.origin(), (animation, state) -> animationState.computeIfAbsent(handle, i -> new AnimationState()).add(animation, state));
             battle.update(update);
             battles.put(handle, battle);
         }
@@ -109,7 +108,7 @@ public class ClientBattleWorldContainer implements AutoCloseable {
     public void close() {
         for (final AnimationState value : animationState.values()) {
             try {
-                value.manager.close();
+                value.scene.close();
             } catch (final Exception e) {
                 e.printStackTrace();
             }
@@ -118,10 +117,10 @@ public class ClientBattleWorldContainer implements AutoCloseable {
     }
 
     private static final class AnimationState {
-        private final AnimationManager<BattleAnimationContext> manager = AnimationManager.create();
+        private final AnimationScene<BattleAnimationContext> scene = AnimationScene.create();
 
-        public void add(final Consumer<AnimationManager<BattleAnimationContext>> consumer) {
-            consumer.accept(manager);
+        public void add(final BiConsumer<AnimationScene<BattleAnimationContext>, BattleStateView> consumer, final BattleStateView state) {
+            consumer.accept(scene, state);
         }
 
         public void render(final WorldRenderContext context, final BattleView battle) {
@@ -133,7 +132,7 @@ public class ClientBattleWorldContainer implements AutoCloseable {
                 matrices.translate(-pos.x, -pos.y, -pos.z);
                 final Vec3d v = battle.toGlobal(Vec3d.ZERO);
                 matrices.translate(v.x, v.y, v.z);
-                manager.update(time, new BattleAnimationContext() {
+                scene.update(time, new BattleAnimationContext() {
                     @Override
                     public BattleStateView state() {
                         return battle.getState();
@@ -159,7 +158,7 @@ public class ClientBattleWorldContainer implements AutoCloseable {
                         return battle.toGlobal(local);
                     }
                 });
-                manager.scene().render(matrices, context.consumers(), pos, context.camera().getRotation(), time);
+                scene.render(matrices, context.consumers(), pos, context.camera().getRotation(), time);
                 matrices.pop();
             }
         }

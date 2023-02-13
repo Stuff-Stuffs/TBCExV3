@@ -17,7 +17,7 @@
       "io.github.stuff_stuffs.tbcexv3test.common.TBCExV3Test"
     ],
     "client": [
-      "io.github.stuff_stuffs.tbcexv3_test.client.TBCExV3TestClient"
+      "io.github.stuff_stuffs.tbcexv3test.client.TBCExV3TestClient"
     ],
     "preLaunch": [
       "io.github.stuff_stuffs.tbcexv3test.common.TBCExV3Test"

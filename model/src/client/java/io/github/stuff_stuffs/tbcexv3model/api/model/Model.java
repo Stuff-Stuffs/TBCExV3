@@ -10,14 +10,16 @@ import net.minecraft.util.Identifier;
 import java.util.Set;
 
 public interface Model {
+    ModelType type();
+
     Skeleton skeleton();
 
     ModelAttachedPart get(Identifier bone);
 
     void renderInGui(MatrixStack matrices, int light, VertexConsumerProvider vertex, float width, float height);
 
-    static Model create() {
-        return new ModelImpl();
+    static Model create(ModelType type) {
+        return new ModelImpl(type);
     }
 
     interface ModelAttachedPart {

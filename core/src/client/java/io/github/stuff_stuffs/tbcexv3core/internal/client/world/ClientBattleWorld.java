@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.world;
 
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
@@ -19,5 +20,5 @@ public interface ClientBattleWorld {
 
     void tbcex$close();
 
-    @Nullable AnimationScene tbcex$getScene(BattleHandle handle);
+    @Nullable AnimationScene<BattleAnimationContext> tbcex$getScene(BattleHandle handle);
 }

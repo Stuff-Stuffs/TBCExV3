@@ -1,5 +1,5 @@
 {
-  "type": "tbcexv3_core:battle_display_world",
+  "type": "tbcexv3core:battle_display_world",
   "generator": {
     "type": "minecraft:flat",
     "settings": {

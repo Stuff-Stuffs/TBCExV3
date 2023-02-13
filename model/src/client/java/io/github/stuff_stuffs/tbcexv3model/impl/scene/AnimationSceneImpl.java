@@ -1,10 +1,14 @@
 package io.github.stuff_stuffs.tbcexv3model.impl.scene;
 
+import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManager;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.ModelAnimationFactory;
 import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
 import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderPartContext;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelType;
 import io.github.stuff_stuffs.tbcexv3model.api.model.modelpart.ModelPart;
 import io.github.stuff_stuffs.tbcexv3model.api.model.skeleton.Bone;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
+import io.github.stuff_stuffs.tbcexv3model.impl.animation.AnimationManagerImpl;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.client.gl.VertexBuffer;
 import net.minecraft.client.render.BufferBuilder;
@@ -18,16 +22,22 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-public class AnimationSceneImpl implements AnimationScene {
+public class AnimationSceneImpl<T> implements AnimationScene<T> {
+    private final AnimationManagerImpl<T> manager = new AnimationManagerImpl<>();
     private final Map<Identifier, Model> models = new Object2ReferenceOpenHashMap<>();
-    private final Map<TokenImpl, VertexBuffer> buffers = new Object2ReferenceOpenHashMap<>();
+    private final Map<TokenImpl<T>, VertexBuffer> buffers = new Object2ReferenceOpenHashMap<>();
     private int nextBufferId = 0;
+
+    @Override
+    public AnimationManager<T> animationManager() {
+        return manager;
+    }
 
     @Override
     public BufferToken upload(final BufferBuilder.BuiltBuffer buffer) {
         final VertexBuffer vertexBuffer = new VertexBuffer();
         vertexBuffer.upload(buffer);
-        final TokenImpl token = new TokenImpl(nextBufferId++, this);
+        final TokenImpl<T> token = new TokenImpl<>(nextBufferId++, this);
         buffers.put(token, vertexBuffer);
         return token;
     }
@@ -48,9 +58,20 @@ public class AnimationSceneImpl implements AnimationScene {
     }
 
     @Override
-    public void addModel(final Identifier id) {
+    public void addModel(final Identifier id, final ModelType type, final Map<Identifier, ModelAnimationFactory<T>> defaultFactories) {
         if (!models.containsKey(id)) {
-            models.put(id, Model.create());
+            validate(type, defaultFactories.keySet());
+            models.put(id, Model.create(type));
+            manager.addModel(id, type, defaultFactories);
+        }
+    }
+
+    private static void validate(final ModelType type, final Set<Identifier> ids) {
+        if (!ids.containsAll(type.requiredAnimations())) {
+            throw new IllegalArgumentException();
+        }
+        for (final ModelType parent : type.parents()) {
+            validate(parent, ids);
         }
     }
 
@@ -82,12 +103,17 @@ public class AnimationSceneImpl implements AnimationScene {
     }
 
     @Override
+    public void update(final double time, final T data) {
+        manager.update(time, data, this);
+    }
+
+    @Override
     public void close() {
         buffers.values().forEach(VertexBuffer::close);
         buffers.clear();
     }
 
-    private record TokenImpl(int id, AnimationSceneImpl scene) implements BufferToken {
+    private record TokenImpl<T>(int id, AnimationSceneImpl<T> scene) implements BufferToken {
         @Override
         public boolean isValid() {
             return scene.buffers.containsKey(this);

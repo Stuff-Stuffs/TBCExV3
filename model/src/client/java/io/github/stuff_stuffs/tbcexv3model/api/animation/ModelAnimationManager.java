@@ -1,17 +1,17 @@
 package io.github.stuff_stuffs.tbcexv3model.api.animation;
 
-import java.util.function.Consumer;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelType;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
 public interface ModelAnimationManager<T> {
-    void setIdleAnimation(ModelIdleAnimation<T> modelAnimation);
+    ModelType type();
 
-    boolean open();
+    @Nullable ModelAnimationFactory<T> get(Identifier animationId);
 
-    boolean setAnimation(ModelAnimation<T> animation);
+    void setModelAnimation(Identifier animationId, ModelAnimationFactory<T> animation);
 
-    void enqueueListener(Listener<T> listener);
+    void animate(ModelAnimation<T> animation);
 
-    interface Listener<T> {
-        void onOpen(Consumer<ModelAnimation<T>> consumer, Runnable giveUpSlot);
-    }
+    boolean isDone();
 }

@@ -2,6 +2,7 @@ package io.github.stuff_stuffs.tbcexv3model.impl.model;
 
 import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
 import io.github.stuff_stuffs.tbcexv3model.api.model.ModelGuiRenderPartContext;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelType;
 import io.github.stuff_stuffs.tbcexv3model.api.model.modelpart.ModelPart;
 import io.github.stuff_stuffs.tbcexv3model.api.model.skeleton.Skeleton;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
@@ -16,11 +17,18 @@ import java.util.Set;
 public class ModelImpl implements Model, Skeleton.Listener {
     private final Skeleton skeleton;
     private final Map<Identifier, ModelAttachedPartImpl> parts;
+    private final ModelType type;
 
-    public ModelImpl() {
+    public ModelImpl(final ModelType type) {
+        this.type = type;
         skeleton = Skeleton.create();
         skeleton.addListener(this);
         parts = new Object2ReferenceOpenHashMap<>();
+    }
+
+    @Override
+    public ModelType type() {
+        return type;
     }
 
     @Override

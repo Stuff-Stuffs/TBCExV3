@@ -1,17 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3model.api.animation;
 
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
-import io.github.stuff_stuffs.tbcexv3model.impl.animation.AnimationManagerImpl;
 import net.minecraft.util.Identifier;
 
-public interface AnimationManager<T> extends AutoCloseable {
-    AnimationScene scene();
-
+public interface AnimationManager<T> {
     ModelAnimationManager<T> forModel(Identifier id);
 
-    void update(final double time, final T data);
+    void update(final double time, final T data, AnimationScene<T> scene);
 
-    static <T> AnimationManager<T> create() {
-        return new AnimationManagerImpl<>();
-    }
+    void enqueueAnimation(SceneAnimation<T> sceneAnimation);
 }
