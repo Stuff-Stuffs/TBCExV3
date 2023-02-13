@@ -1,6 +1,6 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.item;
+package io.github.stuff_stuffs.tbcexv3test.common.item;
 
-import io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test;
+import io.github.stuff_stuffs.tbcexv3test.common.TBCExV3Test;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemType;
 import net.minecraft.registry.Registry;
 

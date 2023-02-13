@@ -1,8 +1,8 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.item;
+package io.github.stuff_stuffs.tbcexv3test.common.item;
 
 import com.mojang.serialization.Codec;
-import io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test;
-import io.github.stuff_stuffs.tbcexv3_test.common.action.BattleParticipantMeleeTestBattleAction;
+import io.github.stuff_stuffs.tbcexv3test.common.TBCExV3Test;
+import io.github.stuff_stuffs.tbcexv3test.common.action.BattleParticipantMeleeTestBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionBuilder;

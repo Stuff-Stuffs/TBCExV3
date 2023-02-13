@@ -1,11 +1,11 @@
-package io.github.stuff_stuffs.tbcexv3_test.common;
+package io.github.stuff_stuffs.tbcexv3test.common;
 
 import com.mojang.brigadier.CommandDispatcher;
-import io.github.stuff_stuffs.tbcexv3_test.common.action.TestBattleActions;
-import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntities;
-import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntityComponent;
-import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItem;
-import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItemTypes;
+import io.github.stuff_stuffs.tbcexv3test.common.action.TestBattleActions;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntities;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntityComponent;
+import io.github.stuff_stuffs.tbcexv3test.common.item.TestBattleParticipantItem;
+import io.github.stuff_stuffs.tbcexv3test.common.item.TestBattleParticipantItemTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantMoveBattleAction;
@@ -17,8 +17,6 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionBlockPosTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.CoreBattleActionTargetTypes;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
@@ -38,7 +36,6 @@ import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.Registry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -51,7 +48,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 
 public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {

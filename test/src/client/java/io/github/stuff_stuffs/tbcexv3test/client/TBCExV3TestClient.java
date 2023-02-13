@@ -1,9 +1,9 @@
-package io.github.stuff_stuffs.tbcexv3_test.client;
+package io.github.stuff_stuffs.tbcexv3test.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test;
-import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntities;
-import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntity;
+import io.github.stuff_stuffs.tbcexv3test.common.TBCExV3Test;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntities;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimatorRegistry;
 import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;

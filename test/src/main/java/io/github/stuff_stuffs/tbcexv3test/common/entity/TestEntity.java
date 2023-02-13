@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.entity;
+package io.github.stuff_stuffs.tbcexv3test.common.entity;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;

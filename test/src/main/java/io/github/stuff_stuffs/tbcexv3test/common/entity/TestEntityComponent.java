@@ -1,8 +1,8 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.entity;
+package io.github.stuff_stuffs.tbcexv3test.common.entity;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.stuff_stuffs.tbcexv3_test.common.CreativeModeBattleParticipantEffect;
+import io.github.stuff_stuffs.tbcexv3test.common.CreativeModeBattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifier;

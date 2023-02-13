@@ -1,7 +1,7 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.entity;
+package io.github.stuff_stuffs.tbcexv3test.common.entity;
 
-import io.github.stuff_stuffs.tbcexv3_test.common.CreativeModeBattleParticipantEffect;
-import io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test;
+import io.github.stuff_stuffs.tbcexv3test.common.CreativeModeBattleParticipantEffect;
+import io.github.stuff_stuffs.tbcexv3test.common.TBCExV3Test;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;

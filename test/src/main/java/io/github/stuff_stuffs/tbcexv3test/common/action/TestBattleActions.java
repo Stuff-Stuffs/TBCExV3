@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.action;
+package io.github.stuff_stuffs.tbcexv3test.common.action;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleActionType;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;

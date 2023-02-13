@@ -1,4 +1,4 @@
-package io.github.stuff_stuffs.tbcexv3_test.common.action;
+package io.github.stuff_stuffs.tbcexv3test.common.action;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

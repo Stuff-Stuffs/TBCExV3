@@ -42,6 +42,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.server.world.ServerLightingProvider;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
@@ -59,7 +60,7 @@ import java.util.Iterator;
 import java.util.function.Supplier;
 
 public class TBCExV3Core implements ModInitializer {
-    public static final String MOD_ID = "tbcexv3_core";
+    public static final String MOD_ID = "tbcexv3core";
     public static final WorldSavePath TBCEX_WORLD_SAVE_PATH = AccessorWorldSavePath.create("tbcex");
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static Supplier<@Nullable Logger> CLIENT_LOGGER = null;
@@ -74,6 +75,7 @@ public class TBCExV3Core implements ModInitializer {
         final int startX = start.getX() >> 4;
         final int startZ = start.getZ() >> 4;
         final Registry<Biome> biomeRegistry = world.getRegistryManager().get(RegistryKeys.BIOME);
+        final ServerLightingProvider provider = world.getChunkManager().getLightingProvider();
         for (int x = startX; x <= sectionMaxX - sectionMinX; x++) {
             for (int z = startZ; z <= sectionMaxZ - sectionMinZ; z++) {
                 final Chunk chunk = world.getChunk(x, z, ChunkStatus.FULL, true);
@@ -88,6 +90,7 @@ public class TBCExV3Core implements ModInitializer {
                         extensions.tbcex$clearBlockContainer();
                         extensions.tbcex$clearBiomeContainer(biomeRegistry);
                     }
+                    provider.checkBlock(new BlockPos((x << 4) + 1, (world.sectionIndexToCoord(i) << 4) + 1, (z << 4) + 1));
                 }
             }
         }
