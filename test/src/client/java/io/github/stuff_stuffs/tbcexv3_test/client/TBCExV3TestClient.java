@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3_test.common.TBCExV3Test;
 import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntities;
 import io.github.stuff_stuffs.tbcexv3_test.common.entity.TestEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimatorRegistry;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
@@ -24,9 +25,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.boss.BossBar;
@@ -48,46 +46,46 @@ public class TBCExV3TestClient implements ClientModInitializer {
             if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantJoined joined)) {
                 return Optional.empty();
             }
-            final Identifier id = TBCExV3Test.id(joined.handle().getUuid().toString().replace('-', '_'));
+            final Identifier id = BattleAnimationContext.toModelId(joined.handle());
             return Optional.of(manager -> manager.forModel(id).enqueueListener((consumer, giveUpSlot) -> consumer.accept((model, context, time, startTime) -> {
                 if (model == null) {
                     context.scene().addModel(id);
-                    model = context.scene().model(id);
+                    model = context.scene().getModel(id);
                     final BattleParticipantStateView participant = context.context().state().getParticipantByHandle(joined.handle());
                     model.skeleton().addBone(TBCExV3Test.id("root"), Optional.empty());
                     final BlockPos center = participant.getBounds().center();
-                    model.skeleton().bone(TBCExV3Test.id("root")).setTransform(new Matrix4f().translation(center.getX(), center.getY(), center.getZ()));
+                    model.skeleton().bone(TBCExV3Test.id("root")).setTransform(new Matrix4f().translation(center.getX() + 0.5F, center.getY(), center.getZ() + 0.5F));
                     final Iterator<BattleParticipantBounds.Part> parts = participant.getBounds().parts();
                     while (parts.hasNext()) {
                         final BattleParticipantBounds.Part part = parts.next();
                         final CuboidModelPart modelPart = new CuboidModelPart((float) part.box().getXLength(), (float) part.box().getYLength(), (float) part.box().getZLength(), 0, 0, 256, 256);
-                        model.get(TBCExV3Test.id("root")).addPart(part.id(), ModelPart.offset(modelPart, (float)part.box().minX - participant.getBounds().center().getX(), (float)part.box().minY - participant.getBounds().center().getY(),(float)part.box().minZ - participant.getBounds().center().getZ()));
+                        model.get(TBCExV3Test.id("root")).addPart(part.id(), ModelPart.offset(modelPart, (float) part.box().minX - (participant.getBounds().center().getX() + 0.5F), (float) part.box().minY - participant.getBounds().center().getY(), (float) part.box().minZ - (participant.getBounds().center().getZ() + 0.5F)));
                     }
                 }
                 return true;
             })));
         });
         ActionTraceAnimatorRegistry.INSTANCE.register(BattleParticipantActionTraces.BattleParticipantLeft.ANIMATION_DATA, trace -> {
-            if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantJoined joined)) {
+            if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantJoined left)) {
                 return Optional.empty();
             }
-            final Identifier id = TBCExV3Test.id(joined.handle().getUuid().toString().replace('-', '_'));
+            final Identifier id = BattleAnimationContext.toModelId(left.handle());
             return Optional.of(manager -> manager.scene().removeModel(id));
         });
         ActionTraceAnimatorRegistry.INSTANCE.register(BattleParticipantActionTraces.BattleParticipantMove.ANIMATION_DATA, trace -> {
             if (!(trace.value() instanceof BattleParticipantActionTraces.BattleParticipantMove moved)) {
                 return Optional.empty();
             }
-            final Identifier id = TBCExV3Test.id(moved.handle().getUuid().toString().replace('-', '_'));
+            final Identifier id = BattleAnimationContext.toModelId(moved.handle());
             return Optional.of(manager -> manager.forModel(id).enqueueListener((consumer, giveUpSlot) -> consumer.accept((model, context, time, startTime) -> {
                 if (model == null) {
                     return true;
                 }
                 final double length = 10;
                 final double delta = MathHelper.clamp((time - startTime) / length, 0, 1);
-                final double x = MathHelper.lerp(delta, moved.start().getX(), moved.end().getX());
+                final double x = MathHelper.lerp(delta, moved.start().getX() + 0.5, moved.end().getX() + 0.5);
                 final double y = MathHelper.lerp(delta, moved.start().getY(), moved.end().getY());
-                final double z = MathHelper.lerp(delta, moved.start().getZ(), moved.end().getZ());
+                final double z = MathHelper.lerp(delta, moved.start().getZ() + 0.5, moved.end().getZ() + 0.5);
                 model.skeleton().bone(TBCExV3Test.id("root")).setTransform(new Matrix4f().translation((float) x, (float) y, (float) z));
                 return time > startTime + length;
             })));

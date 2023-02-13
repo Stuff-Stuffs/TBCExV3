@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3model.api.model.modelpart;
 
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelGuiRenderPartContext;
 import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderPartContext;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
@@ -110,6 +111,31 @@ public class CuboidModelPart implements ModelPart {
                 scratch.mul(1 / scratch.w());
                 final Vector2fc uv = face.uvs[i];
                 consumer.vertex(scratch.x, scratch.y, scratch.z).color(face.colors[i]).texture(uv.x(), uv.y()).overlay(OverlayTexture.DEFAULT_UV).light(context.sampleLight(center.x(), center.y(), center.z())).normal(normScratch.x(), normScratch.y(), normScratch.z()).next();
+            }
+        }
+    }
+
+    @Override
+    public void renderInGui(ModelGuiRenderPartContext context) {
+        final MatrixStack matrices = context.matrices();
+        final Vector4f scratch = new Vector4f();
+        final Vector3f normScratch = new Vector3f();
+        final Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
+        final Matrix3f normalMatrix = matrices.peek().getNormalMatrix();
+        final VertexConsumer consumer = context.vertexConsumers().getBuffer(renderLayer.apply(texture));
+        for (final Face face : faces) {
+            normScratch.set(face.normal);
+            normalMatrix.transform(normScratch);
+            for (int i = 0; i < 4; i++) {
+                final Vector3fc vertex = face.vertices[i];
+                scratch.set(vertex.x(), vertex.y(), vertex.z(), 1.0F);
+                positionMatrix.transform(scratch);
+                if (Math.abs(scratch.w()) < 0.0000001) {
+                    continue;
+                }
+                scratch.mul(1 / scratch.w());
+                final Vector2fc uv = face.uvs[i];
+                consumer.vertex(scratch.x, scratch.y, scratch.z).color(face.colors[i]).texture(uv.x(), uv.y()).overlay(OverlayTexture.DEFAULT_UV).light(context.light()).normal(normScratch.x(), normScratch.y(), normScratch.z()).next();
             }
         }
     }

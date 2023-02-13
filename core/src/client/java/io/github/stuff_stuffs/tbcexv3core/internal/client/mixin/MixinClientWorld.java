@@ -7,6 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.internal.client.world.ClientBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.world.ClientBattleWorldContainer;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
+import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -68,7 +69,17 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
     }
 
     @Override
-    public void tbcex$render(WorldRenderContext context) {
+    public void tbcex$render(final WorldRenderContext context) {
         battleWorldContainer.render(context);
+    }
+
+    @Override
+    public void tbcex$close() {
+        battleWorldContainer.close();
+    }
+
+    @Override
+    public @Nullable AnimationScene tbcex$getScene(final BattleHandle handle) {
+        return battleWorldContainer.getScene(handle);
     }
 }

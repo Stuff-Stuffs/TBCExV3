@@ -6,6 +6,8 @@ import io.github.stuff_stuffs.tbcexv3model.api.model.modelpart.ModelPart;
 import io.github.stuff_stuffs.tbcexv3model.api.model.skeleton.Bone;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import net.minecraft.client.gl.VertexBuffer;
+import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -18,6 +20,17 @@ import java.util.Set;
 
 public class AnimationSceneImpl implements AnimationScene {
     private final Map<Identifier, Model> models = new Object2ReferenceOpenHashMap<>();
+    private final Map<TokenImpl, VertexBuffer> buffers = new Object2ReferenceOpenHashMap<>();
+    private int nextBufferId = 0;
+
+    @Override
+    public BufferToken upload(final BufferBuilder.BuiltBuffer buffer) {
+        final VertexBuffer vertexBuffer = new VertexBuffer();
+        vertexBuffer.upload(buffer);
+        final TokenImpl token = new TokenImpl(nextBufferId++, this);
+        buffers.put(token, vertexBuffer);
+        return token;
+    }
 
     @Override
     public Set<Identifier> models() {
@@ -25,7 +38,7 @@ public class AnimationSceneImpl implements AnimationScene {
     }
 
     @Override
-    public Model model(final Identifier id) {
+    public Model getModel(final Identifier id) {
         return models.get(id);
     }
 
@@ -42,7 +55,7 @@ public class AnimationSceneImpl implements AnimationScene {
     }
 
     @Override
-    public void render(MatrixStack matrices, final VertexConsumerProvider vertexConsumer, final Vec3d cameraPos, final Quaternionfc cameraLook, final double time) {
+    public void render(final MatrixStack matrices, final VertexConsumerProvider vertexConsumer, final Vec3d cameraPos, final Quaternionfc cameraLook, final double time) {
         for (final Map.Entry<Identifier, Model> entry : models.entrySet()) {
             final Model model = entry.getValue();
             for (final Identifier boneId : model.skeleton().bones()) {
@@ -65,6 +78,33 @@ public class AnimationSceneImpl implements AnimationScene {
                     matrices.pop();
                 }
             }
+        }
+    }
+
+    @Override
+    public void close() {
+        buffers.values().forEach(VertexBuffer::close);
+        buffers.clear();
+    }
+
+    private record TokenImpl(int id, AnimationSceneImpl scene) implements BufferToken {
+        @Override
+        public boolean isValid() {
+            return scene.buffers.containsKey(this);
+        }
+
+        @Override
+        public VertexBuffer getBuffer() {
+            final VertexBuffer vertexBuffer = scene.buffers.get(this);
+            if (vertexBuffer == null) {
+                throw new RuntimeException();
+            }
+            return vertexBuffer;
+        }
+
+        @Override
+        public void destroy() {
+            scene.buffers.remove(this).close();
         }
     }
 }

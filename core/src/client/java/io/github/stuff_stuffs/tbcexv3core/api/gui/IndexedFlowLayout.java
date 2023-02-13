@@ -27,6 +27,7 @@ public class IndexedFlowLayout<T> extends BaseParentComponent {
 
     public void setComparator(final Comparator<T> comparator) {
         this.comparator = comparator;
+        updateSort();
     }
 
     @Override

@@ -10,7 +10,8 @@
     "MixinClientWorld",
     "MixinGameRenderer",
     "MixinMinecraftClient",
-    "MixinMouse"
+    "MixinMouse",
+    "MixinWorldClient"
   ],
   "injectors": {
     "defaultRequire": 1

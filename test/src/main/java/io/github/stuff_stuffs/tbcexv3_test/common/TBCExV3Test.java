@@ -8,7 +8,7 @@ import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItem
 import io.github.stuff_stuffs.tbcexv3_test.common.item.TestBattleParticipantItemTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantTeleportBattleAction;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantMoveBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.InitialTeamSetupBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantAction;
@@ -17,6 +17,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionBlockPosTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.CoreBattleActionTargetTypes;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemStack;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
@@ -25,6 +27,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattlePlayerCompo
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.InventoryBattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Pathfinder;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
 import net.fabricmc.api.EnvType;
@@ -35,17 +38,20 @@ import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 
 public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
@@ -64,7 +70,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             for (int i = 0; i < 32; i++) {
                 componentBuilder.addStack(BattleParticipantItemStack.of(new TestBattleParticipantItem(random.nextLong()), random.nextBetween(1, 128)));
             }
-            builder.addComponent(new TestEntityComponent(20, 20));
+            builder.addComponent(new TestEntityComponent(20, 20, entity.interactionManager.isCreative()));
             builder.addComponent(componentBuilder.build());
         });
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> testCommand(dispatcher));
@@ -79,32 +85,62 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
                 return new TooltipText(List.of(Text.of("The name is about all you need to know")));
             }
 
-            private static BattleParticipantActionBuilder.TargetRaycaster<BattleParticipantActionBlockPosTarget> getRaycastTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer) {
+            private static BattleParticipantActionBuilder.TargetRaycaster<BattleParticipantActionBlockPosTarget> getRaycastTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer, final Pathfinder.PathTree<List<BlockPos>> pathTree) {
                 final BattleEnvironmentView environment = state.getBattleState().getEnvironment();
-                return BattleParticipantActionBlockPosTarget.filterRaycast(pos -> environment.checkForStanding(state.getBounds(), pos, true), (pos, start, end) -> {
+                return BattleParticipantActionBlockPosTarget.filterRaycast(pos -> pathTree.endPositions().contains(pos), (pos, start, end) -> {
                     final BlockHitResult raycast = environment.getBlockState(pos).getCollisionShape(environment.asBlockView(), pos).raycast(start, end, pos);
                     return raycast != null && raycast.getType() != HitResult.Type.MISS;
                 }, p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
             }
 
-            private static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBlockPosTarget> getIteratorTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer) {
-                final BattleEnvironmentView environment = state.getBattleState().getEnvironment();
-                return BattleParticipantActionBlockPosTarget.filterIterator(pos -> environment.checkForStanding(state.getBounds(), pos, true), state.getBounds().center(), 10, p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
+            private static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBlockPosTarget> getIteratorTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer, final Pathfinder.PathTree<List<BlockPos>> pathTree) {
+                return BattleParticipantActionBlockPosTarget.filterIterator(pos -> pathTree.endPositions().contains(pos), state.getBounds().center(), 16, p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
+            }
+
+            private static Pathfinder.PathTree<List<BlockPos>> gatherPaths(final BattleParticipantStateView state) {
+                return Pathfinder.find(state.getBounds().center(), new Pathfinder.NeighbourGetter() {
+                    @Override
+                    public void neighbours(final BlockPos pos, final Pathfinder.Node node, final Pathfinder.NodeAppender appender) {
+                        for (final BlockPos outward : BlockPos.iterateOutwards(pos, 1, 0, 1)) {
+                            if (appender.getCost(outward) > node.cost() + 1.00001 && state.getBattleState().getEnvironment().checkForStanding(state.getBounds(), outward, true)) {
+                                appender.append(outward, node.cost() + 1);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void start(final BlockPos pos, final Pathfinder.NodeAppender appender) {
+                        if (state.getBattleState().getEnvironment().checkForStanding(state.getBounds(), pos, true)) {
+                            appender.append(pos, 0);
+                        }
+                    }
+                }, new Pathfinder.PostProcessor<>() {
+                    @Override
+                    public boolean isValidEndPoint(final Pathfinder.Node node) {
+                        return true;
+                    }
+
+                    @Override
+                    public List<BlockPos> process(final List<BlockPos> positions) {
+                        return positions;
+                    }
+                });
             }
 
             @Override
             public BattleParticipantActionBuilder builder(final BattleParticipantStateView state, final Consumer<BattleAction> consumer) {
+                final Pathfinder.PathTree<List<BlockPos>> pathTree = gatherPaths(state);
                 return BattleParticipantActionBuilder.create(
                         state,
                         l -> !l.isEmpty(),
-                        l -> new BattleParticipantTeleportBattleAction(l.get(0).pos(), state.getHandle()),
+                        l -> new BattleParticipantMoveBattleAction(pathTree.getPath(l.get(0).pos()), state.getHandle()),
                         new ArrayList<>(),
                         (stateView, targets, targetConsumer) -> BattleParticipantActionBuilder.TargetProvider.single(
                                 stateView,
                                 targetConsumer,
                                 CoreBattleActionTargetTypes.BLOCK_POS_TARGET_TYPE,
-                                () -> getIteratorTargets(stateView, targetConsumer),
-                                () -> getRaycastTargets(stateView, targetConsumer)
+                                () -> getIteratorTargets(stateView, targetConsumer, pathTree),
+                                () -> getRaycastTargets(stateView, targetConsumer, pathTree)
                         ),
                         (BiConsumer<ArrayList<BattleParticipantActionBlockPosTarget>, BattleParticipantActionTarget>) (targets, target) -> {
                             TBCExV3Test.MESSAGE_CONSUMER.accept(Text.of("Targeted " + ((BattleParticipantActionBlockPosTarget) target).pos()));

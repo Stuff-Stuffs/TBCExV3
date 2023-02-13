@@ -13,7 +13,9 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.CoreBattleActionTargetTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
+import io.github.stuff_stuffs.tbcexv3core.api.gui.DoublePressHandler;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.TBCExGUI;
+import io.github.stuff_stuffs.tbcexv3core.api.gui.WrapperComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.TBCExV3CoreClient;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.entity.TBCExClientPlayerExtensions;
@@ -27,7 +29,6 @@ import io.wispforest.owo.ui.container.GridLayout;
 import io.wispforest.owo.ui.core.Insets;
 import io.wispforest.owo.ui.core.ParentComponent;
 import io.wispforest.owo.ui.core.Sizing;
-import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.util.Observable;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import net.minecraft.client.MinecraftClient;
@@ -75,7 +76,7 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
         Observable<Boolean> canBuild = Observable.of(false);
         FlowLayout flowLayout = Containers.verticalFlow(Sizing.content(), Sizing.content());
         flowLayout.gap(8);
-        flowLayout.surface(Surface.PANEL);
+        flowLayout.surface(TBCExGUI.DEFAULT_SURFACE);
         targetObservable.observe(pair -> {
             flowLayout.clearChildren();
             if (pair.isPresent()) {
@@ -95,8 +96,9 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
                 flowLayout.child(descriptionLayout);
             }
         });
-        layout.keyPress().subscribe((keyCode, scanCode, modifiers) -> {
-            if (keyCode == GLFW.GLFW_KEY_ENTER && targetObservable.get().isPresent()) {
+        final DoublePressHandler<DoublePressHandler.MouseDownContext> handler = DoublePressHandler.mousePress(layout.mouseDown(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        handler.doublePress.subscribe(context -> {
+            if (targetObservable.get().isPresent()) {
                 final Pair<BattleParticipantActionTarget, Double> pair = targetObservable.get().get();
                 final BattleParticipantActionBuilder.TargetIterator<?> iterator = builder.targets(pair.getFirst().type());
                 while (iterator.hasNext()) {
@@ -110,9 +112,8 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
             return false;
         });
         GridLayout gridLayout = Containers.grid(Sizing.content(), Sizing.content(), 1, 1);
-        gridLayout.surface(Surface.PANEL);
-        LabelComponent buildLabel = Components.label(Text.of("Do it!"));
-        buildLabel.sizing(Sizing.fixed(24), Sizing.fixed(24));
+        gridLayout.surface(TBCExGUI.DEFAULT_SURFACE);
+        WrapperComponent<LabelComponent> buildLabel = new WrapperComponent<>(Sizing.fixed(32), Sizing.fixed(24), Components.label(Text.of("Do it!")));
         gridLayout.child(buildLabel, 0, 0);
         canBuild.observe(b -> {
             if (b) {
@@ -132,7 +133,7 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
         });
         layout.child(flowLayout);
         layout.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            if (button != GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+            if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                 return false;
             }
             canBuild.set(builder.canBuild());
@@ -185,7 +186,9 @@ public class BattleActionHudRegistryImpl implements BattleActionHudRegistry {
             }
             return true;
         });
-        return layout;
+        WrapperComponent<FlowLayout> wrapper = new WrapperComponent<>(Sizing.content(), Sizing.content(), layout);
+        wrapper.preDraw.subscribe(handler::update);
+        return wrapper;
     };
 
     private static @Nullable BattleParticipantStateView tryGetState() {

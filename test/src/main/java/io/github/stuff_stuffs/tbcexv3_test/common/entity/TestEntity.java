@@ -38,7 +38,7 @@ public class TestEntity extends LivingEntity implements BattleEntity {
         final Identifier identifier = EntityType.getId(entityType);
         compound.putString("id", identifier.toString());
         builder.addComponent(new SaveEntityDataComponent(getUuid(), compound));
-        builder.addComponent(new TestEntityComponent(20, 20));
+        builder.addComponent(new TestEntityComponent(20, 20, false));
     }
 
     @Override

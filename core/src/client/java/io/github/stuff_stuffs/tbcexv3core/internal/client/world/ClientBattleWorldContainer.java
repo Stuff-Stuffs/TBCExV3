@@ -13,6 +13,7 @@ import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesU
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequest;
 import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManager;
+import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -27,7 +28,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 //TODO timeout
-public class ClientBattleWorldContainer {
+public class ClientBattleWorldContainer implements AutoCloseable {
     private final Map<BattleHandle, ClientBattleImpl> battles = new Object2ReferenceOpenHashMap<>();
     private final Map<UUID, List<BattleParticipantHandle>> entityBattles = new Object2ReferenceOpenHashMap<>();
     private final Map<UUID, List<BattleParticipantHandle>> activeEntityBattles = new Object2ReferenceOpenHashMap<>();
@@ -36,6 +37,14 @@ public class ClientBattleWorldContainer {
     private final Map<BattleHandle, AnimationState> animationState = new Object2ReferenceOpenHashMap<>();
 
     public ClientBattleWorldContainer() {
+    }
+
+    public @Nullable AnimationScene getScene(final BattleHandle handle) {
+        final AnimationState state = animationState.get(handle);
+        if (state != null) {
+            return state.manager.scene();
+        }
+        return null;
     }
 
     public @Nullable BattleView getBattle(final BattleHandle handle) {
@@ -94,6 +103,18 @@ public class ClientBattleWorldContainer {
         for (final Map.Entry<BattleHandle, AnimationState> entry : animationState.entrySet()) {
             entry.getValue().render(context, battles.get(entry.getKey()));
         }
+    }
+
+    @Override
+    public void close() {
+        for (final AnimationState value : animationState.values()) {
+            try {
+                value.manager.close();
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+        }
+        animationState.clear();
     }
 
     private static final class AnimationState {

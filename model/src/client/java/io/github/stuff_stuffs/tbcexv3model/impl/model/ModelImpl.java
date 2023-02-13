@@ -1,9 +1,12 @@
 package io.github.stuff_stuffs.tbcexv3model.impl.model;
 
 import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelGuiRenderPartContext;
 import io.github.stuff_stuffs.tbcexv3model.api.model.modelpart.ModelPart;
 import io.github.stuff_stuffs.tbcexv3model.api.model.skeleton.Skeleton;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 import java.util.Collections;
@@ -28,6 +31,16 @@ public class ModelImpl implements Model, Skeleton.Listener {
     @Override
     public ModelAttachedPart get(final Identifier bone) {
         return parts.get(bone);
+    }
+
+    @Override
+    public void renderInGui(final MatrixStack matrices, final int light, final VertexConsumerProvider vertex, final float width, final float height) {
+        for (final Map.Entry<Identifier, ModelAttachedPartImpl> entry : parts.entrySet()) {
+            for (final Map.Entry<Identifier, ModelPart> partEntry : entry.getValue().parts.entrySet()) {
+                final ModelGuiRenderPartContext context = ModelGuiRenderPartContext.of(matrices, vertex, this, light, entry.getKey(), partEntry.getKey(), width, height);
+                partEntry.getValue().renderInGui(context);
+            }
+        }
     }
 
     @Override

@@ -4,7 +4,7 @@ import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import io.github.stuff_stuffs.tbcexv3model.impl.animation.AnimationManagerImpl;
 import net.minecraft.util.Identifier;
 
-public interface AnimationManager<T> {
+public interface AnimationManager<T> extends AutoCloseable {
     AnimationScene scene();
 
     ModelAnimationManager<T> forModel(Identifier id);

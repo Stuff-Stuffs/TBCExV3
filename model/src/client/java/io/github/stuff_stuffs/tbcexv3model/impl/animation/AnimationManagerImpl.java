@@ -37,7 +37,12 @@ public class AnimationManagerImpl<T> implements AnimationManager<T> {
             }
         };
         for (final Map.Entry<Identifier, ModelAnimationManagerImpl<T>> entry : forModels.entrySet()) {
-            entry.getValue().update(scene.model(entry.getKey()), context, time);
+            entry.getValue().update(scene.getModel(entry.getKey()), context, time);
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        scene.close();
     }
 }

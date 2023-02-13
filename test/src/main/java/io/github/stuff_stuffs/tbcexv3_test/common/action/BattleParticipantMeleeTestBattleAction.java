@@ -18,7 +18,7 @@ public class BattleParticipantMeleeTestBattleAction implements BattleAction {
             BattleParticipantHandle.codec().fieldOf("attacker").forGetter(action -> action.attacker),
             BattleParticipantHandle.codec().fieldOf("target").forGetter(action -> action.target)
     ).apply(instance, BattleParticipantMeleeTestBattleAction::new));
-    private static final float DAMAGE = 20.0F;
+    private static final float DAMAGE = 4.0F;
     private final BattleParticipantHandle attacker;
     private final BattleParticipantHandle target;
 

@@ -6,6 +6,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.gui.SelectionWheelComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.WrapperComponent;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.screen.parts.ActionPart;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.screen.parts.InventoryPart;
+import io.github.stuff_stuffs.tbcexv3core.internal.client.screen.parts.StatsPart;
 import io.wispforest.owo.ui.base.BaseOwoScreen;
 import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
@@ -74,7 +75,7 @@ public class BattleMenuScreen extends BaseOwoScreen<FlowLayout> {
             updateState(MenuState.SELF_STATS);
         });
         component.addChild().setWrappedText(Text.of("Other Stats"));
-        component.addChild().setWrappedText(Text.of("Test button!"));
+        component.addChild().setWrappedText(Text.of("Exit Inventory")).setClickAction(this::close);
         return component;
     }
 
@@ -89,6 +90,7 @@ public class BattleMenuScreen extends BaseOwoScreen<FlowLayout> {
         final Component child = switch (state) {
             case INVENTORY -> InventoryPart.inventory(handle, push);
             case ACTIONS -> ActionPart.action(handle, source -> source instanceof BattleParticipantActionSource.Default || source instanceof BattleParticipantActionSource.Effect || source instanceof BattleParticipantActionSource.Equipped, push);
+            case SELF_STATS -> StatsPart.stats(handle);
             default -> null;
         };
         push.accept(child);

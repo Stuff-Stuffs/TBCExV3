@@ -143,12 +143,6 @@ public class SelectionWheelComponent extends BaseComponent {
             if (lineCount == 0) {
                 return;
             }
-            final boolean yRev;
-            {
-                final double maxOut = Math.max(area.y(1), area.y(2));
-                final double maxIn = Math.max(area.y(0), area.y(3));
-                yRev = maxOut > maxIn;
-            }
             double cX = 0;
             double cY = 0;
             for (int i = 0; i < 4; i++) {
@@ -168,12 +162,15 @@ public class SelectionWheelComponent extends BaseComponent {
             final double maxRad = Math.min(width, height);
             final double trapHeight = maxRad / hoverRadSize - maxRad * startRadPercent;
             final double dH = trapHeight / (lineCount * 2);
+            final double angle = (startAngle + endAngle) * 0.5;
+            final boolean b = Math.cos(angle) >= 0;
+            double mult = b?-1:1;
             for (int i = 0; i < lineCount; i++) {
                 matrices.push();
                 matrices.translate(cX, cY, 0);
                 matrices.multiply(rotation);
                 final OrderedText text = texts.get(i);
-                matrices.translate(-textRenderer.getWidth(text) / 2.0, dH * (i - lineCount / 2.0), 0);
+                matrices.translate(-textRenderer.getWidth(text) / 2.0, dH * (i - mult * lineCount / 2.0) - (b?textRenderer.fontHeight*2:0), 0);
                 textRenderer.draw(matrices, text, 0, 0, -1);
                 matrices.pop();
             }
@@ -207,11 +204,7 @@ public class SelectionWheelComponent extends BaseComponent {
         private List<OrderedText> wrap(final Text text, final Trapezoid area) {
             final double angle = (startAngle + endAngle) * 0.5;
             final boolean b = Math.cos(angle) >= 0;
-            final double siX = area.x(0);
-            final double siY = area.y(0);
-            final double soX = area.x(1);
-            final double soY = area.y(1);
-            final int maxLines = MathHelper.floor(Math.sqrt((siX - soX) * (siX - soX) + (siY - soY) * (siY - soY)) / textRenderer.fontHeight);
+            final int maxLines = MathHelper.floor((area.getOuterRadius() - area.getInnerRadius()) / textRenderer.fontHeight);
             final Optional<List<OrderedText>> texts = TBCExTextUtil.splitContentDependent(text, textRenderer, new TBCExTextUtil.ContentDependentTextDisplay() {
                 private int lineCount = 1;
 

@@ -12,6 +12,7 @@ public final class CoreBattleActions {
     public static final BattleActionType<InitialTeamSetupBattleAction> INITIAL_TEAM_SETUP_ACTION = BattleActionType.create(InitialTeamSetupBattleAction.class, InitialTeamSetupBattleAction.CODEC);
     public static final BattleActionType<InitialBoundsBattleAction> INITIAL_BOUNDS_ACTION = BattleActionType.create(InitialBoundsBattleAction.class, InitialBoundsBattleAction.CODEC);
     public static final BattleActionType<BattleParticipantTeleportBattleAction> BATTLE_PARTICIPANT_TELEPORT_ACTION = BattleActionType.create(BattleParticipantTeleportBattleAction.class, BattleParticipantTeleportBattleAction.CODEC);
+    public static final BattleActionType<BattleParticipantMoveBattleAction> BATTLE_PARTICIPANT_MOVE_ACTION = BattleActionType.create(BattleParticipantMoveBattleAction.class, BattleParticipantMoveBattleAction.CODEC);
 
     public static void init() {
         Registry.register(BattleActionType.REGISTRY, BattleActionType.NOOP_ID, NOOP_BATTLE_ACTION_TYPE);
@@ -21,6 +22,7 @@ public final class CoreBattleActions {
         Registry.register(BattleActionType.REGISTRY, TBCExV3Core.createId("initial_team_setup"), INITIAL_TEAM_SETUP_ACTION);
         Registry.register(BattleActionType.REGISTRY, TBCExV3Core.createId("initial_bounds"), INITIAL_BOUNDS_ACTION);
         Registry.register(BattleActionType.REGISTRY, TBCExV3Core.createId("participant_teleport"), BATTLE_PARTICIPANT_TELEPORT_ACTION);
+        Registry.register(BattleActionType.REGISTRY, TBCExV3Core.createId("participant_move"), BATTLE_PARTICIPANT_MOVE_ACTION);
     }
 
     private CoreBattleActions() {

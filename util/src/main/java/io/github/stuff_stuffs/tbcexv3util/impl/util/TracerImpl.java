@@ -20,6 +20,7 @@ public class TracerImpl<T> implements Tracer<T> {
     private final List<IntervalEnd<T>> ends;
     private final List<Instant<T>> instants;
     private final IntervalStartImpl<T> start;
+    private final List<Node<T>> all;
     private final T endValue;
     private long nextId = 0;
 
@@ -31,6 +32,7 @@ public class TracerImpl<T> implements Tracer<T> {
         starts = new ArrayList<>();
         ends = new ArrayList<>();
         instants = new ArrayList<>();
+        all = new ArrayList<>();
     }
 
     @Override
@@ -39,6 +41,7 @@ public class TracerImpl<T> implements Tracer<T> {
             final IntervalStart<T> start = new IntervalStartImpl<>(TracerImpl.this, value, relations, nextId++);
             starts.add(start);
             open.add(start);
+            all.add(start);
             applyRelations(relations, start);
             stack.push(start);
             return start;
@@ -78,6 +81,7 @@ public class TracerImpl<T> implements Tracer<T> {
                 throw new RuntimeException();
             }
             ((IntervalStartImpl<T>) start).end = end;
+            all.add(end);
             applyRelations(relations, end);
             stack.push(end);
             return end;
@@ -89,6 +93,7 @@ public class TracerImpl<T> implements Tracer<T> {
         return new NodeBuilderImpl<>(this, defaultRelations, (value, relations) -> {
             final Instant<T> instant = new InstantImpl<>(TracerImpl.this, value, nextId++, relations);
             instants.add(instant);
+            all.add(instant);
             applyRelations(relations, instant);
             stack.push(instant);
             return instant;
@@ -117,7 +122,7 @@ public class TracerImpl<T> implements Tracer<T> {
 
     @Override
     public Stream<Node<T>> all() {
-        return Stream.concat(Stream.concat(starts(), ends()), instants());
+        return all.stream();
     }
 
     @Override

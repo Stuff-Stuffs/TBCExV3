@@ -10,8 +10,8 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionSource;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantActionUtil;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import io.github.stuff_stuffs.tbcexv3core.api.gui.SimpleParentComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.gui.TBCExGUI;
+import io.github.stuff_stuffs.tbcexv3core.api.gui.WrapperComponent;
 import io.github.stuff_stuffs.tbcexv3core.impl.battles.participant.action.BattleActionHudRegistryImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.entity.TBCExClientPlayerExtensions;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleTryActionSender;
@@ -22,8 +22,6 @@ import io.wispforest.owo.ui.container.Containers;
 import io.wispforest.owo.ui.container.FlowLayout;
 import io.wispforest.owo.ui.container.ScrollContainer;
 import io.wispforest.owo.ui.core.*;
-import io.wispforest.owo.ui.event.MouseEnter;
-import io.wispforest.owo.ui.event.MouseLeave;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -38,9 +36,10 @@ public final class ActionPart {
     private static Component entry(final BattleParticipantAction action, final BattleParticipantStateView state) {
         final Text name = action.name(state);
         final LabelComponent labelComponent = Components.label(name);
-        labelComponent.sizing(Sizing.fixed(64), Sizing.content());
+        labelComponent.sizing(Sizing.content(), Sizing.content());
         labelComponent.tooltip(action.description(state).texts());
-        labelComponent.mouseDown().subscribe((mouseX, mouseY, button) -> {
+        final ParentComponent wrapper = new WrapperComponent<>(Sizing.content(4), Sizing.content(4), labelComponent);
+        wrapper.mouseDown().subscribe((mouseX, mouseY, button) -> {
             if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                 final ClientPlayerEntity player = MinecraftClient.getInstance().player;
                 ((TBCExClientPlayerExtensions) player).tbcexcore$action$setCurrent(action.builder(state, handle -> actionSender(state.getBattleState().getHandle(), handle)), name);
@@ -49,11 +48,11 @@ public final class ActionPart {
             }
             return false;
         });
-        final ParentComponent simple = new SimpleParentComponent(Sizing.content(4), Sizing.content(4), labelComponent);
-        simple.surface(TBCExGUI.DARK_SURFACE);
-        simple.mouseEnter().subscribe(() -> simple.surface(TBCExGUI.SELECTED_SURFACE));
-        simple.mouseLeave().subscribe(() -> simple.surface(TBCExGUI.DARK_SURFACE));
-        return simple;
+        wrapper.surface(TBCExGUI.DARK_SURFACE);
+        wrapper.mouseEnter().subscribe(() -> wrapper.surface(TBCExGUI.SELECTED_SURFACE));
+        wrapper.mouseLeave().subscribe(() -> wrapper.surface(TBCExGUI.DARK_SURFACE));
+        wrapper.padding(Insets.both(4,4));
+        return wrapper;
     }
 
     private static void actionSender(final BattleHandle handle, final BattleAction action) {

@@ -34,6 +34,14 @@ public final class Trapezoid {
         angleDelta = (endAngle - startAngle);
     }
 
+    public double getInnerRadius() {
+        return innerRadius;
+    }
+
+    public double getOuterRadius() {
+        return outerRadius;
+    }
+
     public IntList splitWidths(final int count, final boolean reverse) {
         final IntList list = new IntArrayList();
         final double s = Math.abs(Math.cos(angleDelta * 0.5));
@@ -45,12 +53,12 @@ public final class Trapezoid {
         if (!reverse) {
             for (int i = 0; i < count; i++) {
                 final double cur = MathHelper.lerp((i + 1) / (double) count, start, end);
-                list.add(MathHelper.floor(cur)-1);
+                list.add(MathHelper.floor(cur) - 1);
             }
         } else {
             for (int i = 0; i < count; i++) {
                 final double cur = Math.min(MathHelper.lerp((count - i) / (double) count, start, end), MathHelper.lerp((count - i - 1) / (double) count, start, end));
-                list.add(MathHelper.floor(cur)-1);
+                list.add(MathHelper.floor(cur) - 1);
             }
         }
         return list;

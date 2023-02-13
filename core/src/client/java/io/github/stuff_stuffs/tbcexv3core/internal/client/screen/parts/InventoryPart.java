@@ -51,23 +51,20 @@ public final class InventoryPart {
     private static final int ITEM_ENTRY_INSET = 4;
     private static final int ITEM_ENTRY_HEIGHT = 24;
 
-    private static DataWrapperComponent<BattleParticipantInventoryHandle> itemStackEntry(final BattleParticipantInventoryHandle inventoryHandle, final InventoryState state, final BattleParticipantItemStack stack, final BattleParticipantStateView participant, final boolean odd, final Runnable select, final Consumer<Component> push) {
-        final Insets insets = Insets.of(ITEM_ENTRY_INSET, ITEM_ENTRY_INSET, ITEM_ENTRY_INSET, ITEM_ENTRY_INSET);
+    private static Component itemStackEntry(final BattleParticipantInventoryHandle inventoryHandle, final InventoryState state, final BattleParticipantItemStack stack, final BattleParticipantStateView participant, final boolean odd, final Runnable select, final Consumer<Component> push) {
+        final Insets insets = Insets.of(ITEM_ENTRY_INSET, 0, ITEM_ENTRY_INSET, ITEM_ENTRY_INSET);
         final GridLayout layout = Containers.grid(Sizing.content(), Sizing.content(), 1, 3);
-        final LabelComponent label = Components.label(stack.getItem().name(participant));
-        label.sizing(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH - ITEM_ENTRY_INSET * 2), Sizing.fill(ITEM_ENTRY_HEIGHT - 2 * ITEM_ENTRY_INSET));
-        final ScrollContainer<LabelComponent> component = Containers.verticalScroll(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), label);
-        component.positioning(Positioning.relative(0, 50));
+        final WrapperComponent<LabelComponent> label = new WrapperComponent<>(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), Components.label(stack.getItem().name(participant)));
+        label.child().maxWidth(ITEM_ENTRY_NAME_WIDTH - ITEM_ENTRY_INSET * 2);
+        final ScrollContainer<ParentComponent> component = Containers.verticalScroll(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT - ITEM_ENTRY_INSET * 2), label);
         component.padding(insets);
         component.sizing(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT));
         layout.child(component, 0, 0);
-        final LabelComponent count = Components.label(Text.of("" + stack.getCount()));
-        count.sizing(Sizing.fixed(ITEM_ENTRY_COUNT_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT));
+        final ParentComponent count = new WrapperComponent<>(Sizing.fixed(ITEM_ENTRY_COUNT_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), Components.label(Text.of("" + stack.getCount())));
         count.margins(insets);
         layout.child(count, 0, 1);
-        final LabelComponent rarity = Components.label(stack.getItem().rarity().getAsText());
+        final ParentComponent rarity = new WrapperComponent<>(Sizing.fixed(ITEM_ENTRY_RARITY_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), Components.label(stack.getItem().rarity().getAsText()));
         rarity.margins(insets);
-        rarity.sizing(Sizing.fixed(ITEM_ENTRY_RARITY_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT));
         layout.child(rarity, 0, 2);
         final Surface surface = odd ? TBCExGUI.DARK_SURFACE : TBCExGUI.LIGHT_SURFACE;
         layout.surface(surface);
@@ -75,18 +72,22 @@ public final class InventoryPart {
             if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
                 select.run();
                 return true;
-            } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-                push.accept(ActionPart.action(inventoryHandle.getParentHandle(), source -> {
-                    if (source instanceof BattleParticipantActionSource.Item item) {
-                        return item.handle().equals(inventoryHandle);
-                    } else if (source instanceof BattleParticipantActionSource.Equipped equipped) {
-                        final Optional<BattleParticipantEquipmentSlot> slot = participant.getInventory().getSlot(inventoryHandle);
-                        return slot.isPresent() && equipped.slot() == slot.get();
-                    }
-                    return false;
-                }, push));
             }
             return false;
+        });
+        final DoublePressHandler<DoublePressHandler.MouseDownContext> handler = DoublePressHandler.mousePress(layout.mouseDown(), GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        label.preDraw.subscribe(handler::update);
+        handler.doublePress.subscribe(context -> {
+            push.accept(ActionPart.action(inventoryHandle.getParentHandle(), source -> {
+                if (source instanceof BattleParticipantActionSource.Item item) {
+                    return item.handle().equals(inventoryHandle);
+                } else if (source instanceof BattleParticipantActionSource.Equipped equipped) {
+                    final Optional<BattleParticipantEquipmentSlot> slot = participant.getInventory().getSlot(inventoryHandle);
+                    return slot.isPresent() && equipped.slot() == slot.get();
+                }
+                return false;
+            }, push));
+            return true;
         });
         state.selected.observe(handle -> {
             if (handle.isEmpty()) {
@@ -99,7 +100,7 @@ public final class InventoryPart {
                 }
             }
         });
-        return new DataWrapperComponent<>(Sizing.content(), Sizing.content(), layout, inventoryHandle);
+        return layout;
     }
 
     private static Component preview(final InventoryState state, final BattleParticipantHandle handle, final BattleWorld world) {
@@ -196,12 +197,9 @@ public final class InventoryPart {
 
     private static Component sorterBar(final InventoryState state, final BattleParticipantHandle handle, final BattleWorld world) {
         final GridLayout layout = Containers.grid(Sizing.content(), Sizing.content(), 2, 3);
-        final LabelComponent label = Components.label(Text.of("Name"));
-        final LabelComponent count = Components.label(Text.of("Count"));
-        final LabelComponent rarity = Components.label(Text.of("Rarity"));
-        label.sizing(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT));
-        count.sizing(Sizing.fixed(ITEM_ENTRY_COUNT_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT));
-        rarity.sizing(Sizing.fixed(ITEM_ENTRY_RARITY_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT));
+        final ParentComponent label = new WrapperComponent<>(Sizing.fixed(ITEM_ENTRY_NAME_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), Components.label(Text.of("Name")));
+        final ParentComponent count = new WrapperComponent<>(Sizing.fixed(ITEM_ENTRY_COUNT_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), Components.label(Text.of("Count")));
+        final ParentComponent rarity = new WrapperComponent<>(Sizing.fixed(ITEM_ENTRY_RARITY_WIDTH), Sizing.fixed(ITEM_ENTRY_HEIGHT), Components.label(Text.of("Rarity")));
 
         layout.child(label, 1, 0);
         layout.child(count, 1, 1);
@@ -232,7 +230,15 @@ public final class InventoryPart {
             return 0;
         }, IndexedFlowLayout.Algorithm.VERTICAL);
         state.sort.observe(sort -> itemList.updateSort());
-        final InterceptingComponent<IndexedFlowLayout<BattleParticipantInventoryHandle>> inventoryUpdater = new InterceptingComponent<>(Sizing.content(), Sizing.content(), () -> {
+        final WrapperComponent<IndexedFlowLayout<BattleParticipantInventoryHandle>> inventoryUpdater = new WrapperComponent<>(Sizing.content(), Sizing.content(), itemList);
+        itemList.mouseDown().subscribe((mouseX, mouseY, button) -> {
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                state.updateSelected(Optional.empty());
+                return true;
+            }
+            return false;
+        });
+        inventoryUpdater.preDraw.subscribe(delta -> {
             final BattleView battleView = ((BattleWorld) MinecraftClient.getInstance().world).tryGetBattleView(handle.getParent());
             if (battleView != null) {
                 if (state.updateHandles(handle, battleView.getState())) {
@@ -246,7 +252,7 @@ public final class InventoryPart {
                     for (final BattleParticipantInventoryHandle inventoryHandle : state.handles) {
                         final Optional<BattleParticipantItemStack> stack = inventory.getStack(inventoryHandle);
                         if (stack.isPresent()) {
-                            final ParentComponent child = itemStackEntry(inventoryHandle, state, stack.get(), participant, (counter & 1) == 1, () -> state.updateSelected(Optional.of(inventoryHandle)), push);
+                            final Component child = itemStackEntry(inventoryHandle, state, stack.get(), participant, (counter & 1) == 1, () -> state.updateSelected(Optional.of(inventoryHandle)), push);
                             itemList.child(inventoryHandle, child);
                             counter++;
                         }
@@ -254,15 +260,7 @@ public final class InventoryPart {
                 }
             }
         });
-        itemList.mouseDown().subscribe((mouseX, mouseY, button) -> {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                state.updateSelected(Optional.empty());
-                return true;
-            }
-            return false;
-        });
-        inventoryUpdater.child(itemList);
-        final ScrollContainer<InterceptingComponent<?>> itemListScroller = Containers.verticalScroll(Sizing.content(), Sizing.fill(90), inventoryUpdater);
+        final ScrollContainer<WrapperComponent<?>> itemListScroller = Containers.verticalScroll(Sizing.content(), Sizing.fill(90), inventoryUpdater);
         flowLayout.child(itemListScroller);
         flowLayout.child(preview(state, handle, (BattleWorld) MinecraftClient.getInstance().world));
         outer.child(flowLayout);

@@ -17,7 +17,6 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExPlayerEntity;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
@@ -48,7 +47,7 @@ public class TBCExV3CoreClient implements ClientModInitializer {
             }
         });
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
-            if(client.player!=null&&client.player.age%20==0) {
+            if (client.player != null && client.player.age % 20 == 0) {
                 PlayerCurrentBattleRequestSender.send();
             }
             if (client.player != null && ((TBCExClientPlayerExtensions) client.player).tbcexcore$action$current() != null) {
@@ -60,7 +59,7 @@ public class TBCExV3CoreClient implements ClientModInitializer {
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             DEFERRED_RENDERING.forEach(e -> e.accept(context));
             DEFERRED_RENDERING.clear();
-            ((ClientBattleWorld)context.world()).tbcex$render(context);
+            ((ClientBattleWorld) context.world()).tbcex$render(context);
         });
         BattleUpdateReceiver.init();
         EntityBattlesUpdateReceiver.init();

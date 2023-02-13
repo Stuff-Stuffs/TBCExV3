@@ -1,11 +1,18 @@
 package io.github.stuff_stuffs.tbcexv3core.api.animation;
 
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
+import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
 public interface BattleAnimationContext {
+    static Identifier toModelId(final BattleParticipantHandle handle) {
+        return TBCExV3Core.createId("model/" + handle.getUuid().toString().replace('-', '_'));
+    }
+
     BattleStateView state();
 
     BlockPos toLocal(BlockPos global);
