@@ -5,15 +5,11 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleP
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTargetType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
-import net.minecraft.util.math.Vec3d;
 
 import java.util.Iterator;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 
-public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantActionBuilder {
+public class BattleParticipantActionBuilderImpl<R, S> implements BattleParticipantActionBuilder<R> {
     private final BattleParticipantStateView stateView;
     private final Predicate<S> buildPredicate;
     private final Function<S, ? extends BattleAction> builder;
@@ -21,10 +17,12 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     private final TargetProviderFactory<S> targetProviderFactory;
     private final BiConsumer<S, BattleParticipantActionTarget> stateUpdater;
     private final Consumer<BattleAction> consumer;
+    private final BiFunction<R, S, R> renderDataUpdater;
+    private R renderData;
     private int targetCount = 0;
     private TargetProvider currentProvider;
 
-    public BattleParticipantActionBuilderImpl(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
+    public BattleParticipantActionBuilderImpl(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer, final R data, final BiFunction<R, S, R> renderDataUpdater) {
         stateView = view;
         buildPredicate = predicate;
         this.builder = builder;
@@ -32,6 +30,8 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
         targetProviderFactory = factory;
         stateUpdater = updater;
         this.consumer = consumer;
+        this.renderDataUpdater = renderDataUpdater;
+        renderData = data;
         setupProvider();
     }
 
@@ -46,6 +46,11 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
     }
 
     @Override
+    public R renderData() {
+        return renderData;
+    }
+
+    @Override
     public Iterator<? extends BattleParticipantActionTargetType<?>> types() {
         return currentProvider.types();
     }
@@ -56,6 +61,7 @@ public class BattleParticipantActionBuilderImpl<S> implements BattleParticipantA
         }
         targetCount++;
         stateUpdater.accept(state, target);
+        renderData = renderDataUpdater.apply(renderData, state);
         setupProvider();
     }
 

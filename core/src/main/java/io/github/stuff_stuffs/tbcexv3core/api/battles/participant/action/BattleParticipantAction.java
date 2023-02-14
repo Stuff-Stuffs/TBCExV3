@@ -15,7 +15,7 @@ public interface BattleParticipantAction {
 
     TooltipText description(BattleParticipantStateView state);
 
-    BattleParticipantActionBuilder builder(BattleParticipantStateView state, Consumer<BattleAction> consumer);
+    BattleParticipantActionBuilder<?> builder(BattleParticipantStateView state, Consumer<BattleAction> consumer);
 
     Optional<Identifier> renderer(BattleParticipantStateView state);
 }

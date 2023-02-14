@@ -5,24 +5,29 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTargetType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class AbstractTwoTargetBattleParticipantAction<T0 extends BattleParticipantActionTarget, T1 extends BattleParticipantActionTarget> implements BattleParticipantAction {
+public abstract class AbstractTwoTargetBattleParticipantAction<R, T0 extends BattleParticipantActionTarget, T1 extends BattleParticipantActionTarget> implements BattleParticipantAction {
     protected final BattleParticipantActionTargetType<T0> firstType;
     protected final BattleParticipantActionTargetType<T1> secondType;
     protected final Function<State<T0, T1>, ? extends BattleAction> actionFactory;
     private final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> targetProviderFactory;
+    private final R renderData;
+    private final BiFunction<R, State<T0, T1>, R> renderDataUpdater;
 
-    protected AbstractTwoTargetBattleParticipantAction(final BattleParticipantActionTargetType<T0> firstType, final BattleParticipantActionTargetType<T1> secondType, final Function<State<T0, T1>, BattleAction> factory, final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> providerFactory) {
+    protected AbstractTwoTargetBattleParticipantAction(final BattleParticipantActionTargetType<T0> firstType, final BattleParticipantActionTargetType<T1> secondType, final Function<State<T0, T1>, BattleAction> factory, final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> providerFactory, R data, BiFunction<R, State<T0, T1>, R> updater) {
         this.firstType = firstType;
         this.secondType = secondType;
         actionFactory = factory;
+        renderData = data;
+        renderDataUpdater = updater;
         targetProviderFactory = wrapProviderFactory(providerFactory, firstType, secondType);
     }
 
     @Override
-    public BattleParticipantActionBuilder builder(final BattleParticipantStateView stateView, final Consumer<BattleAction> consumer) {
+    public BattleParticipantActionBuilder<R> builder(final BattleParticipantStateView stateView, final Consumer<BattleAction> consumer) {
         return BattleParticipantActionBuilder.create(stateView, s -> s.firstValue != null && s.secondValue != null, actionFactory, new State<>(stateView), targetProviderFactory, (state, target) -> {
             if (state.firstValue == null) {
                 if (target.type() != firstType) {
@@ -37,7 +42,7 @@ public abstract class AbstractTwoTargetBattleParticipantAction<T0 extends Battle
             } else {
                 throw new IllegalStateException("Too many targets!");
             }
-        }, consumer);
+        }, consumer, renderData, renderDataUpdater);
     }
 
     private static <T0 extends BattleParticipantActionTarget, T1 extends BattleParticipantActionTarget> BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> wrapProviderFactory(final BattleParticipantActionBuilder.TargetProviderFactory<State<T0, T1>> factory, final BattleParticipantActionTargetType<T0> firstType, final BattleParticipantActionTargetType<T1> secondType) {

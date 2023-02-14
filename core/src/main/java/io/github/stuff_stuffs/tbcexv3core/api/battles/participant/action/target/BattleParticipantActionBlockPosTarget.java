@@ -12,6 +12,7 @@ import net.minecraft.util.math.Vec3d;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -23,9 +24,13 @@ public record BattleParticipantActionBlockPosTarget(
 ) implements BattleParticipantActionTarget {
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BattleParticipantActionBlockPosTarget target)) return false;
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BattleParticipantActionBlockPosTarget target)) {
+            return false;
+        }
 
         return pos.equals(target.pos);
     }
@@ -85,6 +90,14 @@ public record BattleParticipantActionBlockPosTarget(
             if (predicate.test(outward)) {
                 targets.add(new BattleParticipantActionBlockPosTarget(outward.toImmutable(), nameFunction.apply(outward), description.apply(outward)));
             }
+        }
+        return BattleParticipantActionBuilder.TargetIterator.of(targets.iterator(), consumer);
+    }
+
+    public static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBlockPosTarget> computed(final Set<BlockPos> data, final Function<BlockPos, Text> nameFunction, final Function<BlockPos, TooltipText> description, final Consumer<BattleParticipantActionTarget> consumer) {
+        final List<BattleParticipantActionBlockPosTarget> targets = new ArrayList<>(data.size());
+        for (final BlockPos datum : data) {
+            targets.add(new BattleParticipantActionBlockPosTarget(datum, nameFunction.apply(datum), description.apply(datum)));
         }
         return BattleParticipantActionBuilder.TargetIterator.of(targets.iterator(), consumer);
     }

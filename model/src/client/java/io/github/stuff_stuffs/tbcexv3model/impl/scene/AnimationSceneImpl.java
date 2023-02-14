@@ -29,16 +29,18 @@ public class AnimationSceneImpl<T> implements AnimationScene<T> {
     private int nextBufferId = 0;
 
     @Override
-    public AnimationManager<T> animationManager() {
+    public AnimationManager<T> manager() {
         return manager;
     }
 
     @Override
     public BufferToken upload(final BufferBuilder.BuiltBuffer buffer) {
         final VertexBuffer vertexBuffer = new VertexBuffer();
+        vertexBuffer.bind();
         vertexBuffer.upload(buffer);
         final TokenImpl<T> token = new TokenImpl<>(nextBufferId++, this);
         buffers.put(token, vertexBuffer);
+        VertexBuffer.unbind();
         return token;
     }
 

@@ -11,12 +11,12 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(ClientPlayerEntity.class)
 public class MixinClientPlayerEntity implements TBCExClientPlayerExtensions {
     @Unique
-    private @Nullable BattleParticipantActionBuilder currentBuilder = null;
+    private @Nullable BattleParticipantActionBuilder<?> currentBuilder = null;
     @Unique
     private @Nullable Text currentTitle;
 
     @Override
-    public @Nullable BattleParticipantActionBuilder tbcexcore$action$current() {
+    public @Nullable BattleParticipantActionBuilder<?> tbcexcore$action$current() {
         return currentBuilder;
     }
 
@@ -26,7 +26,7 @@ public class MixinClientPlayerEntity implements TBCExClientPlayerExtensions {
     }
 
     @Override
-    public void tbcexcore$action$setCurrent(@Nullable final BattleParticipantActionBuilder builder, @Nullable final Text title) {
+    public void tbcexcore$action$setCurrent(@Nullable final BattleParticipantActionBuilder<?> builder, @Nullable final Text title) {
         if (builder == null ^ title == null) {
             throw new RuntimeException("Either both or neigther must be null!");
         }

@@ -12,15 +12,18 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 
 public final class BattleActionHudScreen extends BaseOwoScreen<ParentComponent> implements MouseUnlockingScreen {
     private final BiFunction<Sizing, Sizing, ParentComponent> factory;
+    private final List<Runnable> toCleanup = new ArrayList<>();
     private boolean unlocked = false;
 
-    private BattleActionHudScreen(final Function<BattleActionHudRegistry.MouseLocker, BiFunction<Sizing, Sizing, ParentComponent>> factory) {
+    private BattleActionHudScreen(final BiFunction<BattleActionHudRegistry.MouseLocker, Consumer<Runnable>, BiFunction<Sizing, Sizing, ParentComponent>> factory) {
         final Mouse mouse = MinecraftClient.getInstance().mouse;
         final BattleActionHudRegistry.MouseLocker mouseLocker = new BattleActionHudRegistry.MouseLocker() {
             @Override
@@ -37,13 +40,20 @@ public final class BattleActionHudScreen extends BaseOwoScreen<ParentComponent> 
                 mouse.unlockCursor();
             }
         };
-        this.factory = factory.apply(mouseLocker);
+        this.factory = factory.apply(mouseLocker, toCleanup::add);
         passEvents = true;
     }
 
     @Override
     public boolean shouldPause() {
         return false;
+    }
+
+
+    @Override
+    public void removed() {
+        toCleanup.forEach(Runnable::run);
+        super.removed();
     }
 
     @Override
@@ -61,10 +71,10 @@ public final class BattleActionHudScreen extends BaseOwoScreen<ParentComponent> 
     }
 
     public static void setup(final BattleParticipantHandle handle, final Identifier id, final ClientPlayerEntity entity) {
-        MinecraftClient.getInstance().setScreen(new BattleActionHudScreen(mouseLocker -> create(id, mouseLocker)));
+        MinecraftClient.getInstance().setScreen(new BattleActionHudScreen((mouseLocker, cleanup) -> create(id, mouseLocker, cleanup)));
     }
 
-    private static BiFunction<Sizing, Sizing, ParentComponent> create(final Identifier id, final BattleActionHudRegistry.MouseLocker mouseLocker) {
-        return BattleActionHudRegistry.INSTANCE.get(id, mouseLocker);
+    private static BiFunction<Sizing, Sizing, ParentComponent> create(final Identifier id, final BattleActionHudRegistry.MouseLocker mouseLocker, final Consumer<Runnable> consumer) {
+        return BattleActionHudRegistry.INSTANCE.get(id, mouseLocker, consumer);
     }
 }

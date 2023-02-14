@@ -5,9 +5,9 @@ import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 public interface TBCExClientPlayerExtensions {
-    @Nullable BattleParticipantActionBuilder tbcexcore$action$current();
+    @Nullable BattleParticipantActionBuilder<?> tbcexcore$action$current();
 
     @Nullable Text tbcexcore$action$title();
 
-    void tbcexcore$action$setCurrent(@Nullable BattleParticipantActionBuilder builder, @Nullable Text title);
+    void tbcexcore$action$setCurrent(@Nullable BattleParticipantActionBuilder<?> builder, @Nullable Text title);
 }

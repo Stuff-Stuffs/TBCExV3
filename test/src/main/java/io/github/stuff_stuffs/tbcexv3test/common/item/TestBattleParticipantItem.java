@@ -24,6 +24,7 @@ import net.minecraft.item.Items;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Unit;
 import net.minecraft.util.math.random.Random;
 
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
             }
 
             @Override
-            public BattleParticipantActionBuilder builder(final BattleParticipantStateView state, final Consumer<BattleAction> consumer) {
+            public BattleParticipantActionBuilder<Unit> builder(final BattleParticipantStateView state, final Consumer<BattleAction> consumer) {
                 return BattleParticipantActionBuilder.create(
                         stateView,
                         l -> !l.isEmpty(),
@@ -129,7 +130,9 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
                                     (BattleParticipantActionBattleParticipantTarget) target
                             );
                         },
-                        consumer
+                        consumer,
+                        Unit.INSTANCE,
+                        (p,s) -> p
                 );
             }
 

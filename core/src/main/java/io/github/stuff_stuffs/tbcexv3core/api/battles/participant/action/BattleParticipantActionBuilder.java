@@ -2,6 +2,7 @@ package io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action;
 
 import com.google.common.collect.Iterators;
 import com.mojang.datafixers.util.Pair;
+import com.mojang.datafixers.util.Unit;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTarget;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.target.BattleParticipantActionTargetType;
@@ -18,19 +19,25 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @ApiStatus.NonExtendable
-public interface BattleParticipantActionBuilder {
+public interface BattleParticipantActionBuilder<R> {
     <T extends BattleParticipantActionTarget> TargetIterator<? extends T> targets(BattleParticipantActionTargetType<T> type);
 
     <T extends BattleParticipantActionTarget> TargetRaycaster<? extends T> raycastTargets(BattleParticipantActionTargetType<T> type);
 
     Iterator<? extends BattleParticipantActionTargetType<?>> types();
 
+    R renderData();
+
     boolean canBuild();
 
     void build();
 
-    static <S> BattleParticipantActionBuilder create(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
-        return new BattleParticipantActionBuilderImpl<>(view, predicate, builder, state, factory, updater, consumer);
+    static <S> BattleParticipantActionBuilder<Unit> create(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer) {
+        return create(view, predicate, builder, state, factory, updater, consumer, Unit.INSTANCE, (p, s) -> p);
+    }
+
+    static <R, S> BattleParticipantActionBuilder<R> create(final BattleParticipantStateView view, final Predicate<S> predicate, final Function<S, ? extends BattleAction> builder, final S state, final TargetProviderFactory<S> factory, final BiConsumer<S, BattleParticipantActionTarget> updater, final Consumer<BattleAction> consumer, final R data, final BiFunction<R, S, R> renderDataUpdater) {
+        return new BattleParticipantActionBuilderImpl<>(view, predicate, builder, state, factory, updater, consumer, data, renderDataUpdater);
     }
 
     record RaycastIterator<T extends BattleParticipantActionTarget>(

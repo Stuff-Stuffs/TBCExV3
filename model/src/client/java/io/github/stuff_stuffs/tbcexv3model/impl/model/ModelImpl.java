@@ -93,5 +93,10 @@ public class ModelImpl implements Model, Skeleton.Listener {
             parts.put(id, part);
             return true;
         }
+
+        @Override
+        public boolean removePart(final Identifier id) {
+            return parts.remove(id) != null;
+        }
     }
 }

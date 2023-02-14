@@ -16,11 +16,11 @@ public interface SceneRenderContext<T> {
 
     Quaternionfc cameraLook();
 
-    AnimationScene scene();
+    AnimationScene<T> scene();
 
     T context();
 
-    static <T> SceneRenderContext<T> create(final MatrixStack matrices, final VertexConsumerProvider vertexConsumers, final Vec3d cameraPos, final Quaternionfc cameraLook, final AnimationScene scene, final T context) {
+    static <T> SceneRenderContext<T> create(final MatrixStack matrices, final VertexConsumerProvider vertexConsumers, final Vec3d cameraPos, final Quaternionfc cameraLook, final AnimationScene<T> scene, final T context) {
         return new SceneRenderContextImpl<>(matrices, vertexConsumers, cameraPos, new Quaternionf(cameraLook), scene, context);
     }
 }

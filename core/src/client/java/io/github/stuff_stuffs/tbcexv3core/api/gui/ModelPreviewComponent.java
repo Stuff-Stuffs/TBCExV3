@@ -1,5 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.api.gui;
 
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import io.wispforest.owo.ui.base.BaseComponent;
@@ -13,14 +14,14 @@ import org.joml.Quaternionf;
 
 public class ModelPreviewComponent extends BaseComponent {
     private final Identifier modelId;
-    private final AnimationScene scene;
+    private final AnimationScene<BattleAnimationContext> scene;
     private float rotationSpeed = 1 / 80.0F;
     private float mouseSensitivity = (float) Math.PI * 2.0F;
     private boolean rotating = true;
     private boolean mouseEffects = true;
     private final Quaternionf rotation = new Quaternionf().identity();
 
-    public ModelPreviewComponent(final Identifier id, final AnimationScene scene) {
+    public ModelPreviewComponent(final Identifier id, final AnimationScene<BattleAnimationContext> scene) {
         modelId = id;
         this.scene = scene;
     }

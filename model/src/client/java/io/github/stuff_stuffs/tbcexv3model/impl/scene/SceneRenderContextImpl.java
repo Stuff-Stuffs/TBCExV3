@@ -12,7 +12,7 @@ public record SceneRenderContextImpl<T>(
         VertexConsumerProvider vertexConsumers,
         Vec3d cameraPos,
         Quaternionfc cameraLook,
-        AnimationScene scene,
+        AnimationScene<T> scene,
         T context
 ) implements SceneRenderContext<T> {
 }

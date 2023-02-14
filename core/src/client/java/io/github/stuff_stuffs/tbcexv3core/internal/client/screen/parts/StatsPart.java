@@ -40,7 +40,7 @@ public final class StatsPart {
         final GridLayout gridLayout = Containers.grid(Sizing.fill(75), Sizing.fill(75), 2, 2);
         gridLayout.positioning(Positioning.relative(50, 50));
         gridLayout.surface(TBCExGUI.DEFAULT_SURFACE);
-        final AnimationScene scene = ((ClientBattleWorld) MinecraftClient.getInstance().world).tbcex$getScene(target.getParent());
+        final AnimationScene<BattleAnimationContext> scene = ((ClientBattleWorld) MinecraftClient.getInstance().world).tbcex$getScene(target.getParent());
         final Component modelPreview;
         if (scene != null) {
             modelPreview = new ModelPreviewComponent(BattleAnimationContext.toModelId(target), scene);
@@ -49,8 +49,8 @@ public final class StatsPart {
             modelPreview = Components.box(Sizing.fill(50), Sizing.fill(50));
         }
         gridLayout.child(modelPreview, 0, 0);
-        gridLayout.child(statPart(target), 1, 1);
-        gridLayout.child(effectPart(target), 1, 0);
+        gridLayout.child(statPart(target), 1, 0);
+        gridLayout.child(effectPart(target), 1, 1);
         return gridLayout;
     }
 

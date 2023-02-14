@@ -8,31 +8,36 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public abstract class AbstractSingleTargetTypeBattleParticipantAction<T extends BattleParticipantActionTarget> implements BattleParticipantAction {
+public abstract class AbstractSingleTargetTypeBattleParticipantAction<R,T extends BattleParticipantActionTarget> implements BattleParticipantAction {
     protected final BattleParticipantActionTargetType<T> type;
     protected final Function<State<T>, BattleAction> actionFactory;
     protected final Predicate<State<T>> readyForBuild;
     private final BattleParticipantActionBuilder.TargetProviderFactory<State<T>> providerFactory;
+    private final R renderData;
+    private final BiFunction<R,State<T>,R> renderDataUpdater;
 
-    protected AbstractSingleTargetTypeBattleParticipantAction(final BattleParticipantActionTargetType<T> type, final Function<State<T>, BattleAction> factory, final Predicate<State<T>> build, final BattleParticipantActionBuilder.TargetProviderFactory<State<T>> providerFactory) {
+    protected AbstractSingleTargetTypeBattleParticipantAction(final BattleParticipantActionTargetType<T> type, final Function<State<T>, BattleAction> factory, final Predicate<State<T>> build, final BattleParticipantActionBuilder.TargetProviderFactory<State<T>> providerFactory, R data, BiFunction<R, State<T>, R> updater) {
         this.type = type;
         actionFactory = factory;
         readyForBuild = build;
         this.providerFactory = providerFactory;
+        renderData = data;
+        renderDataUpdater = updater;
     }
 
     @Override
-    public BattleParticipantActionBuilder builder(final BattleParticipantStateView stateView, final Consumer<BattleAction> consumer) {
+    public BattleParticipantActionBuilder<R> builder(final BattleParticipantStateView stateView, final Consumer<BattleAction> consumer) {
         return BattleParticipantActionBuilder.create(stateView, readyForBuild, actionFactory, new State<>(stateView), (stateView1, state, targetConsumer) -> BattleParticipantActionBuilder.TargetProvider.typeCheck(providerFactory.build(stateView1, state, targetConsumer), type), (state, target) -> {
             if (target.type() != type) {
                 throw new IllegalArgumentException("Type mismatch!");
             }
             state.value.add((T) target);
-        }, consumer);
+        }, consumer, renderData, renderDataUpdater);
     }
 
     protected static final class State<T> {

@@ -1,11 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3test.common;
 
 import com.mojang.brigadier.CommandDispatcher;
-import io.github.stuff_stuffs.tbcexv3test.common.action.TestBattleActions;
-import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntities;
-import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntityComponent;
-import io.github.stuff_stuffs.tbcexv3test.common.item.TestBattleParticipantItem;
-import io.github.stuff_stuffs.tbcexv3test.common.item.TestBattleParticipantItemTypes;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantMoveBattleAction;
@@ -25,6 +20,11 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattlePlayerCompo
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.InventoryBattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TooltipText;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
+import io.github.stuff_stuffs.tbcexv3test.common.action.TestBattleActions;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntities;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntityComponent;
+import io.github.stuff_stuffs.tbcexv3test.common.item.TestBattleParticipantItem;
+import io.github.stuff_stuffs.tbcexv3test.common.item.TestBattleParticipantItemTypes;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Pathfinder;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
@@ -90,7 +90,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             }
 
             private static BattleParticipantActionBuilder.TargetIterator<BattleParticipantActionBlockPosTarget> getIteratorTargets(final BattleParticipantStateView state, final Consumer<BattleParticipantActionTarget> consumer, final Pathfinder.PathTree<List<BlockPos>> pathTree) {
-                return BattleParticipantActionBlockPosTarget.filterIterator(pos -> pathTree.endPositions().contains(pos), state.getBounds().center(), 16, p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
+                return BattleParticipantActionBlockPosTarget.computed(pathTree.endPositions(), p -> Text.of(p.toString()), p -> new TooltipText(List.of()), consumer);
             }
 
             private static Pathfinder.PathTree<List<BlockPos>> gatherPaths(final BattleParticipantStateView state) {
@@ -124,7 +124,7 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             }
 
             @Override
-            public BattleParticipantActionBuilder builder(final BattleParticipantStateView state, final Consumer<BattleAction> consumer) {
+            public BattleParticipantActionBuilder<?> builder(final BattleParticipantStateView state, final Consumer<BattleAction> consumer) {
                 final Pathfinder.PathTree<List<BlockPos>> pathTree = gatherPaths(state);
                 return BattleParticipantActionBuilder.create(
                         state,
@@ -144,13 +144,15 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
                                     (BattleParticipantActionBlockPosTarget) target
                             );
                         },
-                        consumer
+                        consumer,
+                        pathTree,
+                        (p, s) -> p
                 );
             }
 
             @Override
             public Optional<Identifier> renderer(final BattleParticipantStateView state) {
-                return Optional.empty();
+                return Optional.of(TBCExV3Test.id("walk"));
             }
         }));
     }
