@@ -1,43 +1,28 @@
 package io.github.stuff_stuffs.tbcexv3model.api.model;
 
 import io.github.stuff_stuffs.tbcexv3model.internal.common.TBCExV3Model;
-import io.wispforest.owo.util.OwoFreezer;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 public final class ModelType {
     private static final Map<Identifier, ModelType> CACHE = new Object2ReferenceOpenHashMap<>();
-    private static boolean FROZEN = false;
     public static final ModelType PARTICIPANT = getOrCreate(TBCExV3Model.id("model_type/participant"));
     public static final ModelType ENVIRONMENT = getOrCreate(TBCExV3Model.id("model_type/environment"));
     public static final ModelType PARTICLE = getOrCreate(TBCExV3Model.id("model_type/particle"));
     private final Identifier id;
-    private final Set<ModelType> parents;
-    private final Set<Identifier> requiredAnimations = new ObjectOpenHashSet<>();
+    private final @Nullable ModelType parent;
 
-    private ModelType(final Identifier id, final Set<ModelType> parents) {
+    private ModelType(final Identifier id, final @Nullable ModelType parent) {
         this.id = id;
-        this.parents = parents;
+        this.parent = parent;
     }
 
-    public void addRequiredAnimation(final Identifier id) {
-        if (FROZEN) {
-            throw new RuntimeException();
-        }
-        requiredAnimations.add(id);
-    }
-
-    public Set<ModelType> parents() {
-        return Collections.unmodifiableSet(parents);
-    }
-
-    public Set<Identifier> requiredAnimations() {
-        return Collections.unmodifiableSet(requiredAnimations);
+    public Optional<ModelType> parent() {
+        return Optional.ofNullable(parent);
     }
 
     @Override
@@ -57,30 +42,25 @@ public final class ModelType {
         return id.hashCode();
     }
 
-    public static ModelType getOrCreate(final Identifier id) {
-        return CACHE.computeIfAbsent(id, identifier -> new ModelType(identifier, Set.of()));
+    @Override
+    public String toString() {
+        return "ModelType{" + "id=" + id + '}';
     }
 
-    public static ModelType getOrCreate(final Identifier id, final Set<ModelType> parents) {
+    public Identifier getId() {
+        return id;
+    }
+
+    public static ModelType getOrCreate(final Identifier id) {
+        return CACHE.computeIfAbsent(id, identifier -> new ModelType(identifier, null));
+    }
+
+    public static ModelType getOrCreate(final Identifier id, final ModelType parent) {
         ModelType type = CACHE.get(id);
         if (type == null) {
-            type = new ModelType(id, Set.copyOf(parents));
+            type = new ModelType(id, parent);
             CACHE.put(id, type);
         }
         return type;
-    }
-
-    static {
-        OwoFreezer.registerFreezeCallback(() -> FROZEN = true);
-        PARTICIPANT.addRequiredAnimation(RequiredAnimations.Participant.IDLE);
-        PARTICIPANT.addRequiredAnimation(RequiredAnimations.Participant.DAMAGE_TAKEN);
-        PARTICIPANT.addRequiredAnimation(RequiredAnimations.Participant.DEATH);
-        PARTICIPANT.addRequiredAnimation(RequiredAnimations.Participant.SPAWN);
-
-        ENVIRONMENT.addRequiredAnimation(RequiredAnimations.Environment.PHASE_IN);
-        ENVIRONMENT.addRequiredAnimation(RequiredAnimations.Environment.PHASE_OUT);
-
-        PARTICLE.addRequiredAnimation(RequiredAnimations.Particle.PHASE_IN);
-        PARTICLE.addRequiredAnimation(RequiredAnimations.Particle.PHASE_OUT);
     }
 }

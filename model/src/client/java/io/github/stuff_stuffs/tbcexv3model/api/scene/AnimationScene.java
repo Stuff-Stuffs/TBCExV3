@@ -1,28 +1,39 @@
 package io.github.stuff_stuffs.tbcexv3model.api.scene;
 
-import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManager;
-import io.github.stuff_stuffs.tbcexv3model.api.animation.ModelAnimationFactory;
-import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.ModelAnimation;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.SceneAnimation;
 import io.github.stuff_stuffs.tbcexv3model.api.model.ModelType;
-import io.github.stuff_stuffs.tbcexv3model.impl.scene.AnimationSceneImpl;
+import io.github.stuff_stuffs.tbcexv3model.api.util.Transition;
+import io.github.stuff_stuffs.tbcexv3model.impl.AnimationSceneImpl;
+import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.world.BlockRenderView;
 
-import java.util.Map;
+import java.util.Optional;
 
-public interface AnimationScene<T> extends AnimationSceneView<T>, AutoCloseable {
-    @Override
-    AnimationManager<T> manager();
+public interface AnimationScene<SC, MC> extends AnimationSceneView<SC, MC> {
+    void setSceneAnimation(Identifier layer, SceneAnimation animation, Transition transition);
 
-    @Override
-    Model getModel(Identifier id);
+    void setModelAnimation(Identifier modelId, Identifier layer, ModelAnimation animation, Transition transition);
+
+    void addModel(Identifier id, ModelBuilder model, ModelType type);
 
     void removeModel(Identifier id);
 
-    void addModel(Identifier id, ModelType type, Map<Identifier, ModelAnimationFactory<T>> defaultFactories);
+    void render(MatrixStack matrices, VertexConsumerProvider vertexConsumers, BlockRenderView world, double time);
 
-    void update(double time, T data);
+    void addSceneAnimationCallback(Identifier layer, Runnable runnable);
 
-    static <T> AnimationScene<T> create() {
-        return new AnimationSceneImpl<>();
+    static <SC, MC> AnimationScene<SC, MC> create(final double time) {
+        return new AnimationSceneImpl<>(time);
+    }
+
+    static ModelBuilder modelBuilder() {
+        return new AnimationSceneImpl.ModelBuilderImpl();
+    }
+
+    interface ModelBuilder {
+        ModelBuilder addBone(Identifier id, Optional<Identifier> parentId);
     }
 }

@@ -1,6 +1,7 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.mixin;
 
-import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleParticipantAnimationContext;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleSceneAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
@@ -41,7 +42,7 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initialize(final ClientPlayNetworkHandler networkHandler, final ClientWorld.Properties properties, final RegistryKey<World> registryRef, final RegistryEntry dimensionTypeEntry, final int loadDistance, final int simulationDistance, final Supplier profiler, final WorldRenderer worldRenderer, final boolean debugWorld, final long seed, final CallbackInfo ci) {
-        battleWorldContainer = new ClientBattleWorldContainer();
+        battleWorldContainer = new ClientBattleWorldContainer(this);
     }
 
     @Override
@@ -80,7 +81,7 @@ public abstract class MixinClientWorld extends World implements BattleWorld, Cli
     }
 
     @Override
-    public @Nullable AnimationScene<BattleAnimationContext> tbcex$getScene(final BattleHandle handle) {
+    public @Nullable AnimationScene<BattleSceneAnimationContext, BattleParticipantAnimationContext> tbcex$getScene(final BattleHandle handle) {
         return battleWorldContainer.getScene(handle);
     }
 }

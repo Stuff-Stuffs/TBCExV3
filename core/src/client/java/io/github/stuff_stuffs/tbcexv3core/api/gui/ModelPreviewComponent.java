@@ -1,11 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3core.api.gui;
 
-import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
 import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
 import io.wispforest.owo.ui.base.BaseComponent;
 import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
@@ -14,14 +12,14 @@ import org.joml.Quaternionf;
 
 public class ModelPreviewComponent extends BaseComponent {
     private final Identifier modelId;
-    private final AnimationScene<BattleAnimationContext> scene;
+    private final AnimationScene<?, ?> scene;
     private float rotationSpeed = 1 / 80.0F;
     private float mouseSensitivity = (float) Math.PI * 2.0F;
     private boolean rotating = true;
     private boolean mouseEffects = true;
     private final Quaternionf rotation = new Quaternionf().identity();
 
-    public ModelPreviewComponent(final Identifier id, final AnimationScene<BattleAnimationContext> scene) {
+    public ModelPreviewComponent(final Identifier id, final AnimationScene<?, ?> scene) {
         modelId = id;
         this.scene = scene;
     }
@@ -74,13 +72,13 @@ public class ModelPreviewComponent extends BaseComponent {
                 rotation.rotateY(delta * rotationSpeed);
             }
             matrices.push();
-            matrices.translate(x + this.width / 2f, y+height, 250);
+            matrices.translate(x + width / 2f, y + height, 250);
             final int i = Math.min(width, height);
             matrices.multiply(rotation);
             matrices.scale(i * 0.25F, -i * 0.25F, i * 0.25F);
             final BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             final VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(buffer);
-            model.renderInGui(matrices, LightmapTextureManager.MAX_LIGHT_COORDINATE, immediate, width, height);
+            scene.render(modelId, matrices, immediate);
             immediate.draw();
             matrices.pop();
         }

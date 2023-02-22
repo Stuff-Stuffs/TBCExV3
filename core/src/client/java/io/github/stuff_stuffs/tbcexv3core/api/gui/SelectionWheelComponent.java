@@ -16,7 +16,6 @@ import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
 import org.joml.Quaternionf;
-import org.joml.Vector3d;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -99,6 +98,7 @@ public class SelectionWheelComponent extends BaseComponent {
         private double startAngle = 0;
         private double endAngle = 1;
         private final Quaternionf rotation = new Quaternionf();
+        private boolean flipped;
 
         private Trapezoid bounds;
         private Trapezoid hoverBounds;
@@ -151,26 +151,18 @@ public class SelectionWheelComponent extends BaseComponent {
             }
             cX /= 4;
             cY /= 4;
-            final Vector3d s0 = new Vector3d();
-            final Vector3d s1 = new Vector3d();
-            s0.set(area.x(0), area.y(0), 0);
-            s1.set(area.x(1), area.y(1), 0);
-            rotation.transform(s0);
-            rotation.transform(s1);
             final double width = horizontalSizing().get().value / 2.0;
             final double height = verticalSizing().get().value / 2.0;
             final double maxRad = Math.min(width, height);
             final double trapHeight = maxRad / hoverRadSize - maxRad * startRadPercent;
             final double dH = trapHeight / (lineCount * 2);
-            final double angle = (startAngle + endAngle) * 0.5;
-            final boolean b = Math.cos(angle) >= 0;
-            double mult = b?-1:1;
+            final double mult = flipped ? -1 : 1;
             for (int i = 0; i < lineCount; i++) {
                 matrices.push();
                 matrices.translate(cX, cY, 0);
                 matrices.multiply(rotation);
                 final OrderedText text = texts.get(i);
-                matrices.translate(-textRenderer.getWidth(text) / 2.0, dH * (i - mult * lineCount / 2.0) - (b?textRenderer.fontHeight*2:0), 0);
+                matrices.translate(-textRenderer.getWidth(text) / 2.0, dH * (i - mult * lineCount / 2.0) - (flipped ? textRenderer.fontHeight * 2 : 0), 0);
                 textRenderer.draw(matrices, text, 0, 0, -1);
                 matrices.pop();
             }
@@ -181,6 +173,7 @@ public class SelectionWheelComponent extends BaseComponent {
             this.endAngle = endAngle;
             final double angle = (startAngle + endAngle) * 0.5;
             rotation.setAngleAxis(Math.cos(angle) >= 0 ? angle : Math.PI + angle, 0, 0, -1);
+            flipped = Math.cos(angle) >= 0;
             updateBounds();
         }
 

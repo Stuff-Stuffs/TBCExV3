@@ -1,10 +1,10 @@
 package io.github.stuff_stuffs.tbcexv3core.api.animation;
 
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.impl.animation.ActionTraceAnimatorRegistryImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
+import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationSceneView;
 import io.github.stuff_stuffs.tbcexv3util.api.util.DiscretePhaseTracker;
 import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import net.minecraft.util.Identifier;
@@ -12,7 +12,7 @@ import net.minecraft.util.Util;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public interface ActionTraceAnimatorRegistry {
     Identifier DEFAULT_PHASE = TBCExV3Core.createId("default");
@@ -25,5 +25,5 @@ public interface ActionTraceAnimatorRegistry {
 
     void register(Identifier watch, Identifier phase, ActionTraceAnimator animator);
 
-    Optional<BiConsumer<AnimationScene<BattleAnimationContext>, BattleStateView>> animate(TracerView.Node<ActionTrace> trace);
+    Optional<Consumer<AnimationScene<BattleSceneAnimationContext, BattleParticipantAnimationContext>>> animate(TracerView.Node<ActionTrace> trace, BattleAnimationContextFactory contextFactory, AnimationSceneView<BattleSceneAnimationContext, BattleParticipantAnimationContext> view);
 }

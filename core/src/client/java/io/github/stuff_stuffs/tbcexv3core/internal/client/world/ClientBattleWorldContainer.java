@@ -1,29 +1,32 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.world;
 
-import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.ActionTraceAnimatorRegistry;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContextFactory;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleParticipantAnimationContext;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleSceneAnimationContext;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStatePhase;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateView;
 import io.github.stuff_stuffs.tbcexv3core.impl.ClientBattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.BattleUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.client.network.EntityBattlesUpdateRequestSender;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdate;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequest;
 import io.github.stuff_stuffs.tbcexv3model.api.scene.AnimationScene;
+import io.github.stuff_stuffs.tbcexv3util.api.util.TracerView;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 //TODO timeout
@@ -34,11 +37,13 @@ public class ClientBattleWorldContainer implements AutoCloseable {
     private final Set<BattleHandle> battleUpdateRequestsToSend = new ObjectOpenHashSet<>();
     private final Set<UUID> entityBattleRequestsToSend = new ObjectOpenHashSet<>();
     private final Map<BattleHandle, AnimationState> animationState = new Object2ReferenceOpenHashMap<>();
+    private final World world;
 
-    public ClientBattleWorldContainer() {
+    public ClientBattleWorldContainer(final World world) {
+        this.world = world;
     }
 
-    public @Nullable AnimationScene<BattleAnimationContext> getScene(final BattleHandle handle) {
+    public @Nullable AnimationScene<BattleSceneAnimationContext, BattleParticipantAnimationContext> getScene(final BattleHandle handle) {
         final AnimationState state = animationState.get(handle);
         if (state != null) {
             return state.scene;
@@ -68,6 +73,9 @@ public class ClientBattleWorldContainer implements AutoCloseable {
             EntityBattlesUpdateRequestSender.send(entityBattleRequestsToSend);
             entityBattleRequestsToSend.clear();
         }
+        for (ClientBattleImpl value : battles.values()) {
+            value.tick();
+        }
     }
 
     public void update(final BattleUpdate update) {
@@ -76,7 +84,7 @@ public class ClientBattleWorldContainer implements AutoCloseable {
         } else if (update.offset() == 0 && update.initialData().isPresent()) {
             final BattleUpdate.InitialData data = update.initialData().get();
             final BattleHandle handle = update.handle();
-            final ClientBattleImpl battle = new ClientBattleImpl(handle, BattleStateMode.CLIENT, data.initialEnvironment(), data.origin(), (animation, state) -> animationState.computeIfAbsent(handle, i -> new AnimationState()).add(animation, state));
+            final ClientBattleImpl battle = new ClientBattleImpl(handle, BattleStateMode.CLIENT, data.initialEnvironment(), data.origin(), (trace) -> animationState.computeIfAbsent(handle, i -> new AnimationState(handle, this, world)).add(trace));
             battle.update(update);
             battles.put(handle, battle);
         }
@@ -106,21 +114,28 @@ public class ClientBattleWorldContainer implements AutoCloseable {
 
     @Override
     public void close() {
-        for (final AnimationState value : animationState.values()) {
-            try {
-                value.scene.close();
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }
         animationState.clear();
     }
 
     private static final class AnimationState {
-        private final AnimationScene<BattleAnimationContext> scene = AnimationScene.create();
+        private final AnimationScene<BattleSceneAnimationContext, BattleParticipantAnimationContext> scene;
+        private final BattleHandle handle;
+        private final ClientBattleWorldContainer container;
+        private final World world;
 
-        public void add(final BiConsumer<AnimationScene<BattleAnimationContext>, BattleStateView> consumer, final BattleStateView state) {
-            consumer.accept(scene, state);
+        private AnimationState(final BattleHandle handle, final ClientBattleWorldContainer container, final World world) {
+            this.handle = handle;
+            this.container = container;
+            this.world = world;
+            scene = AnimationScene.create(world.getTime());
+        }
+
+        public void add(final TracerView.Node<ActionTrace> trace) {
+            final BattleView battle = container.getBattle(handle);
+            if (battle == null) {
+                return;
+            }
+            ActionTraceAnimatorRegistry.INSTANCE.animate(trace, BattleAnimationContextFactory.create(battle), scene).ifPresent(animation -> animation.accept(scene));
         }
 
         public void render(final WorldRenderContext context, final BattleView battle) {
@@ -132,33 +147,7 @@ public class ClientBattleWorldContainer implements AutoCloseable {
                 matrices.translate(-pos.x, -pos.y, -pos.z);
                 final Vec3d v = battle.toGlobal(Vec3d.ZERO);
                 matrices.translate(v.x, v.y, v.z);
-                scene.update(time, new BattleAnimationContext() {
-                    @Override
-                    public BattleStateView state() {
-                        return battle.getState();
-                    }
-
-                    @Override
-                    public BlockPos toLocal(final BlockPos global) {
-                        return battle.toLocal(global);
-                    }
-
-                    @Override
-                    public BlockPos toGlobal(final BlockPos local) {
-                        return battle.toGlobal(local);
-                    }
-
-                    @Override
-                    public Vec3d toLocal(final Vec3d global) {
-                        return battle.toLocal(global);
-                    }
-
-                    @Override
-                    public Vec3d toGlobal(final Vec3d local) {
-                        return battle.toGlobal(local);
-                    }
-                });
-                scene.render(matrices, context.consumers(), pos, context.camera().getRotation(), time);
+                scene.render(matrices, context.consumers(), world, time);
                 matrices.pop();
             }
         }

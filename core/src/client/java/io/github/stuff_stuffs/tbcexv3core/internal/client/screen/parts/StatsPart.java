@@ -1,6 +1,6 @@
 package io.github.stuff_stuffs.tbcexv3core.internal.client.screen.parts;
 
-import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContext;
+import io.github.stuff_stuffs.tbcexv3core.api.animation.BattleAnimationContextFactory;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
@@ -40,10 +40,10 @@ public final class StatsPart {
         final GridLayout gridLayout = Containers.grid(Sizing.fill(75), Sizing.fill(75), 2, 2);
         gridLayout.positioning(Positioning.relative(50, 50));
         gridLayout.surface(TBCExGUI.DEFAULT_SURFACE);
-        final AnimationScene<BattleAnimationContext> scene = ((ClientBattleWorld) MinecraftClient.getInstance().world).tbcex$getScene(target.getParent());
+        final AnimationScene<?,?> scene = ((ClientBattleWorld) MinecraftClient.getInstance().world).tbcex$getScene(target.getParent());
         final Component modelPreview;
         if (scene != null) {
-            modelPreview = new ModelPreviewComponent(BattleAnimationContext.toModelId(target), scene);
+            modelPreview = new ModelPreviewComponent(BattleAnimationContextFactory.toModelId(target), scene);
             modelPreview.sizing(Sizing.fill(50), Sizing.fill(50));
         } else {
             modelPreview = Components.box(Sizing.fill(50), Sizing.fill(50));

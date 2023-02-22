@@ -1,33 +1,28 @@
 package io.github.stuff_stuffs.tbcexv3model.api.scene;
 
-import io.github.stuff_stuffs.tbcexv3model.api.animation.AnimationManagerView;
-import io.github.stuff_stuffs.tbcexv3model.api.model.ModelView;
-import net.minecraft.client.gl.VertexBuffer;
-import net.minecraft.client.render.BufferBuilder;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.ModelAnimation;
+import io.github.stuff_stuffs.tbcexv3model.api.animation.SceneAnimation;
+import io.github.stuff_stuffs.tbcexv3model.api.model.Model;
+import io.github.stuff_stuffs.tbcexv3model.api.model.ModelType;
+import io.github.stuff_stuffs.tbcexv3model.api.util.Interpolation;
+import io.github.stuff_stuffs.tbcexv3model.api.util.Transition;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-import org.joml.Quaternionfc;
 
+import java.util.Optional;
 import java.util.Set;
 
-public interface AnimationSceneView<T> {
-    AnimationManagerView<T> manager();
-
+public interface AnimationSceneView<SC, MC> {
     Set<Identifier> models();
 
-    ModelView getModel(Identifier id);
+    void render(Identifier model, MatrixStack matrices, VertexConsumerProvider vertexConsumers);
 
-    void render(MatrixStack matrices, VertexConsumerProvider vertexConsumer, Vec3d cameraPos, Quaternionfc cameraLook, double time);
+    Model getModel(Identifier id);
 
-    BufferToken upload(BufferBuilder.BuiltBuffer buffer);
+    Optional<ModelAnimation> findModelAnimation(Identifier id, ModelType type, MC data, double offset);
 
-    interface BufferToken {
-        boolean isValid();
+    Optional<SceneAnimation> findSceneAnimation(Identifier id, SC data, double offset);
 
-        VertexBuffer getBuffer();
-
-        void destroy();
-    }
+    Transition createTransition(Interpolation interpolation, double offset, double duration);
 }

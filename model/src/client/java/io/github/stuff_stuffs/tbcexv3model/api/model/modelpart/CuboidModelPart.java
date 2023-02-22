@@ -1,14 +1,14 @@
 package io.github.stuff_stuffs.tbcexv3model.api.model.modelpart;
 
-import io.github.stuff_stuffs.tbcexv3model.api.model.ModelGuiRenderPartContext;
-import io.github.stuff_stuffs.tbcexv3model.api.model.ModelRenderPartContext;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ColorHelper;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import org.joml.*;
 
 import java.lang.Math;
@@ -85,59 +85,34 @@ public class CuboidModelPart implements ModelPart {
     }
 
     @Override
-    public void render(final ModelRenderPartContext context, final double time) {
-        final MatrixStack matrices = context.matrices();
-        final Vector4f scratch = new Vector4f();
-        final Vector3f normScratch = new Vector3f();
-        final Vector4f center = new Vector4f();
-        final Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
-        final Matrix3f normalMatrix = matrices.peek().getNormalMatrix();
-        final VertexConsumer consumer = context.vertexConsumers().getBuffer(renderLayer.apply(texture));
-        for (final Face face : faces) {
-            normScratch.set(face.normal);
-            normalMatrix.transform(normScratch);
-            center.set(0.0F, 0.0F, 0.0F, 1.0F);
-            for (final Vector3fc vertex : face.vertices) {
-                center.add(vertex.x(), vertex.y(), vertex.z(), 0.0F);
+    public void render(final ModelPartRenderContext context) {
+        ModelPart.renderTransformed(context, (renderContext, translucency) -> {
+            if (translucency <= 0 || translucency > 1) {
+                return;
             }
-            center.mul(0.25F);
-            for (int i = 0; i < 4; i++) {
-                final Vector3fc vertex = face.vertices[i];
-                scratch.set(vertex.x(), vertex.y(), vertex.z(), 1.0F);
-                positionMatrix.transform(scratch);
-                if (Math.abs(scratch.w()) < 0.0000001) {
-                    continue;
+            final MatrixStack matrices = renderContext.matrices();
+            final Vector4f scratch = new Vector4f();
+            final Vector3f normScratch = new Vector3f();
+            final Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
+            final Matrix3f normalMatrix = matrices.peek().getNormalMatrix();
+            final VertexConsumer consumer = renderContext.vertexConsumers().getBuffer(renderLayer.apply(texture));
+            for (final Face face : faces) {
+                normScratch.set(face.normal);
+                normalMatrix.transform(normScratch);
+                for (int i = 0; i < 4; i++) {
+                    final Vector3fc vertex = face.vertices[i];
+                    scratch.set(vertex.x(), vertex.y(), vertex.z(), 1.0F);
+                    positionMatrix.transform(scratch);
+                    if (Math.abs(scratch.w()) < 0.0000001) {
+                        continue;
+                    }
+                    scratch.mul(1 / scratch.w());
+                    final Vector2fc uv = face.uvs[i];
+                    final int alpha = MathHelper.ceil(ColorHelper.Argb.getAlpha(face.colors[i]) * translucency);
+                    consumer.vertex(scratch.x, scratch.y, scratch.z).color((face.colors[i] & ~0xFF000000) | alpha << 24).texture(uv.x(), uv.y()).overlay(OverlayTexture.DEFAULT_UV).light(renderContext.light(scratch.x, scratch.y, scratch.z)).normal(normScratch.x(), normScratch.y(), normScratch.z()).next();
                 }
-                scratch.mul(1 / scratch.w());
-                final Vector2fc uv = face.uvs[i];
-                consumer.vertex(scratch.x, scratch.y, scratch.z).color(face.colors[i]).texture(uv.x(), uv.y()).overlay(OverlayTexture.DEFAULT_UV).light(context.sampleLight(center.x(), center.y(), center.z())).normal(normScratch.x(), normScratch.y(), normScratch.z()).next();
             }
-        }
-    }
-
-    @Override
-    public void renderInGui(ModelGuiRenderPartContext context) {
-        final MatrixStack matrices = context.matrices();
-        final Vector4f scratch = new Vector4f();
-        final Vector3f normScratch = new Vector3f();
-        final Matrix4f positionMatrix = matrices.peek().getPositionMatrix();
-        final Matrix3f normalMatrix = matrices.peek().getNormalMatrix();
-        final VertexConsumer consumer = context.vertexConsumers().getBuffer(renderLayer.apply(texture));
-        for (final Face face : faces) {
-            normScratch.set(face.normal);
-            normalMatrix.transform(normScratch);
-            for (int i = 0; i < 4; i++) {
-                final Vector3fc vertex = face.vertices[i];
-                scratch.set(vertex.x(), vertex.y(), vertex.z(), 1.0F);
-                positionMatrix.transform(scratch);
-                if (Math.abs(scratch.w()) < 0.0000001) {
-                    continue;
-                }
-                scratch.mul(1 / scratch.w());
-                final Vector2fc uv = face.uvs[i];
-                consumer.vertex(scratch.x, scratch.y, scratch.z).color(face.colors[i]).texture(uv.x(), uv.y()).overlay(OverlayTexture.DEFAULT_UV).light(context.light()).normal(normScratch.x(), normScratch.y(), normScratch.z()).next();
-            }
-        }
+        });
     }
 
     public void setTexture(final Identifier texture) {
