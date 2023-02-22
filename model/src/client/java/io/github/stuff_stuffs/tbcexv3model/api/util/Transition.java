@@ -5,10 +5,10 @@ public interface Transition {
 
     static Transition fromInterpolation(final double start, final double duration, final Interpolation interpolation) {
         return time -> {
-            final double relative = (time - start) / duration;
-            if (duration == 0) {
-                return 1;
+            if (duration <= 0.000001) {
+                return 0.5;
             }
+            final double relative = (time - start) / duration;
             if (relative < 0) {
                 return 0;
             } else if (relative > 1) {
