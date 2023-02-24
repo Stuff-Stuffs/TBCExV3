@@ -1,17 +1,23 @@
 package io.github.stuff_stuffs.tbcexv3test.common;
 
 import com.mojang.serialization.Codec;
-import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntities;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.action.BattleParticipantAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.BattleParticipantEffectType;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifier;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierKey;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierPhase;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3test.common.entity.TestEntities;
+import io.github.stuff_stuffs.tbcexv3util.api.util.OperationChainDisplayBuilder;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.OptionalDouble;
 
 public class CreativeModeBattleParticipantEffect implements BattleParticipantEffect {
     public static final Codec<CreativeModeBattleParticipantEffect> CODEC = Codec.unit(new CreativeModeBattleParticipantEffect());
@@ -26,8 +32,11 @@ public class CreativeModeBattleParticipantEffect implements BattleParticipantEff
             }
 
             @Override
-            public double modify(final double value, @Nullable final Tracer<StatTrace> tracer) {
-                return value + 1000000;
+            public double modify(final double value, @Nullable final OperationChainDisplayBuilder displayBuilder) {
+                if (displayBuilder != null) {
+                    displayBuilder.push(OperationChainDisplayBuilder.Operation.ADD, OptionalDouble.of(1000000.0), Text.empty());
+                }
+                return value + 1000000.0;
             }
         }, tracer);
     }

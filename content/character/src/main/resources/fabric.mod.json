@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "tbcexv3character",
+  "version": "${version}",
+  "name": "TBCExV3-Character",
+  "description": "Turn Based Combat Experiment Version 3 Character",
+  "authors": [
+    "Stuff-Stuffs"
+  ],
+  "contact": {
+    "sources": "https://github.com/Stuff-Stuffs/TBCExV3"
+  },
+  "license": "LGPL-3.0-or-later",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "io.github.stuff_stuffs.tbcexv3content.character.internal.common.TBCExV3Character"
+    ],
+    "client": [
+      "io.github.stuff_stuffs.tbcexv3content.character.internal.client.TBCExV3CharacterClient"
+    ]
+  },
+  "mixins": [
+    "tbcexv3character.mixins.json",
+    {
+      "config": "tbcexv3character.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.6",
+    "fabric": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  },
+  "custom": {
+    "loom:injected_interfaces": {
+      "net/minecraft/class_1937": [
+        "io/github/stuff_stuffs/tbcexv3core/api/battles/BattleWorld"
+      ],
+      "net/minecraft/class_3218": [
+        "io/github/stuff_stuffs/tbcexv3core/api/battles/ServerBattleWorld"
+      ]
+    }
+  }
+}

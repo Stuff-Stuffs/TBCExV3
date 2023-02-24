@@ -46,11 +46,11 @@ public interface BattleEntityComponentType<T extends BattleEntityComponent> {
         return of(codec, netCodec, combiner, happenBefore, happensAfter);
     }
 
-    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Codec<T> codec, final Codec<T> networkCodec, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
-        return of(codec, codec, networkCodec, networkCodec, combiner, happenBefore, happensAfter);
+    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Codec<T> codec, final Codec<T> networkCodec, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happenAfter) {
+        return of(codec, codec, networkCodec, networkCodec, combiner, happenBefore, happenAfter);
     }
 
-    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Encoder<T> encoder, final Decoder<T> decoder, final Encoder<T> networkEncoder, final Decoder<T> networkDecoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happensAfter) {
-        return new BattleEntityComponentTypeImpl<>(encoder, decoder, networkEncoder, networkDecoder, combiner, happenBefore, happensAfter);
+    static <T extends BattleEntityComponent> BattleEntityComponentType<T> of(final Encoder<T> encoder, final Decoder<T> decoder, final Encoder<T> networkEncoder, final Decoder<T> networkDecoder, final BinaryOperator<T> combiner, final Set<Identifier> happenBefore, final Set<Identifier> happenAfter) {
+        return new BattleEntityComponentTypeImpl<>(encoder, decoder, networkEncoder, networkDecoder, combiner, happenBefore, happenAfter);
     }
 }

@@ -51,7 +51,7 @@ public class TestBattleParticipantItem implements BattleParticipantItem {
         final Random random = Random.create(id);
         final BattleParticipantItemRarity.RarityClass[] values = BattleParticipantItemRarity.RarityClass.values();
         final BattleParticipantItemRarity.RarityClass rarityClass = values[random.nextInt(values.length)];
-        return new BattleParticipantItemRarity(random.nextDouble(), rarityClass);
+        return new BattleParticipantItemRarity(1, random.nextDouble(), rarityClass);
     }
 
     @Override

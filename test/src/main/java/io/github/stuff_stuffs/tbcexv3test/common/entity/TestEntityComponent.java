@@ -2,20 +2,22 @@ package io.github.stuff_stuffs.tbcexv3test.common.entity;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.stuff_stuffs.tbcexv3test.common.CreativeModeBattleParticipantEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.BattleView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifier;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattleParticipantStatModifierPhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.StatTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentType;
+import io.github.stuff_stuffs.tbcexv3test.common.CreativeModeBattleParticipantEffect;
+import io.github.stuff_stuffs.tbcexv3util.api.util.OperationChainDisplayBuilder;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.OptionalDouble;
 import java.util.function.BinaryOperator;
 
 public class TestEntityComponent implements BattleEntityComponent {
@@ -42,7 +44,10 @@ public class TestEntityComponent implements BattleEntityComponent {
             }
 
             @Override
-            public double modify(final double value, @Nullable final Tracer<StatTrace> tracer) {
+            public double modify(final double value, @Nullable final OperationChainDisplayBuilder displayBuilder) {
+                if (displayBuilder != null) {
+                    displayBuilder.push(OperationChainDisplayBuilder.Operation.ADD, OptionalDouble.of(maxHealth), Text.of(""));
+                }
                 return value + maxHealth;
             }
         }, tracer);

@@ -7,18 +7,18 @@ import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
-import java.text.DecimalFormat;
 import java.util.Comparator;
 
 public final class BattleParticipantItemRarity {
     public static final Comparator<BattleParticipantItemRarity> COMPARATOR = Comparator.<BattleParticipantItemRarity, RarityClass>comparing(i -> i.rarityClass).thenComparingDouble(i -> i.progress);
-    public static final Codec<BattleParticipantItemRarity> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codec.DOUBLE.fieldOf("progress").forGetter(rarity -> rarity.progress), RarityClass.CODEC.fieldOf("class").forGetter(rarity -> rarity.rarityClass)).apply(instance, BattleParticipantItemRarity::new));
-    private static final DecimalFormat RARITY_FORMAT = new DecimalFormat("0.00");
+    public static final Codec<BattleParticipantItemRarity> CODEC = RecordCodecBuilder.create(instance -> instance.group(Codec.INT.fieldOf("level").forGetter(BattleParticipantItemRarity::getLevel), Codec.DOUBLE.fieldOf("progress").forGetter(rarity -> rarity.progress), RarityClass.CODEC.fieldOf("class").forGetter(rarity -> rarity.rarityClass)).apply(instance, (level, progress1, rarityClass1) -> new BattleParticipantItemRarity(level, progress1, rarityClass1)));
     private static final RarityClass[] RARITY_CLASSES = RarityClass.values();
+    private final int level;
     private final double progress;
     private final RarityClass rarityClass;
 
-    public BattleParticipantItemRarity(final double progress, final RarityClass rarityClass) {
+    public BattleParticipantItemRarity(final int level, final double progress, final RarityClass rarityClass) {
+        this.level = level;
         this.progress = progress;
         this.rarityClass = rarityClass;
         if (!Double.isFinite(progress)) {
@@ -36,6 +36,10 @@ public final class BattleParticipantItemRarity {
         }
     }
 
+    public int getLevel() {
+        return 0;
+    }
+
     public RarityClass getRarityClass() {
         return rarityClass;
     }
@@ -45,7 +49,7 @@ public final class BattleParticipantItemRarity {
     }
 
     public Text getAsText() {
-        return Text.literal(rarityClass.name()).setStyle(Style.EMPTY.withColor(rarityClass.color | 0xFF000000));
+        return Text.literal(rarityClass.name() + '(' + level + ')').setStyle(Style.EMPTY.withColor(rarityClass.color | 0xFF000000));
     }
 
     public enum RarityClass {
@@ -81,7 +85,7 @@ public final class BattleParticipantItemRarity {
         }
     }
 
-    public static BattleParticipantItemRarity getRarity(final double rarity) {
+    public static BattleParticipantItemRarity getRarity(final int level, final double rarity) {
         if (rarity < 0) {
             throw new TBCExException("Negative rarity");
         }
@@ -97,9 +101,9 @@ public final class BattleParticipantItemRarity {
         if (greatestLessThan != null) {
             final RarityClass lessThan = RARITY_CLASSES[idx - 1];
             final double diff = greatestLessThan.start - lessThan.start;
-            return new BattleParticipantItemRarity((rarity - lessThan.start) / diff, lessThan);
+            return new BattleParticipantItemRarity(level, (rarity - lessThan.start) / diff, lessThan);
         } else {
-            return new BattleParticipantItemRarity((rarity - RarityClass.LEGENDARY.start) / 1000.0, RarityClass.LEGENDARY);
+            return new BattleParticipantItemRarity(level, (rarity - RarityClass.LEGENDARY.start) / 1000.0, RarityClass.LEGENDARY);
         }
     }
 }

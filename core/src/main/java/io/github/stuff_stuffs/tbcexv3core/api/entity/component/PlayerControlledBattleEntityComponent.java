@@ -34,7 +34,7 @@ public class PlayerControlledBattleEntityComponent implements BattleEntityCompon
             BlockPos.CODEC.fieldOf("startPos").forGetter(component -> component.startPos)
     ).apply(instance, PlayerControlledBattleEntityComponent::new));
     public static final BinaryOperator<PlayerControlledBattleEntityComponent> COMBINER = (playerControlledBattleEntityComponent, playerControlledBattleEntityComponent2) -> {
-        throw new UnsupportedOperationException("Cannot combine flag like component");
+        throw new UnsupportedOperationException("Cannot combine flag like components!");
     };
     private final UUID controllerUUID;
     private final RegistryKey<World> startDimension;

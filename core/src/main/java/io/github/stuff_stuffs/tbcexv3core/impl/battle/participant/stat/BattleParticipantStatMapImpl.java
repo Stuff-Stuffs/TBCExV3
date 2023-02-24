@@ -4,6 +4,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.*;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
+import io.github.stuff_stuffs.tbcexv3util.api.util.OperationChainDisplayBuilder;
 import io.github.stuff_stuffs.tbcexv3util.api.util.TopologicalSort;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -27,8 +28,8 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
     }
 
     @Override
-    public double compute(final BattleParticipantStat stat, final @Nullable Tracer<StatTrace> tracer) {
-        return entries.computeIfAbsent(stat, Entry::new).compute(tracer);
+    public double compute(final BattleParticipantStat stat, final @Nullable OperationChainDisplayBuilder displayBuilder) {
+        return entries.computeIfAbsent(stat, Entry::new).compute(displayBuilder);
     }
 
     private static final class Entry {
@@ -41,10 +42,10 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
             modifiers = new ArrayList<>();
         }
 
-        public double compute(final @Nullable Tracer<StatTrace> tracer) {
+        public double compute(final @Nullable OperationChainDisplayBuilder displayBuilder) {
             double val = 0;
             for (final WrappedModifier modifier : sorted) {
-                val = modifier.modify(val, tracer);
+                val = modifier.modify(val, displayBuilder);
             }
             return val;
         }
@@ -92,8 +93,8 @@ public class BattleParticipantStatMapImpl implements BattleParticipantStatMap {
         }
 
         @Override
-        public double modify(final double value, final @Nullable Tracer<StatTrace> tracer) {
-            return wrapped.modify(value, tracer);
+        public double modify(final double value, final @Nullable OperationChainDisplayBuilder displayBuilder) {
+            return wrapped.modify(value, displayBuilder);
         }
     }
 

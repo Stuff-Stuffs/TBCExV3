@@ -1,0 +1,10 @@
+archivesBaseName = "tbcexv3contentcharacter"
+
+dependencies {
+    implementation project(path: ":core", configuration: "namedElements")
+    clientImplementation project(":core").sourceSets.client.output
+    implementation project(path: ":model", configuration: "namedElements")
+    clientImplementation project(":model").sourceSets.client.output
+    implementation project(path: ":util", configuration: "namedElements")
+    clientImplementation project(":util").sourceSets.client.output
+}
