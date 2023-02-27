@@ -13,23 +13,4 @@ public interface PreBattleParticipantSetBoundsEvent {
     interface View {
         void preSetBounds(BattleParticipantStateView state, BattleParticipantBounds newBounds, TracerView<ActionTrace> tracer);
     }
-
-    static PreBattleParticipantSetBoundsEvent convert(final PreBattleParticipantSetBoundsEvent.View view) {
-        return (state, newBounds, tracer) -> {
-            view.preSetBounds(state, newBounds, tracer);
-            return true;
-        };
-    }
-
-    static PreBattleParticipantSetBoundsEvent invoker(final PreBattleParticipantSetBoundsEvent[] events, final Runnable enter, final Runnable exit) {
-        return (state, newBounds, tracer) -> {
-            boolean b = true;
-            enter.run();
-            for (final PreBattleParticipantSetBoundsEvent event : events) {
-                b &= event.preSetBounds(state, newBounds, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }

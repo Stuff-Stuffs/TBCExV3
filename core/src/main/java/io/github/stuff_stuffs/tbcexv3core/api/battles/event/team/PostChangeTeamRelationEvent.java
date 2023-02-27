@@ -14,18 +14,4 @@ public interface PostChangeTeamRelationEvent {
     interface View {
         void postChangeTeamRelation(BattleStateView state, BattleParticipantTeam first, BattleParticipantTeam second, BattleParticipantTeamRelation oldRelation, BattleParticipantTeamRelation newRelation, TracerView<ActionTrace> tracer);
     }
-
-    static PostChangeTeamRelationEvent convert(final View view) {
-        return view::postChangeTeamRelation;
-    }
-
-    static PostChangeTeamRelationEvent invoker(final PostChangeTeamRelationEvent[] events, final Runnable enter, final Runnable exit) {
-        return (state, first, second, oldRelation, newRelation, tracer) -> {
-            enter.run();
-            for (final PostChangeTeamRelationEvent event : events) {
-                event.postChangeTeamRelation(state, first, second, oldRelation, newRelation, tracer);
-            }
-            exit.run();
-        };
-    }
 }

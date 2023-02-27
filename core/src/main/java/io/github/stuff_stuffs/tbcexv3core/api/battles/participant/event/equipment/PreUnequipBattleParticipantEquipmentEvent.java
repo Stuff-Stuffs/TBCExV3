@@ -14,23 +14,4 @@ public interface PreUnequipBattleParticipantEquipmentEvent {
     interface View {
         void preUnequip(BattleParticipantStateView state, BattleParticipantInventoryHandle handle, BattleParticipantEquipmentSlot slot, TracerView<ActionTrace> tracer);
     }
-
-    static PreUnequipBattleParticipantEquipmentEvent convert(final View view) {
-        return (state, handle, slot, tracer) -> {
-            view.preUnequip(state, handle, slot, tracer);
-            return true;
-        };
-    }
-
-    static PreUnequipBattleParticipantEquipmentEvent invoker(final PreUnequipBattleParticipantEquipmentEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (state, handle, slot, tracer) -> {
-            boolean b = true;
-            enter.run();
-            for (final PreUnequipBattleParticipantEquipmentEvent listener : listeners) {
-                b &= listener.preUnequip(state, handle, slot, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }

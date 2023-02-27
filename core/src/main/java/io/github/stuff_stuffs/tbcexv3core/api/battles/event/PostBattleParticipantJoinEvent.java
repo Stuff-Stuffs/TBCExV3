@@ -12,18 +12,4 @@ public interface PostBattleParticipantJoinEvent {
     interface View {
         void postBattleParticipantJoin(BattleParticipantStateView state, TracerView<ActionTrace> tracer);
     }
-
-    static PostBattleParticipantJoinEvent convert(final View view) {
-        return view::postBattleParticipantJoin;
-    }
-
-    static PostBattleParticipantJoinEvent invoker(final PostBattleParticipantJoinEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (state, tracer) -> {
-            enter.run();
-            for (final PostBattleParticipantJoinEvent listener : listeners) {
-                listener.postBattleParticipantJoin(state, tracer);
-            }
-            exit.run();
-        };
-    }
 }

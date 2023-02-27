@@ -14,23 +14,4 @@ public interface PreChangeTeamRelationEvent {
     interface View {
         void preChangeTeamRelation(BattleStateView state, BattleParticipantTeam first, BattleParticipantTeam second, BattleParticipantTeamRelation oldRelation, BattleParticipantTeamRelation newRelation, TracerView<ActionTrace> tracer);
     }
-
-    static PreChangeTeamRelationEvent convert(final View view) {
-        return (state, first, second, oldRelation, newRelation, tracer) -> {
-            view.preChangeTeamRelation(state, first, second, oldRelation, newRelation, tracer);
-            return true;
-        };
-    }
-
-    static PreChangeTeamRelationEvent invoker(final PreChangeTeamRelationEvent[] events, final Runnable enter, final Runnable exit) {
-        return (state, first, second, oldRelation, newRelation, tracer) -> {
-            boolean b = true;
-            enter.run();
-            for (final PreChangeTeamRelationEvent event : events) {
-                b &= event.preChangeTeamRelation(state, first, second, oldRelation, newRelation, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }

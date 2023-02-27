@@ -13,23 +13,4 @@ public interface PreBattleParticipantSetTeamEvent {
     interface View {
         void preSetTeam(BattleParticipantStateView state, BattleParticipantTeam newTeam, TracerView<ActionTrace> tracer);
     }
-
-    static PreBattleParticipantSetTeamEvent convert(final View view) {
-        return (state, newTeam, tracer) -> {
-            view.preSetTeam(state, newTeam, tracer);
-            return true;
-        };
-    }
-
-    static PreBattleParticipantSetTeamEvent invoker(final PreBattleParticipantSetTeamEvent[] events, final Runnable enter, final Runnable exit) {
-        return (state, newTeam, tracer) -> {
-            boolean b = true;
-            enter.run();
-            for (final PreBattleParticipantSetTeamEvent event : events) {
-                b &= event.preSetTeam(state, newTeam, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }

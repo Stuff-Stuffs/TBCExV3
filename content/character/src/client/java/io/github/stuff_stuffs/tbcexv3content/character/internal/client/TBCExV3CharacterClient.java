@@ -1,4 +1,4 @@
-package character.internal.client;
+package io.github.stuff_stuffs.tbcexv3content.character.internal.client;
 
 import net.fabricmc.api.ClientModInitializer;
 

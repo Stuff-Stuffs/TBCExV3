@@ -13,18 +13,4 @@ public interface PostBattleParticipantSetTeamEvent {
     interface View {
         void postSetTeam(BattleParticipantStateView state, BattleParticipantTeam oldTeam, TracerView<ActionTrace> tracer);
     }
-
-    static PostBattleParticipantSetTeamEvent convert(final View view) {
-        return view::postSetTeam;
-    }
-
-    static PostBattleParticipantSetTeamEvent invoker(final PostBattleParticipantSetTeamEvent[] events, final Runnable enter, final Runnable exit) {
-        return (state, oldTeam, tracer) -> {
-            enter.run();
-            for (final PostBattleParticipantSetTeamEvent event : events) {
-                event.postSetTeam(state, oldTeam, tracer);
-            }
-            exit.run();
-        };
-    }
 }

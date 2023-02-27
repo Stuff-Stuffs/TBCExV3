@@ -14,18 +14,4 @@ public interface PostBattleParticipantLeaveEvent {
     interface View {
         void postParticipantLeaveEvent(BattleParticipantStateView state, BattleStateView battleStateView, BattleParticipantRemovalReason reason, TracerView<ActionTrace> tracer);
     }
-
-    static PostBattleParticipantLeaveEvent convert(final PostBattleParticipantLeaveEvent.View view) {
-        return view::postParticipantLeaveEvent;
-    }
-
-    static PostBattleParticipantLeaveEvent invoker(final PostBattleParticipantLeaveEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (handle, state, reason, tracer) -> {
-            enter.run();
-            for (final PostBattleParticipantLeaveEvent listener : listeners) {
-                listener.postParticipantLeaveEvent(handle, state, reason, tracer);
-            }
-            exit.run();
-        };
-    }
 }

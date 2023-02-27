@@ -14,23 +14,4 @@ public interface PreBattleParticipantLeaveEvent {
     interface View {
         void preParticipantLeaveEvent(BattleParticipantHandle handle, BattleStateView battleStateView, BattleParticipantRemovalReason reason, TracerView<ActionTrace> tracer);
     }
-
-    static PreBattleParticipantLeaveEvent convert(final PreBattleParticipantLeaveEvent.View view) {
-        return (handle, state, reason, tracer) -> {
-            view.preParticipantLeaveEvent(handle, state, reason, tracer);
-            return true;
-        };
-    }
-
-    static PreBattleParticipantLeaveEvent invoker(final PreBattleParticipantLeaveEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (handle, state, reason, tracer) -> {
-            enter.run();
-            boolean accepted = true;
-            for (final PreBattleParticipantLeaveEvent listener : listeners) {
-                accepted &= listener.preParticipantLeaveEvent(handle, state, reason, tracer);
-            }
-            exit.run();
-            return accepted;
-        };
-    }
 }

@@ -13,23 +13,4 @@ public interface PreGiveBattleParticipantItemEvent {
     interface View {
         void preGiveItem(BattleParticipantItemStack stack, BattleParticipantStateView state, TracerView<ActionTrace> tracer);
     }
-
-    static PreGiveBattleParticipantItemEvent convert(final View view) {
-        return (stack, state, tracer) -> {
-            view.preGiveItem(stack, state, tracer);
-            return true;
-        };
-    }
-
-    static PreGiveBattleParticipantItemEvent invoker(final PreGiveBattleParticipantItemEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (stack, state, tracer) -> {
-            enter.run();
-            boolean b = true;
-            for (final PreGiveBattleParticipantItemEvent listener : listeners) {
-                b &= listener.preGiveItem(stack, state, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }

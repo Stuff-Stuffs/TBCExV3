@@ -14,18 +14,4 @@ public interface PostGiveBattleParticipantItemEvent {
     interface View {
         void postGiveItem(BattleParticipantInventoryHandle handle, BattleParticipantItemStack stack, BattleParticipantStateView state, TracerView<ActionTrace> tracer);
     }
-
-    static PostGiveBattleParticipantItemEvent convert(final View view) {
-        return view::postGiveItem;
-    }
-
-    static PostGiveBattleParticipantItemEvent invoker(final PostGiveBattleParticipantItemEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (handle, stack, state, tracer) -> {
-            enter.run();
-            for (final PostGiveBattleParticipantItemEvent listener : listeners) {
-                listener.postGiveItem(handle, stack, state, tracer);
-            }
-            exit.run();
-        };
-    }
 }

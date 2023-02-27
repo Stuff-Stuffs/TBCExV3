@@ -14,23 +14,4 @@ public interface PreTakeBattleParticipantItemEvent {
     interface View {
         void preTakeItem(BattleParticipantInventoryHandle handle, BattleParticipantItemStack stack, BattleParticipantStateView state, TracerView<ActionTrace> tracer);
     }
-
-    static PreTakeBattleParticipantItemEvent convert(final View view) {
-        return (handle, stack, state, tracer) -> {
-            view.preTakeItem(handle, stack, state, tracer);
-            return true;
-        };
-    }
-
-    static PreTakeBattleParticipantItemEvent invoker(final PreTakeBattleParticipantItemEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (handle, stack, state, tracer) -> {
-            enter.run();
-            boolean b = true;
-            for (final PreTakeBattleParticipantItemEvent listener : listeners) {
-                b &= listener.preTakeItem(handle, stack, state, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }
