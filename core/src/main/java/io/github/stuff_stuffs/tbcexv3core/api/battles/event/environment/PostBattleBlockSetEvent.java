@@ -15,18 +15,4 @@ public interface PostBattleBlockSetEvent {
     interface View {
         void postBattleBlockSet(BlockPos pos, BattleState state, Optional<BattleEnvironmentBlock> old, TracerView<ActionTrace> tracer);
     }
-
-    static PostBattleBlockSetEvent convert(final View view) {
-        return view::postBattleBlockSet;
-    }
-
-    static PostBattleBlockSetEvent invoker(final PostBattleBlockSetEvent[] events, final Runnable enter, final Runnable exit) {
-        return (pos, state, old, tracer) -> {
-            enter.run();
-            for (final PostBattleBlockSetEvent event : events) {
-                event.postBattleBlockSet(pos, state, old, tracer);
-            }
-            exit.run();
-        };
-    }
 }

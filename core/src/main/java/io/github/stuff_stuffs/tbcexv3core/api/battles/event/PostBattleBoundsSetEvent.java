@@ -13,18 +13,4 @@ public interface PostBattleBoundsSetEvent {
     interface View {
         void postBattleBoundsSet(BattleStateView view, BattleBounds oldBounds, TracerView<ActionTrace> tracer);
     }
-
-    static PostBattleBoundsSetEvent convert(final PostBattleBoundsSetEvent.View view) {
-        return view::postBattleBoundsSet;
-    }
-
-    static PostBattleBoundsSetEvent invoker(final PostBattleBoundsSetEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (state, oldBounds, tracer) -> {
-            enter.run();
-            for (final PostBattleBoundsSetEvent listener : listeners) {
-                listener.postBattleBoundsSet(state, oldBounds, tracer);
-            }
-            exit.run();
-        };
-    }
 }

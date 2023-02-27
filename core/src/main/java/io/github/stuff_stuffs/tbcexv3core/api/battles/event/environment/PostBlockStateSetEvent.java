@@ -14,18 +14,4 @@ public interface PostBlockStateSetEvent {
     interface View {
         void postBlockStateSet(BlockPos pos, BattleStateView state, BlockState oldBlockState, TracerView<ActionTrace> tracer);
     }
-
-    static PostBlockStateSetEvent convert(final PostBlockStateSetEvent.View view) {
-        return view::postBlockStateSet;
-    }
-
-    static PostBlockStateSetEvent invoker(final PostBlockStateSetEvent[] events, final Runnable enter, final Runnable exit) {
-        return (pos, state, oldBlockState, tracer) -> {
-            enter.run();
-            for (final PostBlockStateSetEvent event : events) {
-                event.postBlockStateSet(pos, state, oldBlockState, tracer);
-            }
-            exit.run();
-        };
-    }
 }

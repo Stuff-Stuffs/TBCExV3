@@ -14,23 +14,4 @@ public interface PreBlockStateSetEvent {
     interface View {
         void preBlockStateSet(BlockPos pos, BattleStateView state, BlockState newBlockState, TracerView<ActionTrace> tracer);
     }
-
-    static PreBlockStateSetEvent convert(final View view) {
-        return (pos, state, newBlockState, tracer) -> {
-            view.preBlockStateSet(pos, state, newBlockState, tracer);
-            return true;
-        };
-    }
-
-    static PreBlockStateSetEvent invoker(final PreBlockStateSetEvent[] events, final Runnable enter, final Runnable exit) {
-        return (pos, state, newBlockState, tracer) -> {
-            boolean b = true;
-            enter.run();
-            for (final PreBlockStateSetEvent event : events) {
-                b &= event.preBlockStateSet(pos, state, newBlockState, tracer);
-            }
-            exit.run();
-            return b;
-        };
-    }
 }

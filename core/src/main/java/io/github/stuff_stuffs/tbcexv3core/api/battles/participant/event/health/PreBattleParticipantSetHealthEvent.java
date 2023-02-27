@@ -31,38 +31,4 @@ public interface PreBattleParticipantSetHealthEvent {
 
         Identifier phase();
     }
-
-    static PreBattleParticipantSetHealthEvent convert(final View view) {
-        return new PreBattleParticipantSetHealthEvent() {
-            @Override
-            public double preSetHealth(final BattleParticipantState state, final double newHealth, final Tracer<ActionTrace> tracer) {
-                view.preSetHealth(state, newHealth, tracer);
-                return newHealth;
-            }
-
-            @Override
-            public Identifier phase() {
-                return view.phase();
-            }
-        };
-    }
-
-    static PreBattleParticipantSetHealthEvent invoker(final PreBattleParticipantSetHealthEvent[] events, final Runnable enter, final Runnable exit) {
-        return new PreBattleParticipantSetHealthEvent() {
-            @Override
-            public double preSetHealth(final BattleParticipantState state, double newHealth, final Tracer<ActionTrace> tracer) {
-                enter.run();
-                for (final PreBattleParticipantSetHealthEvent event : events) {
-                    newHealth = event.preSetHealth(state, newHealth, tracer);
-                }
-                exit.run();
-                return newHealth;
-            }
-
-            @Override
-            public Identifier phase() {
-                throw new UnsupportedOperationException("Invoker has no phase!");
-            }
-        };
-    }
 }

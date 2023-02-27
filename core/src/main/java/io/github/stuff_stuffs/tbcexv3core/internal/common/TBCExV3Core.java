@@ -7,31 +7,16 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantLeaveBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.*;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PostBattleBlockSetEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PostBlockStateSetEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PreBattleBlockSetEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.environment.PreBlockStateSetEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PostChangeTeamRelationEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.team.PreChangeTeamRelationEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.CoreBattleParticipantEffects;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.*;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostEquipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PostUnequipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreEquipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.equipment.PreUnequipBattleParticipantEquipmentEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PostBattleParticipantSetHealthEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantDeathEvent;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantSetHealthEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostGiveBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PostTakeBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreGiveBattleParticipantItemEvent;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.item.PreTakeBattleParticipantItemEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.*;
+import io.github.stuff_stuffs.tbcexv3core.api.util.EventGenerationUtil;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
@@ -147,48 +132,48 @@ public class TBCExV3Core implements ModInitializer {
             }
         }));
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.register(builder -> {
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT, PreBattleSetBoundsEvent::convert, PreBattleSetBoundsEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT, PostBattleBoundsSetEvent::convert, PostBattleBoundsSetEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT);
 
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT, PreBattleParticipantJoinEvent::convert, PreBattleParticipantJoinEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT, PostBattleParticipantJoinEvent::convert, PostBattleParticipantJoinEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT);
 
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT, PreBattleParticipantLeaveEvent::convert, PreBattleParticipantLeaveEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT, PostBattleParticipantLeaveEvent::convert, PostBattleParticipantLeaveEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT);
 
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_END_EVENT, PreBattleEndEvent::convert, PreBattleEndEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_END_EVENT, PostBattleEndEvent::convert, PostBattleEndEvent::invoker);
+            builder.unsortedViewLike(CoreBattleEvents.PRE_BATTLE_END_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_END_EVENT);
 
-            builder.unsorted(CoreBattleEvents.PRE_TEAM_RELATION_CHANGE_EVENT, PreChangeTeamRelationEvent::convert, PreChangeTeamRelationEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_TEAM_RELATION_CHANGE_EVENT, PostChangeTeamRelationEvent::convert, PostChangeTeamRelationEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_TEAM_RELATION_CHANGE_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_TEAM_RELATION_CHANGE_EVENT);
 
-            builder.unsorted(CoreBattleEvents.PRE_BLOCK_STATE_SET_EVENT, PreBlockStateSetEvent::convert, PreBlockStateSetEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BLOCK_STATE_SET_EVENT, PostBlockStateSetEvent::convert, PostBlockStateSetEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BLOCK_STATE_SET_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_BLOCK_STATE_SET_EVENT);
 
-            builder.unsorted(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT, PreBattleBlockSetEvent::convert, PreBattleBlockSetEvent::invoker);
-            builder.unsorted(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT, PostBattleBlockSetEvent::convert, PostBattleBlockSetEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT);
+            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT);
         });
         BattleParticipantState.BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT.register(builder -> {
-            builder.unsorted(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT, PreGiveBattleParticipantItemEvent::convert, PreGiveBattleParticipantItemEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT, PostGiveBattleParticipantItemEvent::convert, PostGiveBattleParticipantItemEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT, PreTakeBattleParticipantItemEvent::convert, PreTakeBattleParticipantItemEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT, PostTakeBattleParticipantItemEvent::convert, PostTakeBattleParticipantItemEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT);
+            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT);
 
-            builder.unsorted(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PreEquipBattleParticipantEquipmentEvent::convert, PreEquipBattleParticipantEquipmentEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PostEquipBattleParticipantEquipmentEvent::convert, PostEquipBattleParticipantEquipmentEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PreUnequipBattleParticipantEquipmentEvent::convert, PreUnequipBattleParticipantEquipmentEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT, PostUnequipBattleParticipantEquipmentEvent::convert, PostUnequipBattleParticipantEquipmentEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
+            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
 
-            builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT, PreBattleParticipantSetTeamEvent::convert, PreBattleParticipantSetTeamEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT, PostBattleParticipantSetTeamEvent::convert, PostBattleParticipantSetTeamEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT);
 
-            builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT, PreBattleParticipantSetBoundsEvent::convert, PreBattleParticipantSetBoundsEvent::invoker);
-            builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT, PostBattleParticipantSetBoundsEvent::convert, PostBattleParticipantSetBoundsEvent::invoker);
+            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT);
 
-            builder.sorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT, PreBattleParticipantSetHealthEvent::convert, PreBattleParticipantSetHealthEvent::invoker, Comparator.comparing(PreBattleParticipantSetHealthEvent::phase, PreBattleParticipantSetHealthEvent.PHASE_TRACKER.phaseComparator()));
-            builder.unsorted(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT, PostBattleParticipantSetHealthEvent::convert, PostBattleParticipantSetHealthEvent::invoker);
+            builder.sorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT, EventGenerationUtil.generateDoubleConverter(PreBattleParticipantSetHealthEvent.class, PreBattleParticipantSetHealthEvent.View.class, i -> i, 1), EventGenerationUtil.generateDoubleReuseInvoker(PreBattleParticipantSetHealthEvent.class, 1), Comparator.comparing(PreBattleParticipantSetHealthEvent::phase, PreBattleParticipantSetHealthEvent.PHASE_TRACKER.phaseComparator()));
+            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT);
 
-            builder.unsorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT, PreBattleParticipantDeathEvent::convert, PreBattleParticipantDeathEvent::invoker);
+            builder.unsortedViewLike(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT);
         });
     }
 

@@ -14,18 +14,4 @@ public interface PostEquipBattleParticipantEquipmentEvent {
     interface View {
         void postEquip(BattleParticipantStateView state, BattleParticipantInventoryHandle handle, BattleParticipantEquipmentSlot slot, TracerView<ActionTrace> tracer);
     }
-
-    static PostEquipBattleParticipantEquipmentEvent convert(final View view) {
-        return view::postEquip;
-    }
-
-    static PostEquipBattleParticipantEquipmentEvent invoker(final PostEquipBattleParticipantEquipmentEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (state, handle, slot, tracer) -> {
-            enter.run();
-            for (final PostEquipBattleParticipantEquipmentEvent listener : listeners) {
-                listener.postEquip(state, handle, slot, tracer);
-            }
-            exit.run();
-        };
-    }
 }

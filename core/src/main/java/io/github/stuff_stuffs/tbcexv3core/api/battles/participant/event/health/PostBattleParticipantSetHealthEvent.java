@@ -12,18 +12,4 @@ public interface PostBattleParticipantSetHealthEvent {
     interface View {
         void postSetHealth(BattleParticipantStateView state, double oldHealth, TracerView<ActionTrace> tracer);
     }
-
-    static PostBattleParticipantSetHealthEvent convert(final View view) {
-        return view::postSetHealth;
-    }
-
-    static PostBattleParticipantSetHealthEvent invoker(final PostBattleParticipantSetHealthEvent[] events, final Runnable enter, final Runnable exit) {
-        return (state, oldHealth, tracer) -> {
-            enter.run();
-            for (final PostBattleParticipantSetHealthEvent event : events) {
-                event.postSetHealth(state, oldHealth, tracer);
-            }
-            exit.run();
-        };
-    }
 }

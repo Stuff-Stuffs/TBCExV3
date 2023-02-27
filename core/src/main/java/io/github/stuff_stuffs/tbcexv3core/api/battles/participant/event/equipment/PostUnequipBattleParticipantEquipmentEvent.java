@@ -15,18 +15,4 @@ public interface PostUnequipBattleParticipantEquipmentEvent {
     interface View {
         void postUnequip(BattleParticipantStateView state, BattleParticipantInventoryHandle handle, BattleParticipantEquipmentSlot slot, BattleParticipantItemStack stack, TracerView<ActionTrace> tracer);
     }
-
-    static PostUnequipBattleParticipantEquipmentEvent convert(final View view) {
-        return view::postUnequip;
-    }
-
-    static PostUnequipBattleParticipantEquipmentEvent invoker(final PostUnequipBattleParticipantEquipmentEvent[] listeners, final Runnable enter, final Runnable exit) {
-        return (state, handle, slot, stack, tracer) -> {
-            enter.run();
-            for (final PostUnequipBattleParticipantEquipmentEvent listener : listeners) {
-                listener.postUnequip(state, handle, slot, stack, tracer);
-            }
-            exit.run();
-        };
-    }
 }
