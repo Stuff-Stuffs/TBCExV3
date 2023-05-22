@@ -29,7 +29,7 @@ public class BattleEffectTypeImpl<View extends BattleEffect, Effect extends View
     @Override
     public <K> DataResult<K> encode(final DynamicOps<K> ops, final BattleEffect action) {
         if (action.getType() != this) {
-            return DataResult.error("Type mismatch");
+            return DataResult.error(() -> "Type mismatch");
         }
         return encoder.encode((Effect) action, ops, ops.empty());
     }

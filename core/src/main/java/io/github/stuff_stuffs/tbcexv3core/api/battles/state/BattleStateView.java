@@ -9,7 +9,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStateView;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMapView;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMapView;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 

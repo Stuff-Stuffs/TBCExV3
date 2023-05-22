@@ -80,7 +80,7 @@ public final class BattleParticipantItemRarity {
                 case "RARE" -> DataResult.success(RARE);
                 case "EPIC" -> DataResult.success(EPIC);
                 case "LEGENDARY" -> DataResult.success(LEGENDARY);
-                default -> DataResult.error("No RarityClass with name: " + s);
+                default -> DataResult.error(() -> "No RarityClass with name: " + s);
             };
         }
     }

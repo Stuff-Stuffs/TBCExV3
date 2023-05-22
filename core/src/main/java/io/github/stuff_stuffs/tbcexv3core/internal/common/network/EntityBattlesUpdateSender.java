@@ -4,6 +4,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticip
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
@@ -19,11 +20,11 @@ public final class EntityBattlesUpdateSender {
         buf.writeUuid(entityId);
         buf.writeVarInt(activeBattles.size());
         for (final BattleParticipantHandle id : activeBattles) {
-            buf.encode(BattleParticipantHandle.codec(), id);
+            buf.encode(NbtOps.INSTANCE, BattleParticipantHandle.codec(), id);
         }
         buf.writeVarInt(inactiveBattles.size());
         for (final BattleParticipantHandle id : inactiveBattles) {
-            buf.encode(BattleParticipantHandle.codec(), id);
+            buf.encode(NbtOps.INSTANCE, BattleParticipantHandle.codec(), id);
         }
         ServerPlayNetworking.send(entity, CHANNEL, buf);
     }

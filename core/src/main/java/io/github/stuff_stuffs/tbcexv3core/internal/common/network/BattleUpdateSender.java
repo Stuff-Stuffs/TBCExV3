@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
@@ -19,7 +20,7 @@ public final class BattleUpdateSender {
         buf.writeVarInt(updates.size());
         final Codec<BattleUpdate> codec = BattleUpdate.codec(biomeRegistry);
         for (BattleUpdate update : updates) {
-            buf.encode(codec, update);
+            buf.encode(NbtOps.INSTANCE, codec, update);
         }
         sender.sendPacket(CHANNEL, buf);
     }

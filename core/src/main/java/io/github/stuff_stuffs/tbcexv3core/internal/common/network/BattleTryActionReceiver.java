@@ -7,6 +7,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleAction;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
@@ -22,8 +23,8 @@ public final class BattleTryActionReceiver {
     }
 
     private static void receive(final MinecraftServer server, final ServerPlayerEntity entity, final ServerPlayNetworkHandler handler, final PacketByteBuf buf, final PacketSender sender) {
-        final BattleHandle handle = buf.decode(BattleHandle.codec());
-        final BattleAction action = buf.decode(BattleAction.CODEC);
+        final BattleHandle handle = buf.decode(NbtOps.INSTANCE, BattleHandle.codec());
+        final BattleAction action = buf.decode(NbtOps.INSTANCE, BattleAction.CODEC);
         server.execute(() -> {
             final ServerWorld world = server.getWorld(handle.getWorldKey());
             if (world != null) {

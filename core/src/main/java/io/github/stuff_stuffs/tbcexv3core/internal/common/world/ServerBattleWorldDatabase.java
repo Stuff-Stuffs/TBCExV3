@@ -123,9 +123,9 @@ public class ServerBattleWorldDatabase {
             final byte[] bytes = Files.readAllBytes(file(battles, uuid));
             return decodeBattle(bytes);
         } catch (final NoSuchFileException e) {
-            return DataResult.error("Battle does not exist");
+            return DataResult.error(() -> "Battle does not exist");
         } catch (final IOException e) {
-            return DataResult.error("Error: " + e);
+            return DataResult.error(() -> "Error: " + e);
         }
     }
 

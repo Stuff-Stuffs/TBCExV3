@@ -1,7 +1,9 @@
 package io.github.stuff_stuffs.tbcexv3util.api.util;
 
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.gen.EventViewable;
 import io.github.stuff_stuffs.tbcexv3util.impl.util.TracerImpl;
 
+@EventViewable(viewClass = TracerView.class)
 public interface Tracer<T> extends TracerView<T> {
     default NodeBuilder<T, IntervalStart<T>> pushStart() {
         return pushStart(true);

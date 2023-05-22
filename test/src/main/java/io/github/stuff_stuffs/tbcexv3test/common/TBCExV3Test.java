@@ -50,7 +50,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
+public class TBCExV3Test implements ModInitializer {
     public static final String MOD_ID = "tbcexv3_test";
     public static Consumer<Text> MESSAGE_CONSUMER = text -> {
     };
@@ -192,18 +192,6 @@ public class TBCExV3Test implements ModInitializer, PreLaunchEntrypoint {
             }
             return 0;
         })));
-    }
-
-    @Override
-    public void onPreLaunch() {
-        final Properties properties = System.getProperties();
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT && String.CASE_INSENSITIVE_ORDER.compare("true", (String) properties.getOrDefault("renderdoc", "false")) == 0) {
-            try {
-                System.loadLibrary("renderdoc");
-            } catch (final Exception e) {
-                LoggerFactory.getLogger(TBCExV3Test.class).error("Render doc not found, rendering debug will be disabled!");
-            }
-        }
     }
 
     public static Identifier id(final String path) {

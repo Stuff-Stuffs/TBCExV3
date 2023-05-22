@@ -94,7 +94,7 @@ public class ModelPartRenderContextImpl implements ModelPartRenderContext {
 
         @Override
         public int sample(final double x, final double y, final double z) {
-            final BlockPos pos = new BlockPos(x, y, z);
+            final BlockPos pos = BlockPos.ofFloored(x, y, z);
             return LightmapTextureManager.pack(renderView.getLightLevel(LightType.BLOCK, pos), renderView.getLightLevel(LightType.SKY, pos));
         }
     }

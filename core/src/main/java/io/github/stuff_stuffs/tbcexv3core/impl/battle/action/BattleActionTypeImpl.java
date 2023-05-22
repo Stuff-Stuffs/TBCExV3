@@ -33,7 +33,7 @@ public class BattleActionTypeImpl<T extends BattleAction> implements BattleActio
     public <K> DataResult<K> encode(final DynamicOps<K> ops, final BattleAction action, final boolean network) {
         final Encoder<T> encoder = network ? netEncoder : this.encoder;
         if (action.getType() != this) {
-            return DataResult.error("Type mismatch");
+            return DataResult.error(() -> "Type mismatch");
         }
         return encoder.encode((T) action, ops, ops.empty());
     }

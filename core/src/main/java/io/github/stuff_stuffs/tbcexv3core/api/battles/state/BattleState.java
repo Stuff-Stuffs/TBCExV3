@@ -11,9 +11,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.state.BattleStateImpl;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.gen.EventViewable;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.util.Identifier;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.Optional;
 
 @ApiStatus.NonExtendable
+@EventViewable(viewClass = BattleStateView.class)
 public interface BattleState extends BattleStateView {
     void setTurnSelector(TurnSelector turnSelector);
 

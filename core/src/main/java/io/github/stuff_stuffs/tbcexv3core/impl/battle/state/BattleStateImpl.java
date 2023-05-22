@@ -7,10 +7,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionT
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffect;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.BattleEffectType;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantStatePhase;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
@@ -22,6 +22,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.turn.TurnSelector;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.AbstractBattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.util.Identifier;
 
@@ -81,7 +82,7 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     public void ready() {
         checkPhase(BattleStatePhase.INITIALIZATION, true);
         phase = BattleStatePhase.FIGHT;
-        for (BattleParticipantHandle participant : getParticipants()) {
+        for (final BattleParticipantHandle participant : getParticipants()) {
             participantContainer.getParticipantByHandle(participant).ready();
         }
     }
@@ -166,14 +167,15 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
     @Override
     public boolean setBattleBounds(final BattleBounds bounds, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleStatePhase.INITIALIZATION, false);
-        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT).getInvoker().preBattleSetBounds(this, bounds, tracer)) {
+        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_BOUNDS_SET).getInvoker().preBattleBoundsSet(this, bounds, tracer)) {
             final BattleBounds old = this.bounds;
             this.bounds = bounds;
             tracer.pushInstant(true).value(new BattleActionTraces.BattleSetBounds(Optional.ofNullable(old), bounds)).buildAndApply();
-            events.getEvent(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT).getInvoker().postBattleBoundsSet(this, old, tracer);
+            events.getEvent(CoreBattleEvents.SUCCESSFUL_BATTLE_BOUNDS_SET).getInvoker().successfulBattleBoundsSet(this, old, tracer);
             tracer.pop();
             return true;
         }
+        events.getEvent(CoreBattleEvents.FAILED_BATTLE_BOUNDS_SET).getInvoker().failedBattleBoundsSet(this, bounds, tracer);
         return false;
     }
 
@@ -238,13 +240,15 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
             }
         }
         final Optional<BattleParticipantHandle> handle = participantContainer.addParticipant(participant, team, tracer, this.handle);
-        handle.ifPresent(battleParticipantHandle -> {
+        handle.ifPresentOrElse(battleParticipantHandle -> {
             participantContainer.getParticipantByHandle(battleParticipantHandle).setup(this);
             if (phase == BattleStatePhase.FIGHT) {
                 participantContainer.getParticipantByHandle(battleParticipantHandle).ready();
             }
-            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().postBattleParticipantJoin(participant, tracer);
+            events.getEvent(CoreBattleEvents.SUCCESSFUL_BATTLE_PARTICIPANT_JOIN).getInvoker().successfulBattleParticipantJoin(participant, tracer);
             tracer.pop();
+        }, () -> {
+            events.getEvent(CoreBattleEvents.FAILED_BATTLE_PARTICIPANT_JOIN).getInvoker().failedBattleParticipantJoin(participant, tracer);
         });
         return handle;
     }
@@ -255,9 +259,8 @@ public class BattleStateImpl implements AbstractBattleStateImpl {
         final boolean removed = participantContainer.removeParticipant(handle, reason, tracer, this);
         if (removed) {
             if (participantContainer.canEnd()) {
-                getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_END_EVENT).getInvoker().preBattleEnd(this, tracer);
                 phase = BattleStatePhase.FINISHED;
-                getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).getInvoker().postBattleEnd(this, tracer);
+                events.getEvent(CoreBattleEvents.BATTLE_END).getInvoker().battleEnd(this, tracer);
             }
         }
         return removed;

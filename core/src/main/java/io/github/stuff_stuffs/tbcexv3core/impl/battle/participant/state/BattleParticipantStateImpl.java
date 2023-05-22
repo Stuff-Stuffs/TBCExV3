@@ -3,7 +3,7 @@ package io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state;
 import com.google.common.collect.Iterators;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
@@ -72,28 +72,31 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
     @Override
     public boolean setPosition(final BlockPos pos, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleParticipantStatePhase.FIGHT, BattleParticipantStatePhase.FIGHT);
-        if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, bounds, tracer)) {
+        final BattleParticipantBounds movedBounds = BattleParticipantBounds.move(pos, bounds);
+        if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS).getInvoker().preSetBounds(this, movedBounds, tracer)) {
             final BattleParticipantBounds oldBounds = bounds;
-            bounds = BattleParticipantBounds.move(pos, bounds);
+            bounds = movedBounds;
             tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantMove(handle, oldBounds.center(), pos)).buildAndApply();
-            events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, oldBounds, tracer);
+            events.getEvent(CoreBattleParticipantEvents.SUCCESSFUL_BATTLE_PARTICIPANT_SET_BOUNDS).getInvoker().successfulSetBounds(this, oldBounds, tracer);
             tracer.pop();
             return true;
         }
+        events.getEvent(CoreBattleParticipantEvents.FAILED_BATTLE_PARTICIPANT_SET_BOUNDS).getInvoker().failedSetBounds(this, movedBounds, tracer);
         return false;
     }
 
     @Override
     public boolean setBounds(final BattleParticipantBounds bounds, final Tracer<ActionTrace> tracer) {
         checkPhase(BattleParticipantStatePhase.INITIALIZATION, BattleParticipantStatePhase.FIGHT);
-        if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, bounds, tracer)) {
+        if (events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS).getInvoker().preSetBounds(this, bounds, tracer)) {
             final BattleParticipantBounds oldBounds = this.bounds;
             this.bounds = bounds;
             tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantChangeBounds(handle, oldBounds, bounds)).buildAndApply();
-            events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT).getInvoker().preSetBounds(this, oldBounds, tracer);
+            events.getEvent(CoreBattleParticipantEvents.SUCCESSFUL_BATTLE_PARTICIPANT_SET_BOUNDS).getInvoker().successfulSetBounds(this, oldBounds, tracer);
             tracer.pop();
             return true;
         }
+        events.getEvent(CoreBattleParticipantEvents.FAILED_BATTLE_PARTICIPANT_SET_BOUNDS).getInvoker().failedSetBounds(this, bounds, tracer);
         return false;
     }
 
@@ -158,7 +161,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
 
     @Override
     public double setHealth(final double amount, final Tracer<ActionTrace> tracer) {
-        final double newHealth = events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT).getInvoker().preSetHealth(this, amount, tracer);
+        final double newHealth = events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH).getInvoker().preSetHealth(this, amount, tracer);
         final double maxHealth = statMap.compute(CoreBattleParticipantStats.MAX_HEALTH, null);
         final double realHealth = Math.min(newHealth, maxHealth);
         if (newHealth != health) {
@@ -168,10 +171,10 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
                             new BattleParticipantActionTraces.Health.Damage(handle, oldHealth, oldHealth - realHealth) :
                             new BattleParticipantActionTraces.Health.Heal(handle, oldHealth, realHealth - oldHealth)
             ).buildAndApply();
-            events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT).getInvoker().postSetHealth(this, oldHealth, tracer);
             health = realHealth;
-            if (realHealth <= 0) {
-                events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT).getInvoker().preDeath(this, tracer);
+            events.getEvent(CoreBattleParticipantEvents.SUCCESSFUL_BATTLE_PARTICIPANT_SET_HEALTH).getInvoker().successfulSetHealth(this, oldHealth, tracer);
+            if (health <= 0) {
+                events.getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH).getInvoker().preDeath(this, tracer);
                 if (health <= 0) {
                     if (battleState.removeParticipant(handle, BattleParticipantRemovalReason.DIED, tracer)) {
                         return 0;
@@ -183,6 +186,7 @@ public class BattleParticipantStateImpl implements AbstractBattleParticipantStat
             tracer.pop();
             return health;
         }
+        events.getEvent(CoreBattleParticipantEvents.FAILED_BATTLE_PARTICIPANT_SET_HEALTH).getInvoker().failedSetHealth(this, realHealth, tracer);
         return health;
     }
 

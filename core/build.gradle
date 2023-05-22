@@ -7,4 +7,5 @@ dependencies {
     clientImplementation project(":model").sourceSets.client.output
     implementation project(path: ":util", configuration: "namedElements")
     clientImplementation project(":util").sourceSets.client.output
+    annotationProcessor project(path: ":util", configuration: "namedElements")
 }

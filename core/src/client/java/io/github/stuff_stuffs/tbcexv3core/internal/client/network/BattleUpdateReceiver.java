@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
@@ -30,7 +31,7 @@ public final class BattleUpdateReceiver {
         final Registry<Biome> biomeRegistry = client.world.getRegistryManager().get(RegistryKeys.BIOME);
         final Codec<BattleUpdate> codec = BattleUpdate.codec(biomeRegistry);
         for (int i = 0; i < count; i++) {
-            updates.add(buf.decode(codec));
+            updates.add(buf.decode(NbtOps.INSTANCE, codec));
         }
         client.execute(() -> {
             for (final BattleUpdate update : updates) {

@@ -5,6 +5,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleParticipantActionTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleTeamEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantRemovalReason;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
@@ -13,10 +14,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattlePa
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeamRelation;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
-import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.AbstractBattleParticipantState;
+import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMap;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.util.Identifier;
@@ -82,7 +83,7 @@ public class ParticipantContainer {
         if (participantStates.containsKey(handle)) {
             throw new TBCExException();
         }
-        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT).getInvoker().preBattleParticipantJoin(participant, tracer)) {
+        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN).getInvoker().preBattleParticipantJoin(participant, tracer)) {
             participantStates.put(handle, (AbstractBattleParticipantState) participant);
             teamByHandle.put(handle, team);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
@@ -96,15 +97,19 @@ public class ParticipantContainer {
         if (!participantStates.containsKey(handle)) {
             throw new IllegalArgumentException("Tried to remove a non-existent battle participant!");
         }
-        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().preParticipantLeaveEvent(handle, state, reason, tracer)) {
+        if (events.getEvent(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE).getInvoker().preBattleParticipantLeave(handle, state, reason, tracer)) {
             final AbstractBattleParticipantState removed = participantStates.remove(handle);
             handlesByTeam.get(removed.getTeam()).remove(handle);
             removed.finish();
             tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantLeft(handle, reason)).buildAndApply();
-            events.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).getInvoker().postParticipantLeaveEvent(removed, state, reason, tracer);
+            if (reason == BattleParticipantRemovalReason.DIED) {
+                events.getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_DEATH).getInvoker().postDeath(removed, state, tracer);
+            }
+            events.getEvent(CoreBattleEvents.SUCCESS_BATTLE_PARTICIPANT_LEAVE).getInvoker().successBattleParticipantLeave(removed, state, reason, tracer);
             tracer.pop();
             return true;
         }
+        events.getEvent(CoreBattleEvents.FAILED_BATTLE_PARTICIPANT_LEAVE).getInvoker().failedBattleParticipantLeave(handle, state, reason, tracer);
         return false;
     }
 
@@ -114,27 +119,28 @@ public class ParticipantContainer {
         if (old == relation) {
             return true;
         }
-        if (events.getEvent(CoreBattleEvents.PRE_TEAM_RELATION_CHANGE_EVENT).getInvoker().preChangeTeamRelation(state, first, second, old, relation, tracer)) {
+        if (events.getEvent(CoreBattleTeamEvents.PRE_CHANGE_TEAM_RELATION).getInvoker().preChangeTeamRelation(state, first, second, old, relation, tracer)) {
             if (relation == BattleParticipantTeamRelation.NEUTRAL) {
                 relations.remove(pair);
             } else {
                 relations.put(pair, relation);
             }
             tracer.pushInstant(true).value(new BattleActionTraces.BattleTeamSetRelation(first, second, old, relation)).buildAndApply();
-            events.getEvent(CoreBattleEvents.POST_TEAM_RELATION_CHANGE_EVENT).getInvoker().postChangeTeamRelation(state, first, second, old, relation, tracer);
+            events.getEvent(CoreBattleTeamEvents.SUCCESSFUL_CHANGE_TEAM_RELATION).getInvoker().successfulChangeTeamRelation(state, first, second, old, relation, tracer);
             tracer.pop();
             return true;
         }
+        events.getEvent(CoreBattleTeamEvents.FAILED_CHANGE_TEAM_RELATION).getInvoker().failedChangeTeamRelation(state, first, second, old, relation, tracer);
         return false;
     }
 
     public boolean canEnd() {
         for (final BattleParticipantTeam first : teams.values()) {
-            if(handlesByTeam.get(first).isEmpty()) {
+            if (handlesByTeam.get(first).isEmpty()) {
                 continue;
             }
             for (final BattleParticipantTeam second : teams.values()) {
-                if(handlesByTeam.get(second).isEmpty()) {
+                if (handlesByTeam.get(second).isEmpty()) {
                     continue;
                 }
                 if (first == second) {
@@ -161,15 +167,16 @@ public class ParticipantContainer {
             return true;
         }
         final AbstractBattleParticipantState state = participantStates.get(handle);
-        if (state.getEventMap().getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().preSetTeam(state, team, tracer)) {
+        if (state.getEventMap().getEvent(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM).getInvoker().preSetTeam(state, team, tracer)) {
             handlesByTeam.get(currentTeam).remove(handle);
             handlesByTeam.computeIfAbsent(team, i -> new ObjectOpenHashSet<>()).add(handle);
             teamByHandle.put(handle, team);
             tracer.pushInstant(true).value(new BattleParticipantActionTraces.BattleParticipantSetTeam(handle, team, currentTeam)).buildAndApply();
-            state.getEventMap().getEvent(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT).getInvoker().postSetTeam(state, currentTeam, tracer);
+            state.getEventMap().getEvent(CoreBattleParticipantEvents.SUCCESSFUL_BATTLE_PARTICIPANT_SET_TEAM).getInvoker().successfulSetTeam(state, currentTeam, tracer);
             tracer.pop();
             return true;
         }
+        state.getEventMap().getEvent(CoreBattleParticipantEvents.FAILED_BATTLE_PARTICIPANT_SET_TEAM).getInvoker().failedSetTeam(state, team, tracer);
         return false;
     }
 

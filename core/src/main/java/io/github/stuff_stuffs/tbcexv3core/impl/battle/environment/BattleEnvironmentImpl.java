@@ -8,7 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.ActionTrace;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.trace.BattleEnvironmentTraces;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironment;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.BattleEnvironmentBlock;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEnvironmentEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.bounds.BattleParticipantBounds;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
@@ -101,15 +101,16 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
         if (index < 0 || index >= sections.length) {
             return false;
         }
-        if (this.state.getEventMap().getEvent(CoreBattleEvents.PRE_BLOCK_STATE_SET_EVENT).getInvoker().preBlockStateSet(pos, this.state, state, tracer)) {
+        if (this.state.getEventMap().getEvent(CoreBattleEnvironmentEvents.PRE_SET_BLOCK_STATE).getInvoker().preSetBlockState(pos, this.state, state, tracer)) {
             final BattleEnvironmentSection section = sections[index];
             final BlockState oldState = section.getBlockState(pos.getX(), pos.getY(), pos.getZ());
             section.setBlockState(pos.getX(), pos.getY(), pos.getZ(), state);
             tracer.pushInstant().value(new BattleEnvironmentTraces.EnvironmentSetBlockState(pos, oldState, state));
-            this.state.getEventMap().getEvent(CoreBattleEvents.POST_BLOCK_STATE_SET_EVENT).getInvoker().postBlockStateSet(pos, this.state, oldState, tracer);
+            this.state.getEventMap().getEvent(CoreBattleEnvironmentEvents.SUCCESSFUL_SET_BLOCK_STATE).getInvoker().successfulSetBlockState(pos, this.state, oldState, tracer);
             tracer.pop();
             return true;
         }
+        this.state.getEventMap().getEvent(CoreBattleEnvironmentEvents.FAILED_SET_BLOCK_STATE).getInvoker().failedSetBlockState(pos, this.state, state, tracer);
         return false;
     }
 
@@ -122,16 +123,18 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
         }
         final BattleEnvironmentSection section = sections[index];
         final BattleEnvironmentBlock old = section.getBattleBlock(pos.getX(), pos.getY(), pos.getZ());
-        if (state.getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT).getInvoker().preBattleBlockSet(pos, state, Optional.ofNullable(old), tracer)) {
+        if (state.getEventMap().getEvent(CoreBattleEnvironmentEvents.PRE_SET_BATTLE_BLOCK).getInvoker().preSetBattleBlock(pos, state, Optional.ofNullable(old), tracer)) {
             if (old != null) {
                 old.deinit(tracer);
             }
             tracer.pushInstant().value(new BattleEnvironmentTraces.EnvironmentSetBattleBlock(pos, old != null));
-            section.setBattleBlock(pos.getX(), pos.getY(), pos.getZ(), factory.create(state, pos, tracer));
-            state.getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT).getInvoker().postBattleBlockSet(pos, state, Optional.ofNullable(old), tracer);
+            final BattleEnvironmentBlock block = factory.create(state, pos, tracer);
+            section.setBattleBlock(pos.getX(), pos.getY(), pos.getZ(), block);
+            state.getEventMap().getEvent(CoreBattleEnvironmentEvents.SUCCESSFUL_SET_BATTLE_BLOCK).getInvoker().successfulSetBattleBlock(pos, state, Optional.ofNullable(old), Optional.of(block), tracer);
             tracer.pop();
             return true;
         }
+        state.getEventMap().getEvent(CoreBattleEnvironmentEvents.FAILED_SET_BATTLE_BLOCK).getInvoker().failedSetBattleBlock(pos, state, Optional.ofNullable(old), tracer);
         return false;
     }
 
@@ -147,14 +150,15 @@ public class BattleEnvironmentImpl implements BattleEnvironment {
         if (old == null) {
             return false;
         }
-        if (state.getEventMap().getEvent(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT).getInvoker().preBattleBlockSet(pos, state, Optional.of(old), tracer)) {
+        if (state.getEventMap().getEvent(CoreBattleEnvironmentEvents.PRE_SET_BATTLE_BLOCK).getInvoker().preSetBattleBlock(pos, state, Optional.of(old), tracer)) {
             old.deinit(tracer);
             section.setBattleBlock(pos.getX(), pos.getY(), pos.getZ(), null);
             tracer.pushInstant().value(new BattleEnvironmentTraces.EnvironmentRemoveBattleBlock(pos));
-            state.getEventMap().getEvent(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT).getInvoker().postBattleBlockSet(pos, state, Optional.of(old), tracer);
+            state.getEventMap().getEvent(CoreBattleEnvironmentEvents.SUCCESSFUL_SET_BATTLE_BLOCK).getInvoker().successfulSetBattleBlock(pos, state, Optional.of(old), Optional.empty(), tracer);
             tracer.pop();
             return true;
         }
+        state.getEventMap().getEvent(CoreBattleEnvironmentEvents.FAILED_SET_BATTLE_BLOCK).getInvoker().failedSetBattleBlock(pos, state, Optional.of(old), tracer);
         return false;
     }
 

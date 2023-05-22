@@ -102,7 +102,7 @@ public class BattleParticipantBoundsImpl implements BattleParticipantBounds {
         if (doubles.size() == 6) {
             return DataResult.success(new Box(doubles.get(0), doubles.get(1), doubles.get(2), doubles.get(3), doubles.get(4), doubles.get(5)));
         }
-        return DataResult.error("Incorrect number of arguments!");
+        return DataResult.error(() -> "Incorrect number of arguments!");
     }
 
     private static List<Double> of(final Box box) {

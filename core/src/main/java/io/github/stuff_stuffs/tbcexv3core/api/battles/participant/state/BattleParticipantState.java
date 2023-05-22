@@ -9,9 +9,10 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.BattlePar
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.team.BattleParticipantTeam;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponentMap;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3util.api.util.Tracer;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.participant.state.BattleParticipantStateImpl;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.gen.EventViewable;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.util.math.BlockPos;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApiStatus.NonExtendable
+@EventViewable(viewClass = BattleParticipantStateView.class)
 public interface BattleParticipantState extends BattleParticipantStateView {
     @Override
     EventMap getEventMap();

@@ -8,6 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleStateMode;
 import io.github.stuff_stuffs.tbcexv3core.api.util.CodecUtil;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.gen.EventViewable;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -15,6 +16,7 @@ import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.NonExtendable
+@EventViewable(viewClass = BattleView.class)
 public interface Battle extends BattleView {
     @Override
     BattleState getState();

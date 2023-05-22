@@ -7,16 +7,16 @@ import io.github.stuff_stuffs.tbcexv3core.api.battles.ServerBattleWorld;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.BattleParticipantLeaveBattleAction;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.action.CoreBattleActions;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.effect.CoreBattleEffects;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEnvironmentEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleEvents;
+import io.github.stuff_stuffs.tbcexv3core.api.battles.event.CoreBattleTeamEvents;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.BattleParticipantHandle;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.effect.CoreBattleParticipantEffects;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.CoreBattleParticipantEvents;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.event.health.PreBattleParticipantSetHealthEvent;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.stat.CoreBattleParticipantStats;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.state.BattleParticipantState;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.state.BattleState;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.*;
-import io.github.stuff_stuffs.tbcexv3core.api.util.EventGenerationUtil;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.environment.BattleEnvironmentSection;
 import io.github.stuff_stuffs.tbcexv3core.internal.common.mixin.AccessorWorldSavePath;
@@ -125,55 +125,19 @@ public class TBCExV3Core implements ModInitializer {
         CoreBattleParticipantEffects.init();
         CoreBattleEntityComponents.init();
         CoreBattleParticipantStats.init();
-        BattleListenerEvent.EVENT.register((view, world) -> view.getState().getEventMap().getEventView(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((state, battleStateView, reason, tracer) -> {
+        BattleListenerEvent.EVENT.register((view, world) -> view.getState().getEventMap().getEventView(CoreBattleEvents.SUCCESS_BATTLE_PARTICIPANT_LEAVE).registerListener((state, battleStateView, reason, tracer) -> {
             final Iterator<? extends BattleEntityComponent> iterator = state.entityComponents();
             while (iterator.hasNext()) {
                 iterator.next().onLeave(view, world);
             }
         }));
         BattleState.BATTLE_EVENT_INITIALIZATION_EVENT.register(builder -> {
-            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_SET_BOUNDS_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_SET_BOUNDS_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_JOIN_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_PARTICIPANT_LEAVE_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT);
-
-            builder.unsortedViewLike(CoreBattleEvents.PRE_BATTLE_END_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_END_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_TEAM_RELATION_CHANGE_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_TEAM_RELATION_CHANGE_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BLOCK_STATE_SET_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_BLOCK_STATE_SET_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleEvents.PRE_BATTLE_BLOCK_SET_EVENT);
-            builder.unsortedViewLike(CoreBattleEvents.POST_BATTLE_BLOCK_SET_EVENT);
+            CoreBattleEvents.addAll(builder);
+            CoreBattleTeamEvents.addAll(builder);
+            CoreBattleEnvironmentEvents.addAll(builder);
         });
         BattleParticipantState.BATTLE_PARTICIPANT_EVENT_INITIALIZATION_EVENT.register(builder -> {
-            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT);
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_GIVE_BATTLE_PARTICIPANT_ITEM_EVENT);
-            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT);
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_TAKE_BATTLE_PARTICIPANT_ITEM_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_EQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
-            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_UNEQUIP_BATTLE_PARTICIPANT_EQUIPMENT_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_TEAM_EVENT);
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_TEAM_EVENT);
-
-            builder.unsortedBooleanAnd(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT);
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_BOUNDS_EVENT);
-
-            builder.sorted(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_SET_HEALTH_EVENT, EventGenerationUtil.generateDoubleConverter(PreBattleParticipantSetHealthEvent.class, PreBattleParticipantSetHealthEvent.View.class, i -> i, 1), EventGenerationUtil.generateDoubleReuseInvoker(PreBattleParticipantSetHealthEvent.class, 1), Comparator.comparing(PreBattleParticipantSetHealthEvent::phase, PreBattleParticipantSetHealthEvent.PHASE_TRACKER.phaseComparator()));
-            builder.unsortedViewLike(CoreBattleParticipantEvents.POST_BATTLE_PARTICIPANT_SET_HEALTH_EVENT);
-
-            builder.unsortedViewLike(CoreBattleParticipantEvents.PRE_BATTLE_PARTICIPANT_DEATH_EVENT);
+            CoreBattleParticipantEvents.addAll(builder);
         });
     }
 

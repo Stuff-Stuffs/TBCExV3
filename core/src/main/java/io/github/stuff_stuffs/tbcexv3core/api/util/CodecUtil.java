@@ -33,7 +33,7 @@ public final class CodecUtil {
                 if (baseClass.isInstance(input)) {
                     return baseCodec.encode((B) input, ops, prefix);
                 }
-                return DataResult.error("Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface!");
+                return DataResult.error(() -> "Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface!");
             }
 
             @Override
@@ -50,7 +50,7 @@ public final class CodecUtil {
                 if (baseClass.isInstance(input)) {
                     return baseCodec.encode((B) input, ops, prefix);
                 }
-                return DataResult.error("Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface!");
+                return DataResult.error(() -> "Got " + input.getClass().getSimpleName() + ", expected " + baseClass.getSimpleName() + ", somebody implemented an internal interface!");
             }
         };
     }

@@ -22,7 +22,8 @@ public class BattleParticipantItemModelRegistryImpl implements BattleParticipant
             return;
         }
         final ItemStack itemStack = Util.getRandom(stacks, world.random);
-        MinecraftClient.getInstance().getItemRenderer().renderItem(null, itemStack, ModelTransformation.Mode.NONE, false, matrices, context, world, light, OverlayTexture.DEFAULT_UV, 0);
+        //FIXME
+        //MinecraftClient.getInstance().getItemRenderer().renderItem(null, itemStack, ModelTransformation.Mode.NONE, false, matrices, context, world, light, OverlayTexture.DEFAULT_UV, 0);
     };
     private final Map<BattleParticipantItemType<?>, Function<Object, BattleParticipantItemModel>> modelMap = new Object2ReferenceOpenHashMap<>();
 

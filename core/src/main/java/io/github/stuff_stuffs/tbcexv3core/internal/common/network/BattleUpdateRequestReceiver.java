@@ -8,6 +8,7 @@ import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironm
 import io.github.stuff_stuffs.tbcexv3core.internal.common.TBCExV3Core;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
@@ -31,7 +32,7 @@ public final class BattleUpdateRequestReceiver {
         final int count = buf.readVarInt();
         final List<BattleUpdateRequest> requests = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            requests.add(buf.decode(BattleUpdateRequest.CODEC));
+            requests.add(buf.decode(NbtOps.INSTANCE, BattleUpdateRequest.CODEC));
         }
         server.execute(() -> {
             final List<BattleUpdate> updates = new ArrayList<>(count);

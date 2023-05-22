@@ -4,6 +4,7 @@ import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRe
 import io.github.stuff_stuffs.tbcexv3core.internal.common.network.BattleUpdateRequestReceiver;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public final class BattleUpdateRequestSender {
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeVarInt(updateRequests.size());
         for (BattleUpdateRequest updateRequest : updateRequests) {
-            buf.encode(BattleUpdateRequest.CODEC, updateRequest);
+            buf.encode(NbtOps.INSTANCE, BattleUpdateRequest.CODEC, updateRequest);
         }
         ClientPlayNetworking.send(BattleUpdateRequestReceiver.CHANNEL, buf);
     }

@@ -17,7 +17,7 @@ import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleEntity;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.BattleParticipantStateBuilder;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.BattleEntityComponent;
 import io.github.stuff_stuffs.tbcexv3core.api.entity.component.CoreBattleEntityComponents;
-import io.github.stuff_stuffs.tbcexv3core.api.battles.environment.event.EventMap;
+import io.github.stuff_stuffs.tbcexv3util.api.util.event.EventMap;
 import io.github.stuff_stuffs.tbcexv3core.api.util.TBCExException;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.BattleImpl;
 import io.github.stuff_stuffs.tbcexv3core.impl.battle.environment.BattleEnvironmentImpl;
@@ -104,17 +104,17 @@ public class ServerBattleWorldContainer implements AutoCloseable {
 
     private void attachListeners(final Battle battle) {
         final EventMap eventMap = battle.getState().getEventMap();
-        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_JOIN_EVENT).registerListener((state, tracer) -> {
+        eventMap.getEvent(CoreBattleEvents.SUCCESSFUL_BATTLE_PARTICIPANT_JOIN).registerListener((state, tracer) -> {
             if (state.getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
                 database.onBattleJoinLeave(state.getUuid(), state.getBattleState().getHandle().getUuid(), true);
             }
         });
-        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_PARTICIPANT_LEAVE_EVENT).registerListener((stateView, battleStateView, reason, tracer) -> {
+        eventMap.getEvent(CoreBattleEvents.SUCCESS_BATTLE_PARTICIPANT_LEAVE).registerListener((stateView, battleStateView, reason, tracer) -> {
             if (stateView.getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
                 database.onBattleJoinLeave(stateView.getUuid(), stateView.getHandle().getParent().getUuid(), false);
             }
         });
-        eventMap.getEvent(CoreBattleEvents.POST_BATTLE_END_EVENT).registerListener((state, tracer) -> {
+        eventMap.getEvent(CoreBattleEvents.BATTLE_END).registerListener((state, tracer) -> {
             for (final BattleParticipantHandle participant : state.getParticipants()) {
                 if (state.getParticipantByHandle(participant).getEntityComponent(CoreBattleEntityComponents.TRACKED_BATTLE_ENTITY_COMPONENT_TYPE).isPresent()) {
                     database.onBattleJoinLeave(participant.getUuid(), state.getHandle().getUuid(), false);

@@ -28,12 +28,10 @@ public final class TBCExGUI {
             buffer1.vertex(matrix, endX, endY, z).color(endColor).next();
         }, matrices.peek().getPositionMatrix(), buffer, component.x() + 2, component.y() + 2, component.width() - 4, component.height() - 4, component.zIndex());
         RenderSystem.disableDepthTest();
-        RenderSystem.disableTexture();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         BufferRenderer.drawWithGlobalProgram(buffer.end());
         RenderSystem.disableBlend();
-        RenderSystem.enableTexture();
     };
 
     private TBCExGUI() {

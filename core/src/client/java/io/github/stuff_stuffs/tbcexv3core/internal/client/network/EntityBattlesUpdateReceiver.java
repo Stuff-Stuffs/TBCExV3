@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 
 import java.util.ArrayList;
@@ -26,12 +27,12 @@ public final class EntityBattlesUpdateReceiver {
         final int count = buf.readVarInt();
         final List<BattleParticipantHandle> activeBattles = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            activeBattles.add(buf.decode(BattleParticipantHandle.codec()));
+            activeBattles.add(buf.decode(NbtOps.INSTANCE, BattleParticipantHandle.codec()));
         }
         final int inactiveCount = buf.readVarInt();
         final List<BattleParticipantHandle> inactiveBattles = new ArrayList<>(inactiveCount);
         for (int i = 0; i < inactiveCount; i++) {
-            inactiveBattles.add(buf.decode(BattleParticipantHandle.codec()));
+            inactiveBattles.add(buf.decode(NbtOps.INSTANCE, BattleParticipantHandle.codec()));
         }
         client.execute(() -> {
             if (client.world != null) {

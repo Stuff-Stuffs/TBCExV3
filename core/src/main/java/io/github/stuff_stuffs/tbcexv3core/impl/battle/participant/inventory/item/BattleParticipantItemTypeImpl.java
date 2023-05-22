@@ -6,7 +6,6 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Encoder;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItem;
 import io.github.stuff_stuffs.tbcexv3core.api.battles.participant.inventory.item.BattleParticipantItemType;
-import net.minecraft.registry.entry.RegistryEntry;
 
 public class BattleParticipantItemTypeImpl<T extends BattleParticipantItem> implements BattleParticipantItemType<T> {
     private final Encoder<T> encoder;
@@ -27,7 +26,7 @@ public class BattleParticipantItemTypeImpl<T extends BattleParticipantItem> impl
     @Override
     public <K> DataResult<K> encode(final DynamicOps<K> ops, final BattleParticipantItem item) {
         if (item.type() != this) {
-            return DataResult.error("Type mismatch");
+            return DataResult.error(() -> "Type mismatch");
         }
         return encoder.encode((T) item, ops, ops.empty());
     }
