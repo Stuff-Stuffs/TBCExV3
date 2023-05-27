@@ -60,8 +60,12 @@ allprojects {
         // Fabric API. This is technically optional, but you probably want it anyway.
         modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-        modImplementation "io.wispforest:owo-lib:${project.owo_version}"
-        modClientImplementation "io.wispforest:owo-lib:${project.owo_version}"
+        modImplementation("io.wispforest:owo-lib:${project.owo_version}") {
+            exclude group: "net.fabricmc", module: "fabric-loader"
+        }
+        modClientImplementation("io.wispforest:owo-lib:${project.owo_version}") {
+            exclude group: "net.fabricmc", module: "fabric-loader"
+        }
         annotationProcessor "io.wispforest:owo-lib:${project.owo_version}"
     }
 
@@ -84,9 +88,12 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-    modImplementation "io.wispforest:owo-lib:${project.owo_version}"
-    modClientImplementation "io.wispforest:owo-lib:${project.owo_version}"
+    modImplementation("io.wispforest:owo-lib:${project.owo_version}") {
+        exclude group: "net.fabricmc", module: "fabric-loader"
+    }
+    modClientImplementation("io.wispforest:owo-lib:${project.owo_version}") {
+        exclude group: "net.fabricmc", module: "fabric-loader"
+    }
     annotationProcessor "io.wispforest:owo-lib:${project.owo_version}"
     include "io.wispforest:owo-sentinel:${project.owo_version}"
 
